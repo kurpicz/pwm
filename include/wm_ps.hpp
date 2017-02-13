@@ -84,7 +84,7 @@ public:
           word <<= 1;
           word |= ((sorted_text[cur_pos + i] >> ((levels - 1) - level)) & 1ULL);
         }
-        (_bv[level])[cur_pos >> 6] = word;
+        _bv[level][cur_pos >> 6] = word;
       }
       if (size & 63ULL) {
         uint64_t word = 0ULL;
@@ -93,7 +93,7 @@ public:
           word |= ((sorted_text[cur_pos + i] >> ((levels - 1) - level)) & 1ULL);
         }
         word <<= (64 - (size & 63ULL));
-        (_bv[level])[size >> 6] = word;
+        _bv[level][size >> 6] = word;
       }
     }
   }
