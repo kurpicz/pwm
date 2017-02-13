@@ -1,5 +1,5 @@
 /*******************************************************************************
- * include/wm_ppc.hpp
+ * include/wt_ppc.hpp
  *
  * Copyright (C) 2016 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
  *
@@ -7,8 +7,8 @@
  ******************************************************************************/
 
 #pragma once
-#ifndef WM_PREFIX_COUNTING_PARALLEL
-#define WM_PREFIX_COUNTING_PARALLEL
+#ifndef WT_PREFIX_COUNTING_PARALLEL
+#define WT_PREFIX_COUNTING_PARALLEL
 
 #include <vector>
 #include <omp.h>
@@ -16,11 +16,11 @@
 #include "common.hpp"
 
 template <typename TextType, typename SizeType>
-class wm_ppc {
+class wt_ppc {
 
 public:
-  wm_ppc(const std::vector<TextType>& text, const SizeType size,
-    const SizeType levels) : _bv(levels), _zeros(levels, 0) {
+  wt_ppc(const std::vector<TextType>& text, const SizeType size,
+    const SizeType levels) : _bv(levels) {
     
     for (SizeType level = 0; level < levels; ++level) {
       _bv[level] = new uint64_t[(size + 63ULL) >> 6];
@@ -76,11 +76,6 @@ public:
         }
       }
 
-      #pragma omp single
-      for (SizeType i = 0; i < global_max_char; i += 2) {
-      	_zeros[levels - 1] += hist_data_ptr[i];
-      }
-
       #pragma omp for
       for (SizeType level = 1; level < levels; ++level) {
         const SizeType local_max_char = (1 << level);
@@ -103,14 +98,11 @@ public:
 
         SizeType* const hist_ttt = hist.data() + (level * global_max_char);
         std::vector<SizeType> borders(local_max_char);
-        std::vector<SizeType> bit_reverse = BitReverse<SizeType>(level);
 
         borders[0] = 0;
         for (SizeType i = 1; i < local_max_char; ++i) {
-          borders[bit_reverse[i]] = (borders[bit_reverse[i - 1]] +
-             hist_ttt[bit_reverse[i - 1]]);
+          borders[i] = (borders[i - 1] + hist_ttt[i - 1]);
         }
-        _zeros[level - 1] = borders[1];
 
         for (SizeType i = 0; i < size; ++i) {
           const SizeType pos = borders[text_ptr[i] >> prefix_shift]++;
@@ -121,15 +113,14 @@ public:
     }
   }
 
-  auto get_bv_and_zeros() const {
-    return std::make_pair(_bv, _zeros);
+  auto get_bv() const {
+    return _bv;
   }
 
 private:
   std::vector<uint64_t*> _bv;
-  std::vector<SizeType> _zeros;
-}; // class wm_ppc
+}; // class wt_ppc
 
-#endif // WM_PREFIX_COUNTING_PARALLEL
+#endif // WT_PREFIX_COUNTING_PARALLEL
 
 /******************************************************************************/
