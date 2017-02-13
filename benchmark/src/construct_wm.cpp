@@ -50,7 +50,7 @@ void ConstructWM(std::vector<AlphabetType>& text, const bool already_reduced) {
   }
   std::cout << "Levels in WM: " << static_cast<uint64_t>(levels) << std::endl;
 
-#ifdef TIMING
+#ifdef TIMING // Get the average construction time over 5 (default) runs.
   auto t1 = std::chrono::high_resolution_clock::now();
   for (size_t run = 0; run < RUNS; ++run) {
     WM_TYPE<AlphabetType, uint32_t> wm(text, text.size(), levels);
@@ -62,7 +62,7 @@ void ConstructWM(std::vector<AlphabetType>& text, const bool already_reduced) {
   std::cout << "Construction time: "
             << static_cast<float>(seq_time_sorting) / 1000 << " seconds."
             << std::endl;
-#elif CHECK
+#elif CHECK // Check the correctness of the construction algorithm.
   std::vector<uint64_t*> wm_bv;
   std::vector<uint32_t> wm_zeros;
   std::vector<uint64_t*> wm_naive_bv;
@@ -89,6 +89,8 @@ void ConstructWM(std::vector<AlphabetType>& text, const bool already_reduced) {
     }
   }
   std::cout << "Algorithm working corretly." << std::endl;
+#elif MEMORY // Measure the memory consumption of the construction algorithm.
+  WM_TYPE<AlphabetType, uint32_t> wm(text, text.size(), levels);
 #endif
 }
 
