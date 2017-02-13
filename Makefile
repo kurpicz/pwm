@@ -7,7 +7,7 @@
 ################################################################################
 
 CFLAGS := -ansi
-CXXFLAGS := -std=c++14 -O3 -march=native -DNDEBUG
+CXXFLAGS := -std=c++14 -O3 -march=native -DNDEBUG -fopenmp
 
 LIBS := -ldl
 
