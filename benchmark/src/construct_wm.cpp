@@ -17,6 +17,7 @@
 #include <wm_naive.hpp>
 #include <wm_pc.hpp>
 #include <wm_ppc.hpp>
+#include <wm_ps.hpp>
 
 template <typename AlphabetType>
 void ConstructWM(std::vector<AlphabetType>& text, const bool already_reduced) {
