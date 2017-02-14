@@ -1,0 +1,21 @@
+sudo: required
+dist: trusty
+language: cpp
+
+matrix:
+  include:
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-6
+
+install:
+  - if [ "$CXX" = "g++" ]; then export CXX="g++-6"; fi
+  - if [ "$CC" = "gcc" ]; then export CXX="gcc-6"; fi
+
+script:
+  - git submodule update --init
+  - make
