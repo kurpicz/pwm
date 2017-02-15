@@ -10,9 +10,8 @@
 #ifndef WT_PREFIX_SORTING
 #define WT_PREFIX_SORTING
 
+#include <cstring>
 #include <vector>
-
-#include "common.hpp"
 
 template <typename AlphabetType, typename SizeType>
 class wt_ps {

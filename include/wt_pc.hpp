@@ -13,8 +13,6 @@
 #include <cstring>
 #include <vector>
 
-#include "common.hpp"
-
 template <typename AlphabetType, typename SizeType>
 class wt_pc {
 

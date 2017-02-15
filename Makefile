@@ -67,7 +67,7 @@ $(BIN_DIR)/wt/memory_%: $(SRC_DIR)/construct_wt.cpp $(INC_DIR)/%.hpp $(MC_OBJS)
 		$(SRC_DIR)/construct_wt.cpp -I${INC_DIR} -o $@ $(MC_OBJS) $(LIBS)
 
 $(MC_DIR)/%.o : $(MC_DIR)/%c
-	$(CC) $(CFLAGS) -o $@ $<
+	@$(CC) $(CFLAGS) -o $@ $<
 
 .PHONY: clean
 clean:

@@ -10,10 +10,9 @@
 #ifndef WT_PREFIX_COUNTING_PARALLEL
 #define WT_PREFIX_COUNTING_PARALLEL
 
-#include <vector>
+#include <cstring>
 #include <omp.h>
-
-#include "common.hpp"
+#include <vector>
 
 template <typename TextType, typename SizeType>
 class wt_ppc {

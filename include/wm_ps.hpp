@@ -10,6 +10,7 @@
 #ifndef WM_PREFIX_SORTING
 #define WM_PREFIX_SORTING
 
+#include <cstring>
 #include <vector>
 
 #include "common.hpp"

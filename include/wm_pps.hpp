@@ -10,11 +10,11 @@
 #ifndef WM_PREFIX_SORTING_PARALLEL
 #define WM_PREFIX_SORTING_PARALLEL
 
-#include <chrono>
+#include <cstring>
 #include <omp.h>
 #include <vector>
 
-#include <common.hpp>
+#include "common.hpp"
 
 template <typename AlphabetType, typename SizeType>
 class wm_pps {

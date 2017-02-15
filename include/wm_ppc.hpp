@@ -10,8 +10,9 @@
 #ifndef WM_PREFIX_COUNTING_PARALLEL
 #define WM_PREFIX_COUNTING_PARALLEL
 
-#include <vector>
+#include <cstring>
 #include <omp.h>
+#include <vector>
 
 #include "common.hpp"
 

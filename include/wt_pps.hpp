@@ -10,10 +10,9 @@
 #ifndef WT_PREFIX_SORTING_PARALLEL
 #define WT_PREFIX_SORTING_PARALLEL
 
+#include <cstring>
 #include <omp.h>
 #include <vector>
-
-#include <common.hpp>
 
 template <typename AlphabetType, typename SizeType>
 class wt_pps {
@@ -84,17 +83,11 @@ public:
         const SizeType cur_bit_shift = prefix_shift - 1;
 
         #pragma omp for
-        for (int32_t rank = 0; rank < omp_size; ++rank) {
-          for (SizeType i = 0;
-               i < global_max_char; i += (1ULL << prefix_shift)) {
-            hist[rank][i] += hist[rank][i + (1ULL << cur_bit_shift)];
-          }
-        }
-
-        #pragma omp for
         for (SizeType i = 0; i < global_max_char; i += (1ULL << prefix_shift)) {
           borders[0][i] = 0;
+          hist[0][i] += hist[0][i + (1ULL << cur_bit_shift)];
           for (int32_t rank = 1; rank < omp_size; ++rank) {
+            hist[rank][i] += hist[rank][i + (1ULL << cur_bit_shift)];
             borders[rank][i] = borders[rank - 1][i] + hist[rank - 1][i];
           }
         }
@@ -110,22 +103,29 @@ public:
         }
 
         #pragma omp for
+        for (int32_t rank = 0; rank < omp_size; ++rank) {
+          for (SizeType i = 0; i < global_max_char; i += (1ULL << prefix_shift)) {
+            borders[rank][i] += offsets[i];
+          }
+        }
+
+        std::vector<SizeType> borders_aligned(1ULL << level, 0);
+        #pragma omp simd
+        for (SizeType i = 0; i < global_max_char; i += (1ULL << prefix_shift)) {
+          borders_aligned[i >> prefix_shift] = borders[omp_rank][i];
+        }
+
+        #pragma omp for
         for (SizeType i = 0; i <= size - 64; i += 64) {
           for (SizeType j = 0; j < 64; ++j) {
-            const AlphabetType considerd_char =
-              (text[i + j] >> prefix_shift) << (prefix_shift);
-            const SizeType bucket_border = borders[omp_rank][considerd_char]++;
-            const SizeType offset = offsets[considerd_char];
-            sorted_text[bucket_border + offset] = text[i + j];
+            const AlphabetType considerd_char = (text[i + j] >> cur_bit_shift);
+            sorted_text[borders_aligned[considerd_char >> 1]++] = considerd_char;
           }
         }
         if ((size & 63ULL) && ((omp_rank + 1) == omp_size)) {
           for (SizeType i = size - (size & 63ULL); i < size; ++i) {
-            const AlphabetType considerd_char =
-              (text[i] >> prefix_shift) << (prefix_shift);
-            const SizeType bucket_border = borders[omp_rank][considerd_char]++;
-            const SizeType offset = offsets[considerd_char];
-            sorted_text[offset + bucket_border] = text[i];
+            const AlphabetType considerd_char = (text[i] >> cur_bit_shift);
+            sorted_text[borders_aligned[considerd_char >> 1]++] = considerd_char;
           }
         }
 
@@ -134,7 +134,7 @@ public:
           uint64_t word = 0ULL;
           for (SizeType i = 0; i < 64; ++i) {
             word <<= 1;
-            word |= ((sorted_text[cur_pos + i] >> cur_bit_shift) & 1ULL);
+            word |= (sorted_text[cur_pos + i] & 1ULL);
           }
           _bv[level][cur_pos >> 6] = word;
         }
@@ -142,8 +142,7 @@ public:
           uint64_t word = 0ULL;
           for (SizeType i = 0; i < (size & 63ULL); ++i) {
             word <<= 1;
-            word |= ((sorted_text[size - (size & 63ULL) + i]
-              >> cur_bit_shift) & 1ULL);
+            word |= (sorted_text[size - (size & 63ULL) + i] & 1ULL);
           }
           word <<= (63 - (size & 63ULL));
           _bv[level][size >> 6] = word;

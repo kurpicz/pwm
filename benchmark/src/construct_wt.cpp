@@ -14,10 +14,11 @@
 #include <unordered_map>
 #include <vector>
 
-#include <wt_pc.hpp>
-#include <wt_ppc.hpp>
-#include <wt_ps.hpp>
-#include <wt_pps.hpp>
+#include "wt_naive.hpp"
+#include "wt_pc.hpp"
+#include "wt_ppc.hpp"
+#include "wt_ps.hpp"
+#include "wt_pps.hpp"
 
 template <typename AlphabetType>
 void ConstructWT(std::vector<AlphabetType>& text, const bool already_reduced) {
@@ -53,45 +54,34 @@ void ConstructWT(std::vector<AlphabetType>& text, const bool already_reduced) {
   std::cout << "Levels in WM: " << static_cast<uint64_t>(levels) << std::endl;
 
 #ifdef TIMING // Get the average construction time over 5 (default) runs.
-  auto t1 = std::chrono::high_resolution_clock::now();
+  std::vector<float> times;
   for (size_t run = 0; run < RUNS; ++run) {
-    WT_TYPE<AlphabetType, uint32_t> wt(text, text.size(), levels);
+    auto t1 = std::chrono::high_resolution_clock::now();
+    WT_TYPE<AlphabetType, uint32_t> wm(text, text.size(), levels);
+    auto t2 = std::chrono::high_resolution_clock::now();
+    times.emplace_back(static_cast<float>(
+      std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()));
   }
-  auto t2 = std::chrono::high_resolution_clock::now();
-  auto seq_time_sorting =
-    ((std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count())
-      / RUNS);
+  std::sort(times.begin(), times.end());
   std::cout << "Construction time: "
-            << static_cast<float>(seq_time_sorting) / 1000 << " seconds."
+            << times[RUNS >> 1] / 1000 << " seconds."
             << std::endl;
 #elif CHECK // Check the correctness of the construction algorithm.
-  std::vector<uint64_t*> wm_bv;
-  std::vector<uint32_t> wm_zeros;
-  std::vector<uint64_t*> wm_naive_bv;
-  std::vector<uint32_t> wm_naive_zeros;
-
   WT_TYPE<AlphabetType, uint32_t> wt(text, text.size(), levels);
-  // std::tie(wm_bv, wm_zeros) = wt.get_bv();
+  std::vector<uint64_t*> wt_bv = wt.get_bv();
 
-  // wt_naive<AlphabetType, uint32_t> wm_naive(text, text.size(), levels);
-  // std::tie(wm_naive_bv, wm_naive_zeros) = wm_naive.get_bv_and_zeros();
+  wt_naive<AlphabetType, uint32_t> wt_naive(text, text.size(), levels);
+  std::vector<uint64_t*> wt_naive_bv = wt_naive.get_bv();
 
-  // for (AlphabetType level = 0; level < levels; ++level) {
-  //   for (uint64_t i = 0; i < (text.size() >> 6); ++i) {
-  //     if (wm_bv[level][i] != wm_naive_bv[level][i]) {
-  //       std::cout << "Error in level " << static_cast<uint64_t>(level)
-  //                 << " at position " << i << std::endl;
-  //       std::exit(EXIT_FAILURE);
-  //     }
-  //   }
-  //   if (wm_zeros[level] != wm_naive_zeros[level]) {
-  //     std::cout << "Zeros in level " << static_cast<uint64_t>(level)
-  //               << " not matching." << std::endl;
-  //     std::cout << wm_zeros[level] << " given, while " << wm_naive_zeros[level]
-  //               << " expected." << std::endl;
-  //     std::exit(EXIT_FAILURE);
-  //   }
-  // }
+  for (AlphabetType level = 0; level < levels; ++level) {
+    for (uint64_t i = 0; i < (text.size() >> 6); ++i) {
+      if (wt_bv[level][i] != wt_naive_bv[level][i]) {
+        std::cout << "Error in level " << static_cast<uint64_t>(level)
+                  << " at position " << i << std::endl;
+        std::exit(EXIT_FAILURE);
+      }
+    }
+  }
   std::cout << "Algorithm working corretly." << std::endl;
 #elif MEMORY // Measure the memory consumption of the construction algorithm.
   WT_TYPE<AlphabetType, uint32_t> wt(text, text.size(), levels);
