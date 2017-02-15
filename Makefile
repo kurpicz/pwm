@@ -7,7 +7,7 @@
 ################################################################################
 
 CFLAGS := -ansi
-CXXFLAGS := -std=c++14 -O3 -march=native -DNDEBUG -fopenmp
+CXXFLAGS := -std=c++14 -O3 -ffast-math -funroll-loops -march=native -fopenmp
 
 LIBS := -ldl
 
@@ -33,37 +33,37 @@ execs: $(WM_ALGORITHS) $(WT_ALGORITHS)
 $(BIN_DIR)/wm/construct_%: $(SRC_DIR)/construct_wm.cpp $(INC_DIR)/%.hpp
 	@mkdir -p $(BIN_DIR)/wm
 	@echo "Compiling construct_$*"
-	$(CXX) $(CXXFLAGS) -DWM_TYPE="$*" -DRUNS=5 -DTIMING=1\
+	@$(CXX) $(CXXFLAGS) -DWM_TYPE="$*" -DRUNS=5 -DTIMING=1\
 		$(SRC_DIR)/construct_wm.cpp -I${INC_DIR} -o $@
 
 $(BIN_DIR)/wm/check_%: $(SRC_DIR)/construct_wm.cpp $(INC_DIR)/%.hpp
 	@mkdir -p $(BIN_DIR)/wm
 	@echo "Compiling check_$*"
-	$(CXX) $(CXXFLAGS) -DWM_TYPE="$*" -DRUNS=1 -DCHECK=1\
+	@$(CXX) $(CXXFLAGS) -DWM_TYPE="$*" -DRUNS=1 -DCHECK=1\
 		$(SRC_DIR)/construct_wm.cpp -I${INC_DIR} -o $@
 
 $(BIN_DIR)/wm/memory_%: $(SRC_DIR)/construct_wm.cpp $(INC_DIR)/%.hpp $(MC_OBJS)
 	@mkdir -p $(BIN_DIR)/wm
 	@echo "Compiling check_$*"
-	$(CXX) $(CXXFLAGS) -DWM_TYPE="$*" -DRUNS=1 -DMEMORY=1\
+	@$(CXX) $(CXXFLAGS) -DWM_TYPE="$*" -DRUNS=1 -DMEMORY=1\
 		$(SRC_DIR)/construct_wm.cpp -I${INC_DIR} -o $@ $(MC_OBJS) $(LIBS)
 
 $(BIN_DIR)/wt/construct_%: $(SRC_DIR)/construct_wt.cpp $(INC_DIR)/%.hpp
 	@mkdir -p $(BIN_DIR)/wt
 	@echo "Compiling construct_$*"
-	$(CXX) $(CXXFLAGS) -DWT_TYPE="$*" -DRUNS=5 -DTIMING=1\
+	@$(CXX) $(CXXFLAGS) -DWT_TYPE="$*" -DRUNS=5 -DTIMING=1\
 		$(SRC_DIR)/construct_wt.cpp -I${INC_DIR} -o $@
 
 $(BIN_DIR)/wt/check_%: $(SRC_DIR)/construct_wt.cpp $(INC_DIR)/%.hpp
 	@mkdir -p $(BIN_DIR)/wt
 	@echo "Compiling check_$*"
-	$(CXX) $(CXXFLAGS) -DWT_TYPE="$*" -DRUNS=1 -DCHECK=1\
+	@$(CXX) $(CXXFLAGS) -DWT_TYPE="$*" -DRUNS=1 -DCHECK=1\
 		$(SRC_DIR)/construct_wt.cpp -I${INC_DIR} -o $@
 
 $(BIN_DIR)/wt/memory_%: $(SRC_DIR)/construct_wt.cpp $(INC_DIR)/%.hpp $(MC_OBJS)
 	@mkdir -p $(BIN_DIR)/wt
 	@echo "Compiling check_$*"
-	$(CXX) $(CXXFLAGS) -DWT_TYPE="$*" -DRUNS=1 -DMEMORY=1\
+	@$(CXX) $(CXXFLAGS) -DWT_TYPE="$*" -DRUNS=1 -DMEMORY=1\
 		$(SRC_DIR)/construct_wt.cpp -I${INC_DIR} -o $@ $(MC_OBJS) $(LIBS)
 
 $(MC_DIR)/%.o : $(MC_DIR)/%c
@@ -71,4 +71,5 @@ $(MC_DIR)/%.o : $(MC_DIR)/%c
 
 .PHONY: clean
 clean:
-	@rm -f $(BIN_DIR)/*
+	@rm -f $(BIN_DIR)/wm/*
+	@rm -f $(BIN_DIR)/wt/*
