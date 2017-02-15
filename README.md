@@ -1,4 +1,7 @@
 # Parallel Wavelet Tree and Wavelet Matrix Construction
+
+[![Build Status](https://travis-ci.org/kurpicz/pwm.svg?branch=master)](https://travis-ci.org/kurpicz/pwm)
+
 ## What is it?
 We implemented different simple but very fast sequential and parallel wavelet matrix and wavelet tree construction algorithms.
 The two algorithms are named *pc* and *ps* (short for *prefix counting* and *prefix sorting*).
@@ -18,7 +21,9 @@ For each of the two algorithms and two data structures (matrix and tree), there 
 2. check_*[wm|wt]_name*
 3. memory_*[wm|wt]_name*
 
-Here, *construct* builds the data structure 5 (default) times and returns the median of the running times,  *check* builds the data structure naively and checks for correctness and *memory* returns the memory peak of the algorithm during construction.
+Here, *construct* builds the data structure 5 (default) times and returns the median of the running times, *check* builds the data structure naively and checks for correctness and *memory* returns the memory peak of the algorithm during construction.
+The *name* can either be *(p)pc* or *(p)ps*.
+Two p's indicate the parallel version of the algorithm.
 
 ## Contributors
 - Florian Kurpicz (author)
