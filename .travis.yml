@@ -14,7 +14,7 @@ matrix:
 
 install:
   - if [ "$CXX" = "g++" ]; then export CXX="g++-6"; fi
-  - if [ "$CC" = "gcc" ]; then export CXX="gcc-6"; fi
+  - if [ "$CC" = "gcc" ]; then export CC="gcc-6"; fi
 
 script:
   - git submodule update --init
