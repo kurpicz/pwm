@@ -24,10 +24,12 @@ public:
 
     std::vector<AlphabetType> local_text = text;
 
+    // Construct each level top-down
     for (uint64_t level = 0; level < levels; ++level) {
       _bv[level] = new uint64_t[(size + 63ULL) >> 6];
       memset(_bv[level], 0, ((size + 63ULL) >> (3 * sizeof(AlphabetType))));
 
+      // Insert the level-th MSB in the bit vector of the level (in text order)
       uint32_t cur_pos = 0;
       for (; cur_pos + 64 <= size; cur_pos += 64) {
         uint64_t word = 0ULL;
@@ -51,6 +53,7 @@ public:
       text0.reserve(size);
       std::vector<AlphabetType> text1;
       text1.reserve(size);
+      // Scan the text and separate characters that inserted 0s and 1s
       for (uint64_t i = 0; i < local_text.size(); ++i) {
         if ((local_text[i] >> (levels - (level + 1))) & 1ULL) {
           text1.push_back(local_text[i]);
@@ -58,6 +61,7 @@ public:
           text0.push_back(local_text[i]);
         }
       }
+      // "Sort" the text stably based on the bit inserted in the bit vector
       for (uint64_t i = 0; i < text0.size(); ++i) {
         local_text[i] = text0[i];
       }

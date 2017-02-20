@@ -49,6 +49,7 @@ public:
 
       SizeType* const hist_ptr = hist_data_ptr + (global_max_char * omp_rank);
       
+      // While initializing the histogram, we also compute the fist level
       #pragma omp for
       for (SizeType cur_pos = 0; cur_pos <= size - 64; cur_pos += 64) {
         uint64_t word = 0ULL;
@@ -70,6 +71,8 @@ public:
         word <<= (63 - (size & 63ULL));
         _bv[0][size >> 6] = word;
       }
+
+      // Compute the historam with respect to the local slices of the text
       #pragma omp for
       for (SizeType i = 0; i < global_max_char; ++i) {
         for (SizeType rank = 1; rank < omp_size; ++rank) {
@@ -77,11 +80,13 @@ public:
         }
       }
 
+      // The number of 0s at the last level is the number of "even" characters
       #pragma omp single
       for (SizeType i = 0; i < global_max_char; i += 2) {
       	_zeros[levels - 1] += hist_data_ptr[i];
       }
 
+      // Compute the histogram for each level of the WM.
       #pragma omp for
       for (SizeType level = 1; level < levels; ++level) {
         const SizeType local_max_char = (1 << level);
@@ -95,6 +100,7 @@ public:
         }
       }
 
+      // Now we compute the WM bottom-up, i.e., the last level first
       #pragma omp for
       for (SizeType level = 1; level < levels; ++level) {
 
@@ -106,13 +112,17 @@ public:
         std::vector<SizeType> borders(local_max_char);
         std::vector<SizeType> bit_reverse = BitReverse<SizeType>(level);
 
+        // Compute the starting positions of characters with respect to their
+        // bit prefixes and the bit-reversal permutation
         borders[0] = 0;
         for (SizeType i = 1; i < local_max_char; ++i) {
           borders[bit_reverse[i]] = (borders[bit_reverse[i - 1]] +
              hist_ttt[bit_reverse[i - 1]]);
         }
+        // The number of 0s is the position of the first 1 in the previous level
         _zeros[level - 1] = borders[1];
 
+        // Now we insert the bits with respect to their bit prefixes
         for (SizeType i = 0; i < size; ++i) {
           const SizeType pos = borders[text_ptr[i] >> prefix_shift]++;
           _bv[level][pos >> 6] |= (((text[i] >> cur_bit_shift) & 1ULL)

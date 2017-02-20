@@ -32,6 +32,7 @@ public:
     _bv[0] = new uint64_t[(size + 63ULL) >> 6];
     memset(_bv[0], 0, ((size + 63ULL) >> 3)); // memset is ok (all to 0)
 
+    // While initializing the histogram, we also compute the fist level
     SizeType cur_pos = 0;
     for (; cur_pos + 64 <= size; cur_pos += 64) {
       uint64_t word = 0ULL;
@@ -53,6 +54,7 @@ public:
       (_bv[0])[size >> 6] = word;
     }
 
+    // The number of 0s at the last level is the number of "even" characters
     for (SizeType i = 0; i < cur_max_char; i += 2) {
       _zeros[levels - 1] += hist[i];
     }
@@ -61,23 +63,34 @@ public:
       _bv[level] = new uint64_t[(size + 63ULL) >> 6];
       memset(_bv[level], 0, ((size + 63ULL) >> 3)); // memset is ok (all to 0)
 
+      // Update the maximum value of a feasible a bit prefix and update the
+      // histogram of the bit prefixes 
       cur_max_char >>= 1;
       for (SizeType i = 0; i < cur_max_char; ++i) {
         hist[i] = hist[i << 1] + hist[(i << 1) + 1];
       }
+
+      // Compute the starting positions of characters with respect to their
+      // bit prefixes and the bit-reversal permutation
       borders[0] = 0;
       for (SizeType i = 1; i < cur_max_char; ++i) {
         borders[bit_reverse[i]] = borders[bit_reverse[i - 1]] +
           hist[bit_reverse[i - 1]];
         bit_reverse[i - 1] >>= 1;
       }
+      // The number of 0s is the position of the first 1 in the previous level
       _zeros[level - 1] = borders[1];
 
+      // Now we sort the text utilizing counting sort and the starting positions 
+      // that we have computed before
       for (SizeType i = 0; i < size; ++i) {
         const AlphabetType cur_char = text[i];
         sorted_text[borders[cur_char >> (levels - level)]++] = cur_char;
       }
 
+      // Since we have sorted the text, we can simply scan it from left to right
+      // and for the character at position $i$ we set the $i$-th bit in the
+      // bit vector accordingly
       cur_pos = 0;
       for (; cur_pos + 63 < size; cur_pos += 64) {
         uint64_t word = 0ULL;

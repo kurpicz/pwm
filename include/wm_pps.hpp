@@ -60,6 +60,7 @@ public:
       const SizeType global_max_char = (1 << levels);
       SizeType cur_max_char = global_max_char;
 
+      // While initializing the histogram, we also compute the fist level
       #pragma omp for
       for (SizeType cur_pos = 0; cur_pos <= size - 64; cur_pos += 64) {
         uint64_t word = 0ULL;
@@ -81,6 +82,7 @@ public:
         _bv[0][size >> 6] = word;
       }
 
+      // The number of 0s at the last level is the number of "even" characters
       #pragma omp single
       for (SizeType i = 0; i < cur_max_char; i += 2) {
         for (int32_t rank = 0; rank < omp_size; ++rank) {
@@ -88,10 +90,14 @@ public:
         }
       }
 
+      // Now we compute the WM bottom-up, i.e., the last level first
       for (SizeType level = levels - 1; level > 0; --level) {
         const SizeType prefix_shift = (levels - level);
         const SizeType cur_bit_shift = prefix_shift - 1;
 
+        // Compute the histogram and the border for each bit prefix and
+        // processor, i.e., for one fixed bit prefix we compute the prefix sum
+        // over the number of occurrences at each processor
         #pragma omp for
         for (SizeType i = 0; i < global_max_char; i += (1ULL << prefix_shift)) {
           borders[0][i] = 0;
@@ -102,6 +108,8 @@ public:
           }
         }
 
+        // Now we compute the offset for each bit prefix, i.e., the number of
+        // lexicographically smaller characters
         #pragma omp single
         {
           for (SizeType i = 1; i < (1ULL << level); ++i) {
@@ -111,9 +119,12 @@ public:
               hist[omp_size - 1][bit_reverse[i - 1] << prefix_shift];
             bit_reverse[i - 1] >>= 1;
           }
+          // The number of 0s is the position of the first 1 at the first
+          // processor
           _zeros[level - 1] = offsets[1ULL << prefix_shift];
         }
 
+        // We add the offset to the borders (for performance)
         #pragma omp for
         for (int32_t rank = 0; rank < omp_size; ++rank) {
           for (SizeType i = 0; i < global_max_char; i += (1ULL << prefix_shift)) {
@@ -121,12 +132,15 @@ public:
           }
         }
 
+        // We align the borders (in memory) to increase performance by reducing
+        // the number of cache misses
         std::vector<SizeType> borders_aligned(1ULL << level, 0);
         #pragma omp simd
         for (SizeType i = 0; i < global_max_char; i += (1ULL << prefix_shift)) {
           borders_aligned[i >> prefix_shift] = borders[omp_rank][i];
         }
 
+        // Sort the text using the computed (and aligned) borders
         #pragma omp for
         for (SizeType i = 0; i <= size - 64; i += 64) {
           for (SizeType j = 0; j < 64; ++j) {
@@ -141,6 +155,9 @@ public:
           }
         }
 
+        // Since we have sorted the text, we can simply scan it from left to
+        // right and for the character at position $i$ we set the $i$-th bit in
+        // the bit vector accordingly
         #pragma omp for
         for (SizeType cur_pos = 0; cur_pos <= size - 64; cur_pos += 64) {
           uint64_t word = 0ULL;
