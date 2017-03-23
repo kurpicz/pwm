@@ -6,6 +6,8 @@
 We implemented different simple but very fast sequential and parallel wavelet matrix and wavelet tree construction algorithms.
 The two algorithms are named *pc* and *ps* (short for *prefix counting* and *prefix sorting*).
 
+A description and benchmarks of the implemented algorithms can be found in this [arXiv preprint](https://arxiv.org/abs/1702.07578).
+
 ## How to get it?
 First clone this repository, then build all executables.
 ```sh
