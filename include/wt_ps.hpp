@@ -27,7 +27,8 @@ public:
     std::vector<AlphabetType> sorted_text(size);
 
     _bv[0] = new uint64_t[(size + 63ULL) >> 6];
-    memset(_bv[0], 0, ((size + 63ULL) >> 3)); // memset is ok (all to 0)
+    // memset is ok (all to 0)
+    memset(_bv[0], 0, ((size + 63ULL) >> 6) * sizeof(uint64_t));
 
     SizeType cur_pos = 0;
     for (; cur_pos + 64 <= size; cur_pos += 64) {
@@ -52,7 +53,8 @@ public:
 
     for (SizeType level = levels - 1; level > 0; --level) {
       _bv[level] = new uint64_t[(size + 63ULL) >> 6];
-      memset(_bv[level], 0, ((size + 63ULL) >> 3)); // memset is ok (all to 0)
+      // memset is ok (all to 0)
+      memset(_bv[level], 0, ((size + 63ULL) >> 6) * sizeof(uint64_t));
 
       cur_max_char >>= 1;
       for (SizeType i = 0; i < cur_max_char; ++i) {

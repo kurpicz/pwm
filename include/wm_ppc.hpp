@@ -25,7 +25,7 @@ public:
     
     for (SizeType level = 0; level < levels; ++level) {
       _bv[level] = new uint64_t[(size + 63ULL) >> 6];
-        memset(_bv[level], 0, ((size + 63ULL) >> 3));  
+        memset(_bv[level], 0, ((size + 63ULL) >> 6) * sizeof(uint64_t));  
     }
 
     std::vector<SizeType> hist;

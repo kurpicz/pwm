@@ -27,7 +27,7 @@ public:
     // Construct each level top-down
     for (uint64_t level = 0; level < levels; ++level) {
       _bv[level] = new uint64_t[(size + 63ULL) >> 6];
-      memset(_bv[level], 0, ((size + 63ULL) >> (3 * sizeof(AlphabetType))));
+      memset(_bv[level], 0, ((size + 63ULL) >> 6) * sizeof(uint64_t));
 
       // Insert the level-th MSB in the bit vector of the level (in text order)
       uint32_t cur_pos = 0;

@@ -29,8 +29,8 @@ public:
     std::vector<SizeType> borders(cur_max_char, 0);
 
     _bv[0] = new uint64_t[(size + 63ULL) >> 6];
-    memset(_bv[0], 0, ((size + 63ULL) >> 3)); // memset is ok (all to 0)
-
+    // memset is ok (all to 0)
+    memset(_bv[0], 0, ((size + 63ULL) >> 6) * sizeof(uint64_t));
     // While initializing the histogram, we also compute the fist level
     SizeType cur_pos = 0;
     for (; cur_pos + 64 <= size; cur_pos += 64) {
@@ -64,7 +64,8 @@ public:
       const SizeType cur_bit_shift = prefix_shift - 1;
 
       _bv[level] = new uint64_t[(size + 63ULL) >> 6];
-      memset(_bv[level], 0, ((size + 63ULL) >> 3)); // memset is ok (all to 0)
+      // memset is ok (all to 0)
+      memset(_bv[level], 0, ((size + 63ULL) >> 6) * sizeof(uint64_t));
 
       // Update the maximum value of a feasible a bit prefix and update the
       // histogram of the bit prefixes 
