@@ -14,6 +14,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "wm_dd_pc.hpp"
+#include "wm_dd_ps.hpp"
 #include "wm_naive.hpp"
 #include "wm_pc.hpp"
 #include "wm_ppc.hpp"

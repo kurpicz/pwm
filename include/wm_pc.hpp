@@ -1,5 +1,5 @@
 /*******************************************************************************
- * include/wm_prefix_counting.hpp
+ * include/wm_pc.hpp
  *
  * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
  *
