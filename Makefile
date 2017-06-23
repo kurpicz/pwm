@@ -7,7 +7,8 @@
 ################################################################################
 
 CFLAGS := -ansi
-CXXFLAGS := -std=c++14 -O3 -ffast-math -funroll-loops -march=native -fopenmp
+CXXFLAGS := -std=c++14 -O3 -ffast-math -funroll-loops -march=native -fopenmp -fcilkplus
+# CXXFLAGS := -std=c++14 -g -fcilkplus -fopenmp
 
 LIBS := -ldl
 

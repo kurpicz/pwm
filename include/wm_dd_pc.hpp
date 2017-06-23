@@ -11,6 +11,7 @@
 #define WM_DOMAIN_DECOMPOSITION_PREFIX_COUNTING
 
 #include <algorithm>
+#include <chrono>
 #include <cstring>
 #include <omp.h>
 #include <vector>
@@ -24,10 +25,15 @@ public:
   wm_dd_pc(const std::vector<AlphabetType>& text, const SizeType size,
     const SizeType levels) : _bv(levels), _zeros(levels, 0) {
 
+    std::chrono::system_clock::time_point first, second, third, fourth;
+
     #pragma omp parallel
     {
       const auto omp_rank = omp_get_thread_num();
       const auto omp_size = omp_get_num_threads();
+
+      #pragma omp single
+      first = std::chrono::system_clock::now();
 
       const SizeType local_size = (size / omp_size) + 
         ((omp_rank < size % omp_size) ? 1 : 0);
@@ -36,13 +42,20 @@ public:
 
       SizeType cur_max_char = (1 << levels);
       std::vector<SizeType> bit_reverse = BitReverse<SizeType>(levels - 1);
-      std::vector<SizeType> s_pos(cur_max_char, 0);
       std::vector<SizeType> hist(cur_max_char, 0);
       std::vector<SizeType> borders(cur_max_char, 0);
 
-      _bv[0] = new uint64_t[(local_size + 63ULL) >> 6];
+      std::vector<uint64_t*> tmp_bv(levels);
+
+      tmp_bv[0] = new uint64_t[((local_size + 63ULL) >> 6) * levels];
       // memset is ok (all to 0)
-      memset(_bv[0], 0, ((local_size + 63ULL) >> 6) * sizeof(uint64_t));
+      memset(tmp_bv[0], 0, (((local_size + 63ULL) >> 6) * sizeof(uint64_t)) * levels);
+      for (SizeType level = 1; level < levels; ++level) {
+        tmp_bv[level] = tmp_bv[level - 1] + ((local_size + 63ULL) >> 6);
+      }
+
+      #pragma omp single
+      second = std::chrono::system_clock::now();
       // While initializing the histogram, we also compute the fist level
       SizeType cur_pos = 0;
       for (; cur_pos + 64 <= local_size; cur_pos += 64) {
@@ -52,7 +65,7 @@ public:
           word <<= 1;
           word |= ((text[cur_pos + i] >> (levels - 1)) & 1ULL);
         }
-        _bv[0][cur_pos >> 6] = word;
+        tmp_bv[0][cur_pos >> 6] = word;
       }
       if (local_size & 63ULL) {
         uint64_t word = 0ULL;
@@ -62,24 +75,21 @@ public:
           word |= ((text[cur_pos + i] >> (levels - 1)) & 1ULL);
         }
         word <<= (64 - (local_size & 63ULL));
-        _bv[0][local_size >> 6] = word;
+        tmp_bv[0][local_size >> 6] = word;
       }
-
-      // std::cout << "HIER!@#$" << std::endl;
 
       // The number of 0s at the last level is the number of "even" characters
       for (SizeType i = 0; i < cur_max_char; i += 2) {
         _zeros[levels - 1] += hist[i];
       }
 
+      #pragma omp single
+      third = std::chrono::system_clock::now();
+
       // Now we compute the WM bottom-up, i.e., the last level first
       for (SizeType level = levels - 1; level > 0; --level) {
         const SizeType prefix_shift = (levels - level);
         const SizeType cur_bit_shift = prefix_shift - 1;
-
-        _bv[level] = new uint64_t[(local_size + 63ULL) >> 6];
-        // memset is ok (all to 0)
-        memset(_bv[level], 0, ((local_size + 63ULL) >> 6) * sizeof(uint64_t));
 
         // Update the maximum value of a feasible a bit prefix and update the
         // histogram of the bit prefixes 
@@ -102,10 +112,16 @@ public:
         // Now we insert the bits with respect to their bit prefixes
         for (SizeType i = offset; i < local_size + offset; ++i) {
           const SizeType pos = borders[text[i] >> prefix_shift]++;
-          _bv[level][pos >> 6] |= (((text[i] >> cur_bit_shift) & 1ULL)
+          tmp_bv[level][pos >> 6] |= (((text[i] >> cur_bit_shift) & 1ULL)
             << (63ULL - (pos & 63ULL)));
         }
       }
+      #pragma omp single
+      fourth = std::chrono::system_clock::now();
+      #pragma omp single
+      std::cout << "First: " << std::chrono::duration_cast<std::chrono::microseconds>(second - first).count() << std::endl
+                << "Second: " <<  std::chrono::duration_cast<std::chrono::microseconds>(third - second).count() << std::endl
+                << "Third: " << std::chrono::duration_cast<std::chrono::microseconds>(fourth - third).count() << std::endl;
     }
   }
 
