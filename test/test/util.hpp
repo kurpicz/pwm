@@ -11,25 +11,9 @@
 
 #include <sys/stat.h>
 
-#include <tudocomp/Algorithm.hpp>
-#include <tudocomp/AlgorithmStringParser.hpp>
-#include <tudocomp/Env.hpp>
-#include <tudocomp/Registry.hpp>
-#include <tudocomp/Compressor.hpp>
-#include <tudocomp/CreateAlgorithm.hpp>
-#include <tudocomp/io.hpp>
-#include <tudocomp/util/View.hpp>
-#include <tudocomp/generators/FibonacciGenerator.hpp>
-#include <tudocomp/generators/RandomUniformGenerator.hpp>
-#include <tudocomp/generators/RunRichGenerator.hpp>
-#include <tudocomp/generators/ThueMorseGenerator.hpp>
-#include <tudocomp/Literal.hpp>
-#include <tudocomp/Range.hpp>
-#include <tudocomp/io/Path.hpp>
-
-using namespace tdc;
-
 namespace test {
+
+using string_ref = const std::string&;
 
 // TODO: Actually specialize the 3 kinds
 
@@ -98,63 +82,63 @@ std::vector<uint8_t> ostream_to_bytes(Lambda f) {
 /// of different strings testing common corner cases and unicode input.
 template<class F>
 void roundtrip_batch(F f) {
-    f("abcdebcdeabc"_v);
-    f("a"_v);
-    f(""_v);
+    f("abcdebcdeabc");
+    f("a");
+    f("");
 
-    f("aaaaaaaaa"_v); \
-    f("banana"_v); \
-    f("ananas"_v); \
-    f("abcdefgh#defgh_abcde"_v); \
+    f("aaaaaaaaa"); \
+    f("banana"); \
+    f("ananas"); \
+    f("abcdefgh#defgh_abcde"); \
 
-    f("abcdebcdeabcd"_v);
-    f("foobar"_v);
-    f("abcabcabcabc"_v);
+    f("abcdebcdeabcd");
+    f("foobar");
+    f("abcabcabcabc");
 
-    f("abc abc  abc"_v);
+    f("abc abc  abc");
 
-    f("abaaabbababb"_v);
+    f("abaaabbababb");
 
     f(
         "asdfasctjkcbweasbebvtiwetwcnbwbbqnqxernqzezwuqwezuet"
         "qcrnzxbneqebwcbqwicbqcbtnqweqxcbwuexcbzqwezcqbwecqbw"
-        "dassdasdfzdfgfsdfsdgfducezctzqwebctuiqwiiqcbnzcebzqc"_v);
+        "dassdasdfzdfgfsdfsdgfducezctzqwebctuiqwiiqcbnzcebzqc");
 
-    f("ประเทศไทย中华Việt Nam"_v);
+    f("ประเทศไทย中华Việt Nam");
 
     f(
         "Lorem ipsum dolor sit amet, sea ut etiam solet salut"
         "andi, sint complectitur et his, ad salutandi imperdi"
-        "et gubergren per mei."_v);
+        "et gubergren per mei.");
 
     f(
         "Лорэм атоморюм ут хаж, эа граэки емпыдит ёудёкабет "
         "мэль, декам дежпютатионй про ты. Нэ ёужто жэмпэр"
-        " жкрибэнтур векж, незл коррюмпит."_v);
+        " жкрибэнтур векж, незл коррюмпит.");
 
     f(
         "報チ申猛あち涙境ワセ周兵いわ郵入せすをだ漏告されて話巡わッき"
         "や間紙あいきり諤止テヘエラ鳥提フ健2銀稿97傷エ映田ヒマ役請多"
         "暫械ゅにうて。関国ヘフヲオ場三をおか小都供セクヲ前俳著ゅ向深"
         "まも月10言スひす胆集ヌヱナ賀提63劇とやぽ生牟56詰ひめつそ総愛"
-        "ス院攻せいまて報当アラノ日府ラのがし。"_v);
+        "ス院攻せいまて報当アラノ日府ラのがし。");
 
     f(
         "Εαμ ανσιλλαε περισυλα συαφιθαθε εξ, δυο ιδ ρεβυμ σομ"
         "μοδο. Φυγιθ ηομερω ιυς ατ, ει αυδιρε ινθελλεγαμ νες."
         " Ρεκυε ωμνιυμ μανδαμυς κυο εα. Αδμοδυμ σωνσεκυαθ υθ "
         "φιξ, εσθ ετ πρωβατυς συαφιθαθε ραθιονιβυς, ταντας αυ"
-        "διαμ ινστρυσθιορ ει σεα."_v);
+        "διαμ ινστρυσθιορ ει σεα.");
 
-    f("struct Foo { uint8_t bar }"_v);
+    f("struct Foo { uint8_t bar }");
 
-    f("ABBCBCABA"_v);
+    f("ABBCBCABA");
 
-    f("abcabca"_v);
+    f("abcabca");
 
-    f("abbbbbbbbbbcbbbbbbbbbb"_v);
+    f("abbbbbbbbbbcbbbbbbbbbb");
 
-    //f("abc\0"_v);
+    //f("abc\0");
 
     std::vector<uint8_t> all_bytes {
         0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   10,  11,  12,  13,  14,  15,
@@ -176,35 +160,6 @@ void roundtrip_batch(F f) {
     };
 
     //f(View(all_bytes));
-}
-
-template<class F>
-void on_string_generators(F func, size_t n) {
-    VLOG(1) << "fibonacci_word ...";
-    for(size_t i = 0; i < n; ++i) {
-        std::string s = FibonacciGenerator::generate(i);
-        func(s);
-    }
-
-    VLOG(1) << "thue_morse_word ...";
-    for(size_t i = 0; i < n; ++i) {
-        std::string s = ThueMorseGenerator::generate(i);
-        func(s);
-    }
-
-    VLOG(1) << "rich ...";
-    for(size_t i = 0; i < n; ++i) {
-        std::string s = RunRichGenerator::generate(i);
-        func(s);
-    }
-
-    VLOG(1) << "random ...";
-    for(size_t i = 2; i < n; ++i) {
-        for(size_t j = 0; j < 2+50/(i+1); ++j) {
-            std::string s = RandomUniformGenerator::generate(1<<i, j);
-            func(s);
-        }
-    }
 }
 
 const std::string TEST_FILE_PATH = "test_files";
@@ -317,290 +272,4 @@ std::string format_diff_bin(const std::string& a, const std::string& b) {
     return diff;
 }
 
-using PacketIntegers = std::vector<uint64_t>;
-void assert_eq_binary(string_ref actual, PacketIntegers expected) {
-    auto out = test::pack_integers(expected);
-    if (actual != out) {
-        auto print_bits = [&expected](string_ref s, bool byte_units = false) -> std::string {
-            std::stringstream ss;
-
-            // iterate over bits
-
-            size_t packed_i = 0;
-            size_t last_packed_i = 0;
-
-            for (uint64_t i = 0; i < s.size() * 8; i++) {
-                if (!byte_units && packed_i < expected.size() && i == last_packed_i + expected[packed_i + 1]) {
-                    ss << " ";
-                    last_packed_i = i;
-                    packed_i += 2;
-                } else if (byte_units && i > 0 && i % 8 == 0) {
-                    ss << " ";
-                }
-
-                uint8_t c = s[i / 8];
-                ss << int((c >> (8 - (i % 8) - 1)) & 1);
-            }
-
-            return ss.str();
-        };
-
-        auto p_is = print_bits(actual);
-        auto p_should = print_bits(out);
-        auto p_diff = format_diff_bin(p_is, p_should);
-
-        auto p_is_b = print_bits(actual, true);
-        auto p_should_b = print_bits(out, true);
-        auto p_diff_b = format_diff_bin(p_is_b, p_should_b);
-
-        FAIL()
-            << "Should Be: " << p_should   << "\n"
-            << "       Is: " << p_is       << "\n"
-            << "     Diff: " << p_diff     << "\n"
-            << "As Bytes:"                 << "\n"
-            << "Should Be: " << p_should_b << "\n"
-            << "       Is: " << p_is_b     << "\n"
-            << "     Diff: " << p_diff_b   << "\n";
-    }
 }
-
-template<class C>
-struct CompressResult {
-private:
-    Registry<Compressor> m_registry;
-public:
-    std::vector<uint8_t> bytes;
-    std::string str;
-    std::string orginal_text;
-    std::string options;
-
-    CompressResult(const Registry<Compressor>& registry,
-                    std::vector<uint8_t>&& p_bytes,
-                    std::string&& p_str,
-                    std::string&& p_original,
-                    std::string&& p_options):
-        m_registry(registry),
-        bytes(std::move(p_bytes)),
-        str(std::move(p_str)),
-        orginal_text(std::move(p_original)),
-        options(std::move(p_options)) {}
-
-    void assert_decompress() {
-        std::vector<uint8_t> decoded_buffer;
-        {
-            Input text_in = Input::from_memory(bytes);
-            Output decoded_out = Output::from_memory(decoded_buffer);
-
-            auto compressor = create_algo_with_registry<C>(options, m_registry);
-
-            if (C::meta().textds_flags().has_restrictions()) {
-                decoded_out = Output(decoded_out, C::meta().textds_flags());
-            }
-
-            compressor.decompress(text_in, decoded_out);
-        }
-        std::string decompressed_text {
-            decoded_buffer.begin(),
-            decoded_buffer.end(),
-        };
-        ASSERT_EQ(orginal_text, decompressed_text);
-    }
-
-    void assert_decompress_bytes() {
-        std::vector<uint8_t> decompressed_bytes;
-        {
-            Input text_in = Input::from_memory(bytes);
-            Output decoded_out = Output::from_memory(decompressed_bytes);
-
-            auto compressor = create_algo_with_registry<C>(options, m_registry);
-
-            if (C::meta().textds_flags().has_restrictions()) {
-                decoded_out = Output(decoded_out, C::meta().textds_flags());
-            }
-
-            compressor.decompress(text_in, decoded_out);
-        }
-        std::vector<uint8_t> orginal_bytes {
-            orginal_text.begin(),
-            orginal_text.end(),
-        };
-        ASSERT_EQ(orginal_bytes, decompressed_bytes);
-    }
-};
-
-template<class C>
-class RoundTrip {
-    std::string m_options;
-    Registry<Compressor> m_registry;
-public:
-    inline RoundTrip(const std::string& options = "",
-                        const Registry<Compressor>& registry = Registry<Compressor>("compressor")):
-        m_options(options),
-        m_registry(registry)
-    {
-    }
-
-    CompressResult<C> compress(string_ref text) {
-        std::vector<uint8_t> encoded_buffer;
-        {
-            Input text_in = Input::from_memory(text);
-            Output encoded_out = Output::from_memory(encoded_buffer);
-
-            auto compressor = create_algo_with_registry<C>(m_options, m_registry);
-
-            if (C::meta().textds_flags().has_restrictions()) {
-                text_in = Input(text_in, C::meta().textds_flags());
-            }
-            compressor.compress(text_in, encoded_out);
-        }
-        std::string s(encoded_buffer.begin(), encoded_buffer.end());
-        return CompressResult<C> {
-            m_registry,
-            std::move(encoded_buffer),
-            std::move(s),
-            std::string(text),
-            std::string(m_options),
-        };
-    }
-};
-
-template<class T>
-inline CompressResult<T> compress(string_ref text,
-                                    const std::string& options = "",
-                                    const Registry<Compressor>& registry = Registry<Compressor>("compressor")) {
-    return RoundTrip<T>(options, registry).compress(text);
-}
-
-template<class T>
-inline void roundtrip_ex(string_ref original_text,
-                        string_ref expected_compressed_text,
-                        const std::string& options = "",
-                        const Registry<Compressor>& registry = Registry<Compressor>("compressor")) {
-    auto e = RoundTrip<T>(options, registry).compress(original_text);
-    auto& compressed_text = e.str;
-
-    if(expected_compressed_text.size() > 0) {
-        ASSERT_EQ(std::string(expected_compressed_text), compressed_text);
-    }
-
-    e.assert_decompress();
-}
-
-template<class T>
-inline void roundtrip(string_ref original_text) {
-    roundtrip_ex<T>(original_text, "");
-}
-
-template<class T>
-inline void roundtrip_binary(string_ref original_text,
-                            const std::vector<uint64_t>& expected_compressed_text_packed_ints = {},
-                            const std::string& options = "",
-                            const Registry<Compressor>& registry = Registry<Compressor>("compressor")) {
-    auto e = RoundTrip<T>(options, registry).compress(original_text);
-    auto& compressed_text = e.bytes;
-
-    if(expected_compressed_text_packed_ints.size() > 0)
-    assert_eq_binary(compressed_text, expected_compressed_text_packed_ints);
-
-    e.assert_decompress_bytes();
-}
-
-class TestInput: public Input {
-public:
-    inline TestInput(string_ref text, bool sentinel): Input(text) {
-        if (sentinel) {
-            ((Input&) *this) = Input(*this, io::InputRestrictions({0}, true));
-        }
-    }
-    inline TestInput(io::Path&& path, bool sentinel): Input(std::move(path)) {
-        if (sentinel) {
-            ((Input&) *this) = Input(*this, io::InputRestrictions({0}, true));
-        }
-    }
-};
-
-class TestOutput: std::vector<uint8_t>, public Output {
-public:
-    inline TestOutput(bool sentinel): std::vector<uint8_t>(),
-        Output(static_cast<std::vector<uint8_t>&>(*this))
-    {
-        if (sentinel) {
-            ((Output&) *this) = Output(*this, io::InputRestrictions({0}, true));
-        }
-    }
-
-    inline string_ref result() { return *this; }
-};
-
-/// Creates an instance of an `tdc::Input` to be used with `Compressor::compress()`.
-///
-/// It will contain the bytes given by `text`.
-TestInput compress_input(string_ref text) {
-    return TestInput(text, true);
-}
-
-/// Creates an instance of an `tdc::Input` to be used with `Compressor::compress()`.
-///
-/// It will contain the bytes contained in the file at `path`.
-TestInput compress_input_file(string_ref path) {
-    return TestInput(io::Path{std::string(path)}, true);
-}
-
-/// Creates an instance of an `tdc::Output` to be used with `Compressor::compress()`.
-///
-/// The bytes output to it are accessible with the `.result()` accessor.
-TestOutput compress_output() {
-    return TestOutput(false);
-}
-
-/// Creates an instance of an `tdc::Input` to be used with `Compressor::decompress()`.
-///
-/// It will contain the bytes given by `text`.
-TestInput decompress_input(string_ref text) {
-    return TestInput(text, false);
-}
-
-/// Creates an instance of an `tdc::Input` to be used with `Compressor::decompress()`.
-///
-/// It will contain the bytes contained in the file at `path`.
-TestInput decompress_input_file(string_ref path) {
-    return TestInput(io::Path{std::string(path)}, false);
-}
-
-/// Creates an instance of an `tdc::Output` to be used with `Compressor::decompress()`.
-///
-/// The bytes output to it are accessible with the `.result()` accessor.
-TestOutput decompress_output() {
-    return TestOutput(true);
-}
-
-
-template<typename Coder>
-void test_binary_out(string_ref in, std::vector<uint64_t> packed_ints_out, bool interleave = false) {
-    using namespace tdc;
-
-    auto v = in;
-    test::TestOutput o(false);
-    {
-        auto env = tdc::builder<Coder>().env();
-        std::shared_ptr<BitOStream> bo = std::make_shared<BitOStream>(o);
-        typename Coder::Encoder coder(std::move(env), bo, ViewLiterals(v));
-
-        bool was_zero = true;
-        for (auto c : v) {
-            if (was_zero && interleave) {
-                bo->write_int<uliteral_t>(0b01010101, 8);
-                was_zero = false;
-            }
-            coder.encode(c, literal_r);
-            if (c == 0) {
-                was_zero = true;
-            }
-        }
-    }
-    auto res = o.result();
-    test::assert_eq_binary(res, packed_ints_out);
-}
-
-}
-

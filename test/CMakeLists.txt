@@ -27,3 +27,5 @@ endmacro(define_wx)
 
 define_wx(wm WM_TYPE)
 define_wx(wt WT_TYPE)
+
+include_directories(.)
