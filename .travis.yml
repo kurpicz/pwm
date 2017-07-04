@@ -1,21 +1,32 @@
-sudo: required
-dist: trusty
-language: cpp
+sudo: false
 
+cache:
+  apt: true
+  ccache: true
+
+language: generic
 matrix:
   include:
-    - compiler: gcc
+    - os: linux
+      env:
+        - COMPILER_NAME=gcc
+        - CXX=g++-6
+        - CC=gcc-6
+      dist: trusty
       addons:
         apt:
-          sources:
-            - ubuntu-toolchain-r-test
           packages:
             - g++-6
-
-install:
-  - if [ "$CXX" = "g++" ]; then export CXX="g++-6"; fi
-  - if [ "$CC" = "gcc" ]; then export CC="gcc-6"; fi
+            - cmake
+            - cmake-data
+            #- python3
+            #- python
+          sources:
+            - ubuntu-toolchain-r-test
 
 script:
   - git submodule update --init
+  - mkdir build
+  - cd build
+  - cmake ..
   - make
