@@ -22,6 +22,8 @@ public:
   wm_naive(const std::vector<AlphabetType>& text, const SizeType size,
     const SizeType levels) : _bv(levels), _zeros(levels, 0) {
 
+    if(text.size() == 0) { return; }
+
     std::vector<AlphabetType> local_text = text;
 
     // Construct each level top-down

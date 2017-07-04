@@ -20,6 +20,8 @@ public:
   wt_pc(const std::vector<AlphabetType>& text, const SizeType size,
     const SizeType levels) : _bv(levels) {
 
+    if(text.size() == 0) { return; }
+
     SizeType cur_max_char = (1 << levels);
     std::vector<SizeType> s_pos(cur_max_char, 0);
     std::vector<SizeType> hist(cur_max_char, 0);
@@ -27,7 +29,7 @@ public:
 
     _bv[0] = new uint64_t[(size + 63ULL) >> 6];
     // memset is ok (all to 0)
-    memset(_bv[0], 0, ((size + 63ULL) >> 6) * sizeof(uint64_t)); 
+    memset(_bv[0], 0, ((size + 63ULL) >> 6) * sizeof(uint64_t));
 
     SizeType cur_pos = 0;
     for (; cur_pos + 64 <= size; cur_pos += 64) {

@@ -22,6 +22,8 @@ public:
   wm_ps(const std::vector<AlphabetType>& text, const SizeType size,
     const SizeType levels) : _bv(levels), _zeros(levels, 0) {
 
+    if(text.size() == 0) { return; }
+
     SizeType cur_max_char = (1 << levels);
     std::vector<SizeType> bit_reverse = BitReverse<SizeType>(levels - 1);
     std::vector<SizeType> s_pos(cur_max_char, 0);
@@ -66,7 +68,7 @@ public:
       memset(_bv[level], 0, ((size + 63ULL) >> 6) * sizeof(uint64_t));
 
       // Update the maximum value of a feasible a bit prefix and update the
-      // histogram of the bit prefixes 
+      // histogram of the bit prefixes
       cur_max_char >>= 1;
       for (SizeType i = 0; i < cur_max_char; ++i) {
         hist[i] = hist[i << 1] + hist[(i << 1) + 1];
@@ -83,7 +85,7 @@ public:
       // The number of 0s is the position of the first 1 in the previous level
       _zeros[level - 1] = borders[1];
 
-      // Now we sort the text utilizing counting sort and the starting positions 
+      // Now we sort the text utilizing counting sort and the starting positions
       // that we have computed before
       for (SizeType i = 0; i < size; ++i) {
         const AlphabetType cur_char = text[i];

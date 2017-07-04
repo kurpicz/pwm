@@ -20,6 +20,8 @@ public:
   wt_ps(const std::vector<AlphabetType>& text, const SizeType size,
     const SizeType levels) : _bv(levels) {
 
+    if(text.size() == 0) { return; }
+
     SizeType cur_max_char = (1 << levels);
     std::vector<SizeType> s_pos(cur_max_char, 0);
     std::vector<SizeType> hist(cur_max_char, 0);

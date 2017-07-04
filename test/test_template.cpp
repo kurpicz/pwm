@@ -46,7 +46,7 @@ TEST(WX_NAME, smoketest) {
     test::roundtrip_batch([](const std::string& s){
         auto vec = std::vector<uint8_t>(s.begin(), s.end());
         std::cout << "string: '" << s << "'\n";
-        ConstructWM(vec, false);
+        //ConstructWM(vec, false);
         ConstructWM(vec, true);
     });
 }

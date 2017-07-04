@@ -25,6 +25,8 @@ public:
   wm_dd_pc(const std::vector<AlphabetType>& text, const SizeType size,
     const SizeType levels) : _bv(levels), _zeros(levels, 0) {
 
+    if(text.size() == 0) { return; }
+
     std::chrono::system_clock::time_point first, second, third, fourth;
 
     #pragma omp parallel
@@ -35,7 +37,7 @@ public:
       #pragma omp single
       first = std::chrono::system_clock::now();
 
-      const SizeType local_size = (size / omp_size) + 
+      const SizeType local_size = (size / omp_size) +
         ((omp_rank < size % omp_size) ? 1 : 0);
       const SizeType offset = (omp_rank * (size / omp_size)) +
         std::min(static_cast<uint32_t>(omp_rank), size % omp_size);
@@ -92,7 +94,7 @@ public:
         const SizeType cur_bit_shift = prefix_shift - 1;
 
         // Update the maximum value of a feasible a bit prefix and update the
-        // histogram of the bit prefixes 
+        // histogram of the bit prefixes
         cur_max_char >>= 1;
         for (SizeType i = 0; i < cur_max_char; ++i) {
           hist[i] = hist[i << 1] + hist[(i << 1) + 1];

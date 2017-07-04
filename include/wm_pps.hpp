@@ -23,6 +23,8 @@ public:
   wm_pps(const std::vector<AlphabetType>& text, const SizeType size,
     const SizeType levels) : _bv(levels), _zeros(levels, 0) {
 
+    if(text.size() == 0) { return; }
+
     std::vector<SizeType*> borders;
     std::vector<SizeType*> hist;
     std::vector<AlphabetType> sorted_text(size);
@@ -113,8 +115,8 @@ public:
         #pragma omp single
         {
           for (SizeType i = 1; i < (1ULL << level); ++i) {
-            offsets[bit_reverse[i] << prefix_shift] = 
-              offsets[bit_reverse[i - 1] << prefix_shift] + 
+            offsets[bit_reverse[i] << prefix_shift] =
+              offsets[bit_reverse[i - 1] << prefix_shift] +
               borders[omp_size - 1][bit_reverse[i - 1] << prefix_shift] +
               hist[omp_size - 1][bit_reverse[i - 1] << prefix_shift];
             bit_reverse[i - 1] >>= 1;

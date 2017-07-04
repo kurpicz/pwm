@@ -15,7 +15,7 @@ macro(define_wx prefix cxxdefine)
         #message("${WX_NAME}")
 
         if("${WX_NAME}" STREQUAL "wm_cilk_ppc")
-            break()
+            continue()
         endif()
 
         configure_file(test_template.cpp ${WX_NAME}_test.cpp)

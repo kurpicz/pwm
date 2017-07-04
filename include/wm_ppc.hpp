@@ -22,10 +22,12 @@ class wm_ppc {
 public:
   wm_ppc(const std::vector<TextType>& text, const SizeType size,
     const SizeType levels) : _bv(levels), _zeros(levels, 0) {
-    
+
+    if(text.size() == 0) { return; }
+
     for (SizeType level = 0; level < levels; ++level) {
       _bv[level] = new uint64_t[(size + 63ULL) >> 6];
-        memset(_bv[level], 0, ((size + 63ULL) >> 6) * sizeof(uint64_t));  
+        memset(_bv[level], 0, ((size + 63ULL) >> 6) * sizeof(uint64_t));
     }
 
     std::vector<SizeType> hist;
@@ -48,7 +50,7 @@ public:
       const TextType* const text_ptr = text.data();
 
       SizeType* const hist_ptr = hist_data_ptr + (global_max_char * omp_rank);
-      
+
       // While initializing the histogram, we also compute the fist level
       #pragma omp for
       for (SizeType cur_pos = 0; cur_pos <= size - 64; cur_pos += 64) {

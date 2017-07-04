@@ -24,6 +24,8 @@ public:
   wm_dd_ps(const std::vector<AlphabetType>& global_text, const SizeType size,
     const SizeType levels) : _bv(levels), _zeros(levels, 0) {
 
+    if(global_text.size() == 0) { return; }
+
     std::vector<AlphabetType> global_sorted_text(size);
 
     #pragma omp parallel
@@ -31,7 +33,7 @@ public:
       const auto omp_rank = omp_get_thread_num();
       const auto omp_size = omp_get_num_threads();
 
-      const SizeType local_size = (size / omp_size) + 
+      const SizeType local_size = (size / omp_size) +
        ( (omp_rank < size % omp_size) ? 1 : 0);
       const SizeType offset = (omp_rank * (size / omp_size)) +
         std::min(static_cast<uint32_t>(omp_rank), size % omp_size);
@@ -83,7 +85,7 @@ public:
 
       for (SizeType level = levels - 1; level > 0; --level) {
         // Update the maximum value of a feasible a bit prefix and update the
-        // histogram of the bit prefixes 
+        // histogram of the bit prefixes
         cur_max_char >>= 1;
         for (SizeType i = 0; i < cur_max_char; ++i) {
           hist[i] = hist[i << 1] + hist[(i << 1) + 1];
@@ -101,7 +103,7 @@ public:
         // The number of 0s is the position of the first 1 in the previous level
         tmp_zeros[level - 1] = borders[1];
 
-        // Now we sort the text utilizing counting sort and the starting positions 
+        // Now we sort the text utilizing counting sort and the starting positions
         // that we have computed before
         for (SizeType i = 0; i < local_size; ++i) {
           const AlphabetType cur_char = text[i];
