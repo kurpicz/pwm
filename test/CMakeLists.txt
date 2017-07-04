@@ -14,6 +14,10 @@ macro(define_wx prefix cxxdefine)
         #message("${loop_var}")
         #message("${WX_NAME}")
 
+        if("${WX_NAME}" STREQUAL "wm_cilk_ppc")
+            break()
+        endif()
+
         configure_file(test_template.cpp ${WX_NAME}_test.cpp)
         run_test(${WX_NAME}_test DEPS dl)
 
