@@ -17,9 +17,17 @@ macro(define_wx prefix cxxdefine)
         if("${WX_NAME}" STREQUAL "wm_cilk_ppc")
             continue()
         endif()
+        if("${WX_NAME}" STREQUAL "wt_ppc")
+            continue()
+        endif()
+        if("${WX_NAME}" STREQUAL "wt_pps")
+            continue()
+        endif()
 
+        set(${cxxdefine} 1)
         configure_file(test_template.cpp ${WX_NAME}_test.cpp)
         run_test(${WX_NAME}_test DEPS dl)
+        unset(${cxxdefine})
 
         #set_target_properties(${WX_NAME}_tests_testrunner PROPERTIES
         #    COMPILE_DEFINITIONS "WX_NAME=${WX_NAME}"

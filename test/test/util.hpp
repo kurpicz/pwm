@@ -160,6 +160,12 @@ void roundtrip_batch(F f) {
     };
 
     //f(View(all_bytes));
+
+    std::vector<uint8_t> test {
+        0,1,6,7,1,5,4,2,6,3
+    };
+
+    f(std::string(test.begin(), test.end()));
 }
 
 const std::string TEST_FILE_PATH = "test_files";
