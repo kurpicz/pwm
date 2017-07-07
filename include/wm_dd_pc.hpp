@@ -31,8 +31,8 @@ public:
 
     #pragma omp parallel
     {
-      const auto omp_rank = omp_get_thread_num();
-      const auto omp_size = omp_get_num_threads();
+      const size_t omp_rank = omp_get_thread_num();
+      const size_t omp_size = omp_get_num_threads();
 
       #pragma omp single
       first = std::chrono::system_clock::now();
@@ -40,7 +40,7 @@ public:
       const SizeType local_size = (size / omp_size) +
         ((omp_rank < size % omp_size) ? 1 : 0);
       const SizeType offset = (omp_rank * (size / omp_size)) +
-        std::min(static_cast<uint32_t>(omp_rank), size % omp_size);
+        std::min<SizeType>(omp_rank, size % omp_size);
 
       SizeType cur_max_char = (1 << levels);
       std::vector<SizeType> bit_reverse = BitReverse<SizeType>(levels - 1);

@@ -18,10 +18,10 @@ static inline std::vector<SizeType> BitReverse(const SizeType levels) {
   result[0] = 0;
   result[1] = 1;
   for (SizeType i = 1; i < levels; ++i) {
-    for (SizeType j = 0; j < (1 << i); ++j) {
+    for (SizeType j = 0; j < (1u << i); ++j) {
       result[j] <<= 1;
     }
-    for (SizeType j = 0; j < (1 << i); ++j) {
+    for (SizeType j = 0; j < (1u << i); ++j) {
       result[j + (1 << i)] = result[j] + 1;
     }
   }
