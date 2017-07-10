@@ -65,7 +65,7 @@ public:
           word <<= 1;
           word |= ((text[size - (size & 63ULL) + i] >> (levels - 1)) & 1ULL);
         }
-        word <<= (63 - (size & 63ULL));
+        word <<= (64 - (size & 63ULL));
         _bv[0][size >> 6] = word;
       }
       #pragma omp for

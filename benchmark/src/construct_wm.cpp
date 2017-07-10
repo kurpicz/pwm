@@ -79,7 +79,7 @@ void ConstructWM(std::vector<AlphabetType>& text, const bool already_reduced) {
   std::tie(wm_naive_bv, wm_naive_zeros) = wm_naive.get_bv_and_zeros();
 
   for (AlphabetType level = 0; level < levels; ++level) {
-    for (uint64_t i = 0; i < (text.size() >> 6); ++i) {
+    for (uint64_t i = 0; i < ((text.size() + 63ULL) >> 6); ++i) {
       if (wm_bv[level][i] != wm_naive_bv[level][i]) {
         std::cout << "Error in level " << static_cast<uint64_t>(level)
                   << " at position " << i << std::endl;

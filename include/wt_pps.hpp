@@ -74,7 +74,7 @@ public:
           word <<= 1;
           word |= ((text[size - (size & 63ULL) + i] >> (levels - 1)) & 1ULL);
         }
-        word <<= (63 - (size & 63ULL));
+        word <<= (64 - (size & 63ULL));
         _bv[0][size >> 6] = word;
       }
 
@@ -144,7 +144,7 @@ public:
             word <<= 1;
             word |= (sorted_text[size - (size & 63ULL) + i] & 1ULL);
           }
-          word <<= (63 - (size & 63ULL));
+          word <<= (64 - (size & 63ULL));
           _bv[level][size >> 6] = word;
         }
       }

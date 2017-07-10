@@ -78,7 +78,7 @@ public:
           word <<= 1;
           word |= ((text[size - (size & 63ULL) + i] >> (levels - 1)) & 1ULL);
         }
-        word <<= (63 - (size & 63ULL));
+        word <<= (64 - (size & 63ULL));
         _bv[0][size >> 6] = word;
       }
 
@@ -167,13 +167,14 @@ public:
           }
           _bv[level][cur_pos >> 6] = word;
         }
+
         if ((size & 63ULL) && ((omp_rank + 1) == omp_size)) {
           uint64_t word = 0ULL;
           for (SizeType i = 0; i < (size & 63ULL); ++i) {
             word <<= 1;
             word |= (sorted_text[size - (size & 63ULL) + i] & 1ULL);
           }
-          word <<= (63 - (size & 63ULL));
+          word <<= (64 - (size & 63ULL));
           _bv[level][size >> 6] = word;
         }
       }
