@@ -100,6 +100,7 @@ std::string decode_wm(const std::vector<uint64_t*> bv,
     }
 
 
+    /*
     for (size_t i = 0; i < bv.size(); i++) {
         std::cout << "   bv["<<i<<"]";
 
@@ -112,6 +113,7 @@ std::string decode_wm(const std::vector<uint64_t*> bv,
         std::cout << "\n";
     }
     std::cout << "\n";
+    */
 
 
     auto r = std::vector<uint8_t>(length);
