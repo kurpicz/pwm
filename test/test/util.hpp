@@ -82,6 +82,13 @@ std::vector<uint8_t> ostream_to_bytes(Lambda f) {
 /// of different strings testing common corner cases and unicode input.
 template<class F>
 void roundtrip_batch(F f) {
+
+    std::vector<uint8_t> test {
+        0,1,6,7,1,5,4,2,6,3
+    };
+
+    f(std::string(test.begin(), test.end()));
+
     f("abcdebcdeabc");
     f("a");
     f("");
@@ -161,11 +168,6 @@ void roundtrip_batch(F f) {
 
     //f(View(all_bytes));
 
-    std::vector<uint8_t> test {
-        0,1,6,7,1,5,4,2,6,3
-    };
-
-    f(std::string(test.begin(), test.end()));
 }
 
 const std::string TEST_FILE_PATH = "test_files";

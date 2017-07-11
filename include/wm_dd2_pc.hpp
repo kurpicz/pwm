@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "common.hpp"
+#include "debug.hpp"
 
 template <typename AlphabetType, typename SizeType>
 class wm_dd2_pc {
@@ -28,6 +29,27 @@ public:
 
         if(text.size() == 0) { return; }
 
+        // per thread, per level, per node border
+
+        // TODO: Not needed
+        auto glob_borders = std::vector<std::vector<std::vector<SizeType>>>(
+            omp_get_max_threads(), std::vector<std::vector<SizeType>>(
+                levels, std::vector<SizeType>((1 << levels), 0)));
+
+        auto glob_zeros = std::vector<std::vector<SizeType>>(
+            omp_get_max_threads(), std::vector<SizeType>(levels));
+        auto glob_bv = std::vector<std::vector<uint64_t*>>(
+            omp_get_max_threads()
+        );
+
+        auto glob_hist = std::vector<std::vector<std::vector<SizeType>>>(
+            omp_get_max_threads(), std::vector<std::vector<SizeType>>(
+                levels + 1, std::vector<SizeType>((1 << levels), 0)));
+
+        auto glob_bit_reverse = std::vector<std::vector<SizeType>>(
+            levels
+        );
+
         #pragma omp parallel
         {
             const size_t omp_rank = omp_get_thread_num();
@@ -38,12 +60,22 @@ public:
             const SizeType offset = (omp_rank * (size / omp_size)) +
                 std::min<SizeType>(omp_rank, size % omp_size);
 
+            std::stringstream ss;
+            ss << "rank " << omp_rank << " size " << local_size << " / " << size << " offset " << offset << "\n";
+            std::cout << ss.str();
+
             SizeType cur_max_char = (1 << levels);
             std::vector<SizeType> bit_reverse = BitReverse<SizeType>(levels - 1);
-            std::vector<SizeType> hist(cur_max_char, 0);
-            std::vector<SizeType> borders(cur_max_char, 0);
 
-            std::vector<uint64_t*> tmp_bv(levels);
+            #pragma omp single
+            glob_bit_reverse[levels - 1] = bit_reverse;
+
+            auto& zeros = glob_zeros[omp_rank];
+            auto& borders = glob_borders[omp_rank];
+            auto& hist = glob_hist[omp_rank];
+            auto& tmp_bv = glob_bv[omp_rank];
+
+            tmp_bv = std::vector<uint64_t*>(levels);
 
             tmp_bv[0] = new uint64_t[((local_size + 63ULL) >> 6) * levels];
             // memset is ok (all to 0)
@@ -57,7 +89,7 @@ public:
             for (; cur_pos + 64 <= local_size; cur_pos += 64) {
                 uint64_t word = 0ULL;
                 for (SizeType i = offset; i < 64 + offset; ++i) {
-                    ++hist[text[cur_pos + i]];
+                    ++hist[levels][text[cur_pos + i]];
                     word <<= 1;
                     word |= ((text[cur_pos + i] >> (levels - 1)) & 1ULL);
                 }
@@ -66,7 +98,7 @@ public:
             if (local_size & 63ULL) {
                 uint64_t word = 0ULL;
                 for (SizeType i = offset; i < local_size - cur_pos + offset; ++i) {
-                    ++hist[text[cur_pos + i]];
+                    ++hist[levels][text[cur_pos + i]];
                     word <<= 1;
                     word |= ((text[cur_pos + i] >> (levels - 1)) & 1ULL);
                 }
@@ -76,7 +108,7 @@ public:
 
             // The number of 0s at the last level is the number of "even" characters
             for (SizeType i = 0; i < cur_max_char; i += 2) {
-                _zeros[levels - 1] += hist[i];
+                zeros[levels - 1] += hist[levels][i];
             }
 
             // Now we compute the WM bottom-up, i.e., the last level first
@@ -88,28 +120,80 @@ public:
                 // histogram of the bit prefixes
                 cur_max_char >>= 1;
                 for (SizeType i = 0; i < cur_max_char; ++i) {
-                    hist[i] = hist[i << 1] + hist[(i << 1) + 1];
+                    hist[level][i] = hist[level + 1][i << 1] + hist[level + 1][(i << 1) + 1];
                 }
+                hist[level].resize(cur_max_char);
 
                 // Compute the starting positions of characters with respect to their
                 // bit prefixes and the bit-reversal permutation
-                borders[0] = 0;
                 for (SizeType i = 1; i < cur_max_char; ++i) {
-                    borders[bit_reverse[i]] = borders[bit_reverse[i - 1]] +
-                        hist[bit_reverse[i - 1]];
+                    borders[level - 1][i] = borders[level][i];
+                }
+                borders[level - 1][0] = 0;
+                for (SizeType i = 1; i < cur_max_char; ++i) {
+                    borders[level - 1][bit_reverse[i]] = borders[level - 1][bit_reverse[i - 1]] +
+                        hist[level][bit_reverse[i - 1]];
                     bit_reverse[i - 1] >>= 1;
                 }
+                borders[level - 1].resize(cur_max_char);
+                bit_reverse.resize(bit_reverse.size() / 2);
+                #pragma omp single
+                glob_bit_reverse[level - 1] = bit_reverse;
+
                 // The number of 0s is the position of the first 1 in the previous level
-                _zeros[level - 1] = borders[1];
+                zeros[level - 1] = borders[level - 1][1];
 
                 // Now we insert the bits with respect to their bit prefixes
                 for (SizeType i = offset; i < local_size + offset; ++i) {
-                    const SizeType pos = borders[text[i] >> prefix_shift]++;
+                    const SizeType pos = borders[level - 1][text[i] >> prefix_shift]++;
                     tmp_bv[level][pos >> 6] |= (((text[i] >> cur_bit_shift) & 1ULL)
                         << (63ULL - (pos & 63ULL)));
                 }
             }
+
+            hist[0].resize(1);
+            if (hist.size() > 1) {
+                hist[0][0] = hist[1][0] + hist[1][1];
+            }
         }
+        // join results
+        // TODO: Make allocation of bits for shards begin/end at same alignment, so that a memcopy
+        // is enough for merging them if neded
+        // TODO: Add abstraction for allocating the bitvector (no more bare vector of pointers)
+
+        std::cout << "ok?\n";
+
+        //std::cout << glob_bit_reverse[0][0].size() << "\n";
+
+        for(size_t level = 0; level < levels; level++) {
+            for(size_t shard = 0; shard < glob_bv.size(); shard++) {
+                const auto& h = glob_hist[shard][level];
+                const auto& br = glob_bit_reverse[level];
+
+                std::cout << level;
+                /*std::cout << " [";
+                for(size_t i = 0; i < h.size(); i++) {
+                    std::cout << h[i] << ", ";
+                }
+                std::cout << "]\n";
+                std::cout << "  [";
+                for(size_t i = 0; i < br.size(); i++) {
+                    std::cout << br[i] << ", ";
+                }
+                std::cout << "]\n";*/
+                std::cout << "  [";
+                for(size_t i = 0; i < br.size(); i++) {
+                    std::cout << h[br[i]] << ", ";
+                }
+                std::cout << "]\n";
+
+                for(size_t i = 0; i < br.size(); i++) {
+                    const auto offset = h[br[i]];
+                }
+            }
+            std::cout << "\n";
+        }
+
     }
 
     auto get_bv_and_zeros() const {

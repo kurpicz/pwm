@@ -24,6 +24,28 @@
 #include "wm_ps.hpp"
 #include "wm_pps.hpp"
 
+template<typename bv_t>
+auto bit_at(const bv_t& bv, size_t i) -> uint8_t {
+    size_t offset = i / 64ull;
+    size_t word_offset = i % 64ull;
+    return (bv[offset] >> (63ull - word_offset)) & 1ull;
+}
+
+template<typename T>
+void debug(const T& t, size_t length) {
+    for (size_t i = 0; i < t.size(); i++) {
+        std::cout << "   bv["<<i<<"]";
+
+        std::cout << "[";
+        for (size_t j = 0; j < length; j++) {
+            std::cout << size_t(bit_at(t[i], j)) << "";
+        }
+        std::cout << "]";
+
+        std::cout << "\n";
+    }
+    std::cout << "\n";
+}
 template <typename AlphabetType>
 void ConstructWM(std::vector<AlphabetType>& text, const bool already_reduced) {
 
@@ -78,9 +100,11 @@ void ConstructWM(std::vector<AlphabetType>& text, const bool already_reduced) {
 
   WM_TYPE<AlphabetType, uint32_t> wm(text, text.size(), levels);
   std::tie(wm_bv, wm_zeros) = wm.get_bv_and_zeros();
+  debug(wm_bv, text.size());
 
   wm_naive<AlphabetType, uint32_t> wm_naive(text, text.size(), levels);
   std::tie(wm_naive_bv, wm_naive_zeros) = wm_naive.get_bv_and_zeros();
+  debug(wm_naive_bv, text.size());
 
   for (AlphabetType level = 0; level < levels; ++level) {
     for (uint64_t i = 0; i < ((text.size() + 63ULL) >> 6); ++i) {
