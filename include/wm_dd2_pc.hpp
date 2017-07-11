@@ -165,32 +165,49 @@ public:
 
         //std::cout << glob_bit_reverse[0][0].size() << "\n";
 
+        auto merged = std::vector<std::vector<bool>>(levels, std::vector<bool>(size));
+        auto cursors = std::vector<std::vector<size_t>>(levels, std::vector<size_t>(glob_bv.size()));
         for(size_t level = 0; level < levels; level++) {
-            for(size_t shard = 0; shard < glob_bv.size(); shard++) {
-                const auto& h = glob_hist[shard][level];
-                const auto& br = glob_bit_reverse[level];
+            const auto& br = glob_bit_reverse[level];
+            auto& bv = merged[level];
+            size_t j = 0;
 
-                std::cout << level;
-                /*std::cout << " [";
-                for(size_t i = 0; i < h.size(); i++) {
-                    std::cout << h[i] << ", ";
-                }
-                std::cout << "]\n";
-                std::cout << "  [";
-                for(size_t i = 0; i < br.size(); i++) {
-                    std::cout << br[i] << ", ";
-                }
-                std::cout << "]\n";*/
-                std::cout << "  [";
-                for(size_t i = 0; i < br.size(); i++) {
-                    std::cout << h[br[i]] << ", ";
-                }
-                std::cout << "]\n";
+            _bv[level] = new uint64_t[(size + 63ULL) >> 6];
+            // memset is ok (all to 0)
+            memset(_bv[level], 0, ((size + 63ULL) >> 6) * sizeof(uint64_t));
 
-                for(size_t i = 0; i < br.size(); i++) {
-                    const auto offset = h[br[i]];
+            for(size_t i = 0; i < br.size(); i++) {
+                std::cout << level << ", " << i << " take: ";
+                for(size_t shard = 0; shard < glob_bv.size(); shard++) {
+                    auto& h = glob_hist[shard][level];
+                    auto& block_size = h[br[i]];
+                    std::cout << block_size << ", ";
+                    const auto& local_bv = glob_bv[shard][level];
+
+                    auto& local_cursor = cursors[level][shard];
+                    // TODO: copy over whole block
+                    while(block_size != 0) {
+                        block_size--;
+                        const auto src_pos = local_cursor++;
+                        const auto pos = j++;
+                        const bool bit = bit_at(local_bv, src_pos);
+
+                        bv[pos] = bit;
+                        _bv[level][pos >> 6] |= (uint64_t(bit) << (63ULL - (pos & 63ULL)));
+                    }
+
                 }
+                std::cout << " | " << cursors[level].size() << "\n";
             }
+            for(size_t shard = 0; shard < glob_bv.size(); shard++) {
+                std::cout << "(" << glob_zeros[shard][level] << ")";
+                _zeros[level] += glob_zeros[shard][level];
+            }
+            std::cout << "[";
+            for(size_t i = 0; i < size; i++) {
+                std::cout << size_t(bv[i]);
+            }
+            std::cout << "]\n";
             std::cout << "\n";
         }
 
