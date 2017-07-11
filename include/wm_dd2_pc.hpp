@@ -7,8 +7,8 @@
  ******************************************************************************/
 
 #pragma once
-#ifndef WM_DOMAIN_DECOMPOSITION_PREFIX_COUNTING
-#define WM_DOMAIN_DECOMPOSITION_PREFIX_COUNTING
+#ifndef WM_DOMAIN_DECOMPOSITION2_PREFIX_COUNTING
+#define WM_DOMAIN_DECOMPOSITION2_PREFIX_COUNTING
 
 #include <algorithm>
 #include <chrono>

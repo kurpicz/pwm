@@ -17,6 +17,7 @@
 #include "wm_cilk_ppc.hpp"
 
 #include "wm_dd_pc.hpp"
+#include "wm_dd2_pc.hpp"
 #include "wm_dd_ps.hpp"
 #include "wm_naive.hpp"
 #include "wm_pc.hpp"
@@ -24,28 +25,7 @@
 #include "wm_ps.hpp"
 #include "wm_pps.hpp"
 
-template<typename bv_t>
-auto bit_at(const bv_t& bv, size_t i) -> uint8_t {
-    size_t offset = i / 64ull;
-    size_t word_offset = i % 64ull;
-    return (bv[offset] >> (63ull - word_offset)) & 1ull;
-}
 
-template<typename T>
-void debug(const T& t, size_t length) {
-    for (size_t i = 0; i < t.size(); i++) {
-        std::cout << "   bv["<<i<<"]";
-
-        std::cout << "[";
-        for (size_t j = 0; j < length; j++) {
-            std::cout << size_t(bit_at(t[i], j)) << "";
-        }
-        std::cout << "]";
-
-        std::cout << "\n";
-    }
-    std::cout << "\n";
-}
 template <typename AlphabetType>
 void ConstructWM(std::vector<AlphabetType>& text, const bool already_reduced) {
 
@@ -100,15 +80,15 @@ void ConstructWM(std::vector<AlphabetType>& text, const bool already_reduced) {
 
   WM_TYPE<AlphabetType, uint32_t> wm(text, text.size(), levels);
   std::tie(wm_bv, wm_zeros) = wm.get_bv_and_zeros();
-  debug(wm_bv, text.size());
+
 
   wm_naive<AlphabetType, uint32_t> wm_naive(text, text.size(), levels);
   std::tie(wm_naive_bv, wm_naive_zeros) = wm_naive.get_bv_and_zeros();
-  debug(wm_naive_bv, text.size());
+
 
   for (AlphabetType level = 0; level < levels; ++level) {
     for (uint64_t i = 0; i < ((text.size() + 63ULL) >> 6); ++i) {
-      if (wm_bv[level][i] != wm_naive_bv[level][i]) {
+        if (wm_bv[level][i] != wm_naive_bv[level][i]) {
         std::cout << "Error in level " << static_cast<uint64_t>(level)
                   << " at position " << i << std::endl;
         std::exit(EXIT_FAILURE);
@@ -137,7 +117,7 @@ int main(int argc, char const *argv[]) {
   }
 
   uint32_t byte_width = std::stoi(std::string(argv[2]));
-  if (byte_width > 8 || 
+  if (byte_width > 8 ||
     (byte_width != 1 && ((byte_width == 6) || ((byte_width % 2) == 1)))) {
     std::cout << "[symbol with in bytes] must be 1, 2, 4 or 8." << std::endl;
     std::exit(EXIT_FAILURE);

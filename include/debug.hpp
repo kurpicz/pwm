@@ -2,7 +2,7 @@
 
 
 template<typename bv_t>
-auto bit_at(const bv_t& bv, size_t i) -> uint8_t {
+inline auto bit_at(const bv_t& bv, size_t i) -> uint8_t {
     size_t offset = i / 64ull;
     size_t word_offset = i % 64ull;
     return (bv[offset] >> (63ull - word_offset)) & 1ull;
