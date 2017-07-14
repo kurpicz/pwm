@@ -29,21 +29,28 @@ public:
 
         if(text.size() == 0) { return; }
 
+        // TODO: constexpr in common.hpp
+        auto word_size = [](uint64_t size) {
+            return (size + 63ULL) >> 6;
+        };
+
         // TODO: flatten vectors
+
+        const SizeType shards = omp_get_max_threads();
 
         // This will be used for merging
         auto glob_zeros = std::vector<std::vector<SizeType>>(
-            omp_get_max_threads(), std::vector<SizeType>(levels));
+            shards, std::vector<SizeType>(levels));
         auto glob_bv = std::vector<std::vector<uint64_t*>>(
-            omp_get_max_threads()
+            shards
         );
         auto glob_hist = std::vector<std::vector<std::vector<SizeType>>>(
-            omp_get_max_threads(), std::vector<std::vector<SizeType>>(
+            shards, std::vector<std::vector<SizeType>>(
                 levels + 1, std::vector<SizeType>((1 << levels), 0)));
 
         // This just exists for central allocation
         auto glob_borders = std::vector<std::vector<SizeType>>(
-            omp_get_max_threads(), std::vector<SizeType>((1 << levels), 0));
+            shards, std::vector<SizeType>((1 << levels), 0));
 
         #pragma omp parallel
         {
@@ -65,11 +72,11 @@ public:
 
             tmp_bv = std::vector<uint64_t*>(levels);
 
-            tmp_bv[0] = new uint64_t[((local_size + 63ULL) >> 6) * levels];
+            tmp_bv[0] = new uint64_t[word_size(local_size) * levels];
             // memset is ok (all to 0)
-            memset(tmp_bv[0], 0, (((local_size + 63ULL) >> 6) * sizeof(uint64_t)) * levels);
+            memset(tmp_bv[0], 0, (word_size(local_size) * sizeof(uint64_t)) * levels);
             for (SizeType level = 1; level < levels; ++level) {
-                tmp_bv[level] = tmp_bv[level - 1] + ((local_size + 63ULL) >> 6);
+                tmp_bv[level] = tmp_bv[level - 1] + word_size(local_size);
             }
 
             // While initializing the histogram, we also compute the fist level
@@ -149,16 +156,156 @@ public:
             }
         }
 
-        auto cursors = std::vector<std::vector<size_t>>(levels, std::vector<size_t>(glob_bv.size()));
+        auto cursors = std::vector<std::vector<size_t>>(
+            levels, std::vector<size_t>(glob_bv.size())
+        );
+        auto offsets = std::vector<SizeType>(shards);
+        auto local_offsets = std::vector<std::vector<std::vector<SizeType>>>(
+            levels, std::vector<std::vector<SizeType>>(
+                shards, std::vector<SizeType>(shards + 1)
+            )
+        );
 
-        #pragma omp parallel for
+        auto word_offsets = std::vector<std::vector<SizeType>>(
+            levels, std::vector<SizeType>(shards + 1)
+        );
+        auto block_seq_offsets = std::vector<std::vector<SizeType>>(
+            levels, std::vector<SizeType>(shards + 1)
+        );
+
+        std::cout << "================================================\n";
+        std::cout << "global size: " << size << "\n";
+        std::cout << "word size:  " << word_size(size) << "\n";
+        std::cout << "================================================\n";
+        for (size_t rank = 1; rank < shards; rank++) {
+            const size_t omp_rank = rank;
+            const size_t omp_size = shards;
+
+            const SizeType offset = (omp_rank * (word_size(size) / omp_size)) +
+                std::min<SizeType>(omp_rank, word_size(size) % omp_size);
+
+            offsets[rank - 1] = offset * 64ull;
+        }
+        offsets[shards - 1] = word_size(size) * 64ull;
+
+        size_t last = 0;
+        for (size_t rank = 0; rank < shards; rank++) {
+            std::cout << "offset: " << offsets[rank] << ", " << (offsets[rank] - last) << "\n";
+            last = offsets[rank];
+        }
+
+        std::cout << "================================================\n";
+
+        // TODO: fix
+        for(size_t level = 0; level < 3; level++) {
+            const auto& br = bit_reverse[level];
+            const size_t br_size = 1ull << level;
+            size_t j = 0;
+            size_t oi = 0;
+
+            auto body = [&](auto j, auto block_size, char sym, size_t x, size_t y) {
+                std::cout
+                    << sym <<
+                    " j: " << std::setw(3)<< (j - block_size)
+                    << " += " << std::setw(3)<< block_size
+                    << " == " << std::setw(3)<< j
+                    << "\n";
+                for (size_t a = 0; a < shards; a++) {
+                    std::cout <<
+                        "  shard: " << a <<
+                        ", offset: ";
+                    for (size_t b = 0; b < shards; b++) {
+                        char mark = ' ';
+                        if (a == y && b == x) mark = '+';
+                        std::cout << mark << std::setw(3) << local_offsets[level][a][b] << ", ";
+                    }
+                    char mark = ' ';
+                    if (a == y && shards == x) mark = '+';
+                    std::cout << "| " << mark << std::setw(3) << local_offsets[level][a][shards];
+                    std::cout << "\n";
+                }
+            };
+
+            for(size_t i = 0; i < br_size * shards; i++) {
+                const auto bit_i = i / shards;
+                const auto shard = i % shards;
+
+                const auto h = glob_hist[shard][level];
+                const auto block_size = h[br[bit_i]];
+
+                j += block_size;
+                local_offsets[level][shard][oi + 1] += block_size;
+
+                if (j <= offsets[oi]) {
+                    body(j, block_size, 'm', oi + 1, shard);
+                } else {
+                    size_t right = j - offsets[oi];
+                    size_t left = block_size - right;
+
+                    j -= block_size;
+                    local_offsets[level][shard][oi + 1] -= block_size;
+
+                    j += left;
+                    local_offsets[level][shard][oi + 1] += left;
+                    body(j, left, 'l', oi + 1, shard);
+
+                    // TODO: rename word_offset to something like
+                    // "offset in block"
+                    word_offsets[level][oi + 1] = left;
+                    block_seq_offsets[level][oi + 1] = i;
+
+                    std::cout << "------------------------------------------------\n";
+                    if (oi + 2 < shards + 1) {
+                        for(size_t s = 0; s < shards; s++) {
+                            local_offsets[level][s][oi + 2] = local_offsets[level][s][oi + 1];
+                        }
+                    }
+                    oi++;
+
+                    // TODO: dcheck about block_seq_offsets, word_offsets
+
+                    j += right;
+                    local_offsets[level][shard][oi + 1] += right;
+                    body(j, right, 'r', oi + 1, shard);
+                }
+
+                //body(j, 0, 'f');
+            }
+            //std::cout << "j: " << j << "\n";
+            std::cout << "================================================\n";
+        }
+
+        // TODO: print out all data gathered before
+
+        for (size_t level = 0; level < 3; level++) {
+            for(size_t merge_shard = 0; merge_shard < shards; merge_shard++) {
+                std::cout << "merge shard " << merge_shard << ": ";
+
+                std::cout << "offsets = [";
+                for(size_t read_shard = 0; read_shard < shards; read_shard++) {
+                    std::cout << std::setw(3) << local_offsets[level][read_shard][merge_shard] << ", ";
+                }
+                std::cout << "]";
+
+                std::cout << ", block_seq_offset: " << block_seq_offsets[level][merge_shard];
+                std::cout << ", block_offset: " << word_offsets[level][merge_shard];
+
+                std::cout << "\n";
+            }
+
+            std::cout << "\n";
+        }
+
+        std::cout << "================================================\n";
+
+        //#pragma omp parallel for
         for(size_t level = 0; level < levels; level++) {
             const auto& br = bit_reverse[level];
             size_t j = 0;
 
             _bv[level] = new uint64_t[(size + 63ULL) >> 6];
             // memset is ok (all to 0)
-            memset(_bv[level], 0, ((size + 63ULL) >> 6) * sizeof(uint64_t));
+            memset(_bv[level], 0, word_size(size) * sizeof(uint64_t));
 
             for(size_t i = 0; i < br.size(); i++) {
                 for(size_t shard = 0; shard < glob_bv.size(); shard++) {
