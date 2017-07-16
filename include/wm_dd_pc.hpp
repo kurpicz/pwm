@@ -1,5 +1,5 @@
 /*******************************************************************************
- * include/wm_dd2_pc.hpp
+ * include/wm_dd_pc.hpp
  *
  * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
  *
@@ -7,8 +7,8 @@
  ******************************************************************************/
 
 #pragma once
-#ifndef WM_DOMAIN_DECOMPOSITION2_PREFIX_COUNTING
-#define WM_DOMAIN_DECOMPOSITION2_PREFIX_COUNTING
+#ifndef WM_DOMAIN_DECOMPOSITION_PREFIX_COUNTING
+#define WM_DOMAIN_DECOMPOSITION_PREFIX_COUNTING
 
 #include <algorithm>
 #include <chrono>
@@ -20,10 +20,10 @@
 #include "debug.hpp"
 
 template <typename AlphabetType, typename SizeType>
-class wm_dd2_pc {
+class wm_dd_pc {
 
 public:
-    wm_dd2_pc(const std::vector<AlphabetType>& text,
+    wm_dd_pc(const std::vector<AlphabetType>& text,
              const SizeType size,
              const SizeType levels) : _bv(levels), _zeros(levels, 0) {
 
@@ -305,7 +305,7 @@ public:
 private:
     std::vector<uint64_t*> _bv;
     std::vector<SizeType> _zeros;
-}; // class wm_dd2_pc
+}; // class wm_dd_pc
 
 #endif // WM_DOMAIN_DECOMPOSITION_PREFIX_COUNTING
 

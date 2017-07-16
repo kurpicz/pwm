@@ -17,7 +17,6 @@
 #include "wm_cilk_ppc.hpp"
 
 #include "wm_dd_pc.hpp"
-#include "wm_dd2_pc.hpp"
 #include "wm_dd_ps.hpp"
 #include "wm_naive.hpp"
 #include "wm_pc.hpp"
