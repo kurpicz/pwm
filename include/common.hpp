@@ -11,6 +11,7 @@
 #define COMMON
 
 #include <vector>
+#include <cassert>
 
 template <typename SizeType>
 static inline std::vector<SizeType> BitReverse(const SizeType levels) {
@@ -55,7 +56,7 @@ public:
     inline Bvs(SizeType size, SizeType levels):
         m_data(levels)
     {
-        DCHECK_GT(levels, 0);
+        assert(levels != 0);
 
         m_data[0] = new uint64_t[word_size(size) * levels];
         memset(m_data[0], 0, (word_size(size) * sizeof(uint64_t)) * levels);

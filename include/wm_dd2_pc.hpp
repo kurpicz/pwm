@@ -36,7 +36,8 @@ public:
 
         auto glob_zeros = std::vector<std::vector<SizeType>>(
             shards, std::vector<SizeType>(levels));
-        auto glob_bv = std::vector<Bvs<SizeType>>(shards);
+        auto glob_bv = std::vector<Bvs<SizeType>>(
+            shards);
         auto glob_hist = std::vector<std::vector<std::vector<SizeType>>>(
             shards, std::vector<std::vector<SizeType>>(
                 levels + 1, std::vector<SizeType>((1 << levels), 0)));
@@ -55,7 +56,7 @@ public:
             const size_t omp_rank = omp_get_thread_num();
             const size_t omp_size = omp_get_num_threads();
 
-            DCHECK_EQ(omp_size, shards);
+            assert(omp_size == shards);
 
             const SizeType local_size = (size / omp_size) +
                 ((omp_rank < size % omp_size) ? 1 : 0);
@@ -136,7 +137,7 @@ public:
             }
         }
 
-        DCHECK_EQ(shards, glob_bv.size());
+        assert(shards == glob_bv.size());
 
         // TODO: Add abstraction for allocating the bitvector (no more bare vector of pointers)
 
@@ -231,7 +232,7 @@ public:
         {
             const size_t merge_shard = omp_get_thread_num();
 
-            DCHECK_EQ(omp_get_num_threads(), shards);
+            assert(size_t(omp_get_num_threads()) == shards);
 
             const auto target_right = std::min(offsets[merge_shard], size);
             const auto target_left = std::min((merge_shard > 0 ? offsets[merge_shard - 1] : 0), target_right);
