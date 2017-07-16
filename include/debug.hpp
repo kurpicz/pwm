@@ -146,3 +146,18 @@ std::string decode_wm(const std::vector<uint64_t*> bv,
 
     return std::string(r.begin(), r.end());
 }
+
+void print_bv(const std::vector<uint64_t*> bv, size_t length) {
+    for (size_t i = 0; i < bv.size(); i++) {
+        std::cout << "   bv["<<i<<"]";
+
+        std::cout << "[";
+        for (size_t j = 0; j < length; j++) {
+            std::cout << size_t(bit_at(bv[i], j)) << "";
+        }
+        std::cout << "]";
+
+        std::cout << "\n";
+    }
+    std::cout << "\n";
+}

@@ -89,7 +89,6 @@ void roundtrip_batch(F f) {
 
     f(std::string(test.begin(), test.end()));
 
-    /*
     f("abcdebcdeabc");
     f("a");
     f("");
@@ -112,6 +111,7 @@ void roundtrip_batch(F f) {
         "qcrnzxbneqebwcbqwicbqcbtnqweqxcbwuexcbzqwezcqbwecqbw"
         "dassdasdfzdfgfsdfsdgfducezctzqwebctuiqwiiqcbnzcebzqc");
 
+
     f("ประเทศไทย中华Việt Nam");
 
     f(
@@ -123,14 +123,14 @@ void roundtrip_batch(F f) {
         "Лорэм атоморюм ут хаж, эа граэки емпыдит ёудёкабет "
         "мэль, декам дежпютатионй про ты. Нэ ёужто жэмпэр"
         " жкрибэнтур векж, незл коррюмпит.");
-    */
+
     f(
         "報チ申猛あち涙境ワセ周兵いわ郵入せすをだ漏告されて話巡わッき"
         "や間紙あいきり諤止テヘエラ鳥提フ健2銀稿97傷エ映田ヒマ役請多"
         "暫械ゅにうて。関国ヘフヲオ場三をおか小都供セクヲ前俳著ゅ向深"
         "まも月10言スひす胆集ヌヱナ賀提63劇とやぽ生牟56詰ひめつそ総愛"
         "ス院攻せいまて報当アラノ日府ラのがし。");
-    /*
+
     f(
         "Εαμ ανσιλλαε περισυλα συαφιθαθε εξ, δυο ιδ ρεβυμ σομ"
         "μοδο. Φυγιθ ηομερω ιυς ατ, ει αυδιρε ινθελλεγαμ νες."
@@ -168,7 +168,6 @@ void roundtrip_batch(F f) {
     };
 
     //f(View(all_bytes));
-    */
 }
 
 const std::string TEST_FILE_PATH = "test_files";

@@ -196,7 +196,7 @@ public:
         std::cout << "================================================\n";
 
         // TODO: fix
-        for(size_t level = 0; level < 3; level++) {
+        for(size_t level = 0; level < levels; level++) {
             const auto& br = bit_reverse[level];
             const size_t br_size = 1ull << level;
             size_t j = 0;
@@ -276,7 +276,7 @@ public:
 
         // TODO: print out all data gathered before
 
-        for (size_t level = 0; level < 3; level++) {
+        for (size_t level = 0; level < levels; level++) {
             for(size_t merge_shard = 0; merge_shard < shards; merge_shard++) {
                 std::cout << "merge shard " << merge_shard << ": ";
 
@@ -313,14 +313,20 @@ public:
         //#pragma omp parallel for
         for(size_t merge_shard = 0; merge_shard < shards; merge_shard++) {
             const auto target_right = std::min(offsets[merge_shard], size);
-            const auto target_left = (merge_shard > 0 ? offsets[merge_shard - 1] : 0);
+            const auto target_left = std::min((merge_shard > 0 ? offsets[merge_shard - 1] : 0), target_right);
             const auto target_size = target_right - target_left;
 
             auto cursors = std::vector<std::vector<size_t>>(
                 levels, std::vector<size_t>(shards)
             );
 
-            for (size_t level = 0; level < 3; level++) {
+            for (size_t level = 0; level < levels; level++) {
+                for(size_t read_shard = 0; read_shard < shards; read_shard++) {
+                    cursors[level][read_shard] = local_offsets[level][read_shard][merge_shard];
+                }
+            }
+
+            for (size_t level = 0; level < levels; level++) {
                 const size_t br_size = 1ull << level;
                 const auto& br = bit_reverse[level];
 
@@ -334,15 +340,19 @@ public:
                         << i << "," << shard
                         <<  " so many bits: " << target_size
                         << " (" << target_left << " - " << target_right << ")"
-                        << " with initial offset " <<  word_offsets[level][merge_shard]
-                        << "\n";
+                        << " with initial offset " <<  word_offsets[level][merge_shard];
+                    std::cout << ", cursors = [";
+                    for(size_t read_shard = 0; read_shard < shards; read_shard++) {
+                        std::cout << std::setw(3) << cursors[level][read_shard] << ", ";
+                    }
+                    std::cout << "]\n";
                 }
 
-                /*
-                size_t j = 0;
+
+                size_t j = target_left;
                 size_t init_offset = word_offsets[level][merge_shard];
 
-                while (j < target_size) {
+                while (true) {
                     const auto i = seq_i / shards;
                     const auto shard = seq_i % shards;
 
@@ -360,11 +370,19 @@ public:
                         const auto pos = j++;
                         const bool bit = bit_at(local_bv, src_pos);
 
-                        //_bv[level][pos >> 6] |= (uint64_t(bit) << (63ULL - (pos & 63ULL)));
+                        _bv[level][pos >> 6] |= (uint64_t(bit) << (63ULL - (pos & 63ULL)));
+
+                        if (j >= target_right) {
+                            break;
+                        }
+                    }
+
+                    if (j >= target_right) {
+                        break;
                     }
 
                     seq_i++;
-                }*/
+                }
 
 
 
@@ -399,13 +417,16 @@ public:
                     const auto pos = j++;
                     const bool bit = bit_at(local_bv, src_pos);
 
-                    _bv[level][pos >> 6] |= (uint64_t(bit) << (63ULL - (pos & 63ULL)));
+                    //_bv[level][pos >> 6] |= (uint64_t(bit) << (63ULL - (pos & 63ULL)));
                 }
             }
             for(size_t shard = 0; shard < glob_bv.size(); shard++) {
                 _zeros[level] += glob_zeros[shard][level];
             }
         }
+
+        std::cout << "single merged:\n";
+        print_bv(_bv, size);
     }
 
     auto get_bv_and_zeros() const {
