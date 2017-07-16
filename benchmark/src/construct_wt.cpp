@@ -99,7 +99,7 @@ int main(int argc, char const *argv[]) {
   }
 
   uint32_t byte_width = std::stoi(std::string(argv[2]));
-  if (byte_width > 8 || 
+  if (byte_width > 8 ||
     (byte_width != 1 && ((byte_width == 6) || ((byte_width % 2) == 1)))) {
     std::cout << "[symbol with in bytes] must be 1, 2, 4 or 8." << std::endl;
     std::exit(EXIT_FAILURE);
