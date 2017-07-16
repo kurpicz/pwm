@@ -29,11 +29,6 @@ public:
 
         if(text.size() == 0) { return; }
 
-        // TODO: constexpr in common.hpp
-        auto word_size = [](uint64_t size) {
-            return (size + 63ULL) >> 6;
-        };
-
         // TODO: flatten vectors
 
         const SizeType shards = omp_get_max_threads();
@@ -41,7 +36,7 @@ public:
         // This will be used for merging
         auto glob_zeros = std::vector<std::vector<SizeType>>(
             shards, std::vector<SizeType>(levels));
-        auto glob_bv = std::vector<std::vector<uint64_t*>>(
+        auto glob_bv = std::vector<Bvs<SizeType>>(
             shards
         );
         auto glob_hist = std::vector<std::vector<std::vector<SizeType>>>(
@@ -70,14 +65,8 @@ public:
             auto& hist = glob_hist[omp_rank];
             auto& tmp_bv = glob_bv[omp_rank];
 
-            tmp_bv = std::vector<uint64_t*>(levels);
-
-            tmp_bv[0] = new uint64_t[word_size(local_size) * levels];
-            // memset is ok (all to 0)
-            memset(tmp_bv[0], 0, (word_size(local_size) * sizeof(uint64_t)) * levels);
-            for (SizeType level = 1; level < levels; ++level) {
-                tmp_bv[level] = tmp_bv[level - 1] + word_size(local_size);
-            }
+            // TODO: allocate on the outside
+            tmp_bv = Bvs<SizeType>(size, levels);
 
             // While initializing the histogram, we also compute the fist level
             SizeType cur_pos = 0;
@@ -88,7 +77,7 @@ public:
                     word <<= 1;
                     word |= ((text[cur_pos + i] >> (levels - 1)) & 1ULL);
                 }
-                tmp_bv[0][cur_pos >> 6] = word;
+                tmp_bv.vec()[0][cur_pos >> 6] = word;
             }
             if (local_size & 63ULL) {
                 uint64_t word = 0ULL;
@@ -98,7 +87,7 @@ public:
                     word |= ((text[cur_pos + i] >> (levels - 1)) & 1ULL);
                 }
                 word <<= (64 - (local_size & 63ULL));
-                tmp_bv[0][local_size >> 6] = word;
+                tmp_bv.vec()[0][local_size >> 6] = word;
             }
 
             // The number of 0s at the last level is the number of "even" characters
@@ -134,7 +123,7 @@ public:
                 // Now we insert the bits with respect to their bit prefixes
                 for (SizeType i = offset; i < local_size + offset; ++i) {
                     const SizeType pos = borders[text[i] >> prefix_shift]++;
-                    tmp_bv[level][pos >> 6] |= (((text[i] >> cur_bit_shift) & 1ULL)
+                    tmp_bv.vec()[level][pos >> 6] |= (((text[i] >> cur_bit_shift) & 1ULL)
                         << (63ULL - (pos & 63ULL)));
                 }
             }
@@ -236,13 +225,11 @@ public:
             memset(_bv[level], 0, word_size(size) * sizeof(uint64_t));
         }
 
-        //#pragma omp parallel
-        //{
-        //const size_t omp_rank = omp_get_thread_num();
-        //const size_t omp_size = omp_get_num_threads();
+        #pragma omp parallel
+        {
+            const size_t merge_shard = omp_get_thread_num();
 
-        #pragma omp parallel for
-        for(size_t merge_shard = 0; merge_shard < shards; merge_shard++) {
+            DCHECK_EQ(omp_get_num_threads(), shards);
 
             const auto target_right = std::min(offsets[merge_shard], size);
             const auto target_left = std::min((merge_shard > 0 ? offsets[merge_shard - 1] : 0), target_right);
@@ -270,7 +257,7 @@ public:
                     const auto shard = seq_i % shards;
 
                     const auto& h = glob_hist[shard][level];
-                    const auto& local_bv = glob_bv[shard][level];
+                    const auto& local_bv = glob_bv[shard].vec()[level];
 
                     auto block_size = h[br[i]] - init_offset;
                     init_offset = 0; // TODO: remove this by doing a initial pass
