@@ -12,6 +12,7 @@
 
 #include <vector>
 #include <cassert>
+#include <type_traits>
 
 template <typename SizeType>
 static inline std::vector<SizeType> BitReverse(const SizeType levels) {
@@ -126,6 +127,18 @@ public:
     }
 
 };
+
+// A little template helper for dropping a type early
+template <typename T>
+void drop_me(T const&) = delete;
+template <typename T>
+void drop_me(T&) = delete;
+template <typename T>
+void drop_me(T const&&) = delete;
+template <typename T>
+void drop_me(T&& t) {
+    std::remove_reference_t<T>(std::move(t));
+}
 
 #endif // COMMON
 

@@ -42,6 +42,8 @@ public:
         auto glob_hist = std::vector<std::vector<std::vector<SizeType>>>(
             shards, std::vector<std::vector<SizeType>>(
                 levels + 1, std::vector<SizeType>((1 << levels), 0)));
+        const auto rho = rho_bit_reverse(levels);
+
         auto glob_borders = std::vector<std::vector<SizeType>>(
             shards, std::vector<SizeType>((1 << levels), 0));
 
@@ -51,8 +53,6 @@ public:
 
             glob_bv[shard] = Bvs<SizeType>(local_size, levels);
         }
-
-        const auto rho = rho_bit_reverse(levels);
 
         #pragma omp parallel
         {
@@ -139,6 +139,8 @@ public:
                 hist[0][0] = hist[1][0] + hist[1][1];
             }
         }
+
+        drop_me(std::move(glob_borders));
 
         // TODO: Add abstraction for allocating the bitvector (no more bare vector of pointers)
 

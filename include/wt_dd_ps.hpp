@@ -156,6 +156,9 @@ public:
             }
         }
 
+        drop_me(std::move(glob_borders));
+        drop_me(std::move(global_sorted_text));
+
         // TODO: Add abstraction for allocating the bitvector (no more bare vector of pointers)
 
         const auto rho = rho_identity(levels);
