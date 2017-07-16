@@ -310,7 +310,7 @@ public:
         //const size_t omp_rank = omp_get_thread_num();
         //const size_t omp_size = omp_get_num_threads();
 
-        //#pragma omp parallel for
+        #pragma omp parallel for
         for(size_t merge_shard = 0; merge_shard < shards; merge_shard++) {
             const auto target_right = std::min(offsets[merge_shard], size);
             const auto target_left = std::min((merge_shard > 0 ? offsets[merge_shard - 1] : 0), target_right);
