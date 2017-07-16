@@ -54,6 +54,8 @@ public:
 
         std::vector<AlphabetType> global_sorted_text(size);
 
+        const auto rho = rho_bit_reverse(levels);
+
         #pragma omp parallel
         {
             const SizeType omp_rank = omp_get_thread_num();
@@ -70,7 +72,6 @@ public:
             AlphabetType* sorted_text = global_sorted_text.data() + offset;
 
             SizeType cur_max_char = (1 << levels);
-            std::vector<SizeType> bit_reverse = BitReverse<SizeType>(levels - 1);
 
             auto& zeros = glob_zeros[omp_rank];
             auto& borders = glob_borders[omp_rank];
@@ -117,9 +118,8 @@ public:
                 // bit prefixes and the bit-reversal permutation
                 borders[0] = 0;
                 for (SizeType i = 1; i < cur_max_char; ++i) {
-                    borders[bit_reverse[i]] = borders[bit_reverse[i - 1]] +
-                        hist[level][bit_reverse[i - 1]];
-                    bit_reverse[i - 1] >>= 1;
+                    borders[rho(level, i)] = borders[rho(level, i - 1)] +
+                        hist[level][rho(level, i - 1)];
                 }
 
                 // The number of 0s is the position of the first 1 in the previous level
@@ -161,8 +161,6 @@ public:
         }
 
         // TODO: Add abstraction for allocating the bitvector (no more bare vector of pointers)
-
-        const auto rho = rho_bit_reverse(levels);
 
         auto bv = merge_bvs<SizeType>(size, levels, shards, glob_hist, glob_bv, rho);
         _bv = std::move(bv.vec());

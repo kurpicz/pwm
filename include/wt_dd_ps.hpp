@@ -162,6 +162,7 @@ public:
 
         auto bv = merge_bvs<SizeType>(size, levels, shards, glob_hist, glob_bv, rho);
         _bv = std::move(bv.vec());
+
     }
 
     auto get_bv() const {
