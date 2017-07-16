@@ -43,6 +43,29 @@ static inline void BitReverse(const SizeType levels, SizeType* out) {
   }
 }
 
+template <typename SizeType>
+inline auto rho_identity(SizeType levels) {
+    return [](auto level, auto i) -> SizeType {
+        return i;
+    };
+}
+
+template <typename SizeType>
+inline auto rho_bit_reverse(SizeType levels) {
+    auto bit_reverse = std::vector<std::vector<SizeType>>(levels);
+    bit_reverse[levels - 1] = BitReverse<SizeType>(levels - 1);
+    for(size_t level = levels - 1; level > 0; level--) {
+        bit_reverse[level - 1] = std::vector<SizeType>(bit_reverse[level].size() / 2);
+        for(size_t i = 0; i < bit_reverse[level - 1].size(); i++) {
+            bit_reverse[level - 1][i] = bit_reverse[level][i] >> 1;
+        }
+    }
+
+    return [bit_reverse = std::move(bit_reverse)](auto level, auto i) -> SizeType {
+        return bit_reverse[level][i];
+    };
+}
+
 constexpr size_t word_size(uint64_t size) {
     return (size + 63ULL) >> 6;
 }
@@ -101,6 +124,7 @@ public:
 
         return *this;
     }
+
 };
 
 #endif // COMMON

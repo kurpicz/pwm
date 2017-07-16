@@ -18,6 +18,7 @@
 
 #include "common.hpp"
 #include "debug.hpp"
+#include "merge.hpp"
 
 template <typename AlphabetType, typename SizeType>
 class wm_dd_pc {
@@ -25,7 +26,7 @@ class wm_dd_pc {
 public:
     wm_dd_pc(const std::vector<AlphabetType>& text,
              const SizeType size,
-             const SizeType levels) : _bv(levels), _zeros(levels, 0) {
+             const SizeType levels) : _zeros(levels, 0) {
 
         if(text.size() == 0) { return; }
 
@@ -137,157 +138,12 @@ public:
             }
         }
 
-        assert(shards == glob_bv.size());
-
         // TODO: Add abstraction for allocating the bitvector (no more bare vector of pointers)
 
-        auto bit_reverse = std::vector<std::vector<SizeType>>(levels);
-        bit_reverse[levels - 1] = BitReverse<SizeType>(levels - 1);
-        for(size_t level = levels - 1; level > 0; level--) {
-            bit_reverse[level - 1] = std::vector<SizeType>(bit_reverse[level].size() / 2);
-            for(size_t i = 0; i < bit_reverse[level - 1].size(); i++) {
-                bit_reverse[level - 1][i] = bit_reverse[level][i] >> 1;
-            }
-        }
+        const auto rho = rho_bit_reverse(levels);
 
-        auto offsets = std::vector<SizeType>(shards);
-        auto local_offsets = std::vector<std::vector<std::vector<SizeType>>>(
-            levels, std::vector<std::vector<SizeType>>(
-                shards, std::vector<SizeType>(shards + 1)
-            )
-        );
-
-        auto word_offsets = std::vector<std::vector<SizeType>>(
-            levels, std::vector<SizeType>(shards + 1)
-        );
-        auto block_seq_offsets = std::vector<std::vector<SizeType>>(
-            levels, std::vector<SizeType>(shards + 1)
-        );
-
-        for (size_t rank = 1; rank < shards; rank++) {
-            const size_t omp_rank = rank;
-            const size_t omp_size = shards;
-
-            const SizeType offset = (omp_rank * (word_size(size) / omp_size)) +
-                std::min<SizeType>(omp_rank, word_size(size) % omp_size);
-
-            offsets[rank - 1] = offset * 64ull;
-        }
-        offsets[shards - 1] = word_size(size) * 64ull;
-
-        // TODO: fix
-        for(size_t level = 0; level < levels; level++) {
-            const auto& br = bit_reverse[level];
-            const size_t br_size = 1ull << level;
-            size_t j = 0;
-            size_t oi = 0;
-
-            for(size_t i = 0; i < br_size * shards; i++) {
-                const auto bit_i = i / shards;
-                const auto shard = i % shards;
-
-                const auto h = glob_hist[shard][level];
-                const auto block_size = h[br[bit_i]];
-
-                j += block_size;
-                local_offsets[level][shard][oi + 1] += block_size;
-
-                if (j <= offsets[oi]) {
-                    // ...
-                } else {
-                    size_t right = j - offsets[oi];
-                    size_t left = block_size - right;
-
-                    j -= block_size;
-                    local_offsets[level][shard][oi + 1] -= block_size;
-
-                    j += left;
-                    local_offsets[level][shard][oi + 1] += left;
-
-                    // TODO: rename word_offset to something like
-                    // "offset in block"
-                    word_offsets[level][oi + 1] = left;
-                    block_seq_offsets[level][oi + 1] = i;
-
-                    if (oi + 2 < shards + 1) {
-                        for(size_t s = 0; s < shards; s++) {
-                            local_offsets[level][s][oi + 2] = local_offsets[level][s][oi + 1];
-                        }
-                    }
-                    oi++;
-
-                    j += right;
-                    local_offsets[level][shard][oi + 1] += right;
-                }
-            }
-        }
-
-        // TODO: factor out
-        for(size_t level = 0; level < levels; level++) {
-            _bv[level] = new uint64_t[(size + 63ULL) >> 6];
-            memset(_bv[level], 0, word_size(size) * sizeof(uint64_t));
-        }
-
-        #pragma omp parallel
-        {
-            const size_t merge_shard = omp_get_thread_num();
-
-            assert(size_t(omp_get_num_threads()) == shards);
-
-            const auto target_right = std::min(offsets[merge_shard], size);
-            const auto target_left = std::min((merge_shard > 0 ? offsets[merge_shard - 1] : 0), target_right);
-
-            auto cursors = std::vector<std::vector<size_t>>(
-                levels, std::vector<size_t>(shards)
-            );
-
-            for (size_t level = 0; level < levels; level++) {
-                for(size_t read_shard = 0; read_shard < shards; read_shard++) {
-                    cursors[level][read_shard] = local_offsets[level][read_shard][merge_shard];
-                }
-            }
-
-            for (size_t level = 0; level < levels; level++) {
-                const auto& br = bit_reverse[level];
-
-                auto seq_i = block_seq_offsets[level][merge_shard];
-
-                size_t j = target_left;
-                size_t init_offset = word_offsets[level][merge_shard];
-
-                while (true) {
-                    const auto i = seq_i / shards;
-                    const auto shard = seq_i % shards;
-
-                    const auto& h = glob_hist[shard][level];
-                    const auto& local_bv = glob_bv[shard].vec()[level];
-
-                    auto block_size = h[br[i]] - init_offset;
-                    init_offset = 0; // TODO: remove this by doing a initial pass
-                    auto& local_cursor = cursors[level][shard];
-
-                    // TODO: copy over whole block
-                    while(block_size != 0) {
-                        if (j >= target_right) {
-                            break;
-                        }
-
-                        block_size--;
-                        const auto src_pos = local_cursor++;
-                        const auto pos = j++;
-                        const bool bit = bit_at(local_bv, src_pos);
-
-                        _bv[level][pos >> 6] |= (uint64_t(bit) << (63ULL - (pos & 63ULL)));
-                    }
-
-                    if (j >= target_right) {
-                        break;
-                    }
-
-                    seq_i++;
-                }
-            }
-        }
+        auto bv = merge_bvs<SizeType>(size, levels, shards, glob_hist, glob_bv, rho);
+        _bv = std::move(bv.vec());
 
         #pragma omp parallel for
         for(size_t level = 0; level < levels; level++) {

@@ -18,6 +18,7 @@
 
 #include "common.hpp"
 #include "debug.hpp"
+#include "merge.hpp"
 
 template <typename AlphabetType, typename SizeType>
 class wt_dd_pc {
@@ -25,7 +26,7 @@ class wt_dd_pc {
 public:
     wt_dd_pc(const std::vector<AlphabetType>& text,
              const SizeType size,
-             const SizeType levels) : _bv(levels) {
+             const SizeType levels) {
 
         if(text.size() == 0) { return; }
 
@@ -198,70 +199,12 @@ public:
             }
         }
 
-        // TODO: factor out
-        for(size_t level = 0; level < levels; level++) {
-            _bv[level] = new uint64_t[(size + 63ULL) >> 6];
-            memset(_bv[level], 0, word_size(size) * sizeof(uint64_t));
-        }
+        // TODO: Add abstraction for allocating the bitvector (no more bare vector of pointers)
 
-        #pragma omp parallel
-        {
-            const size_t merge_shard = omp_get_thread_num();
+        const auto rho = rho_identity(levels);
 
-            assert(size_t(omp_get_num_threads()) == shards);
-
-            const auto target_right = std::min(offsets[merge_shard], size);
-            const auto target_left = std::min((merge_shard > 0 ? offsets[merge_shard - 1] : 0), target_right);
-
-            auto cursors = std::vector<std::vector<size_t>>(
-                levels, std::vector<size_t>(shards)
-            );
-
-            for (size_t level = 0; level < levels; level++) {
-                for(size_t read_shard = 0; read_shard < shards; read_shard++) {
-                    cursors[level][read_shard] = local_offsets[level][read_shard][merge_shard];
-                }
-            }
-
-            for (size_t level = 0; level < levels; level++) {
-                auto seq_i = block_seq_offsets[level][merge_shard];
-
-                size_t j = target_left;
-                size_t init_offset = word_offsets[level][merge_shard];
-
-                while (true) {
-                    const auto i = seq_i / shards;
-                    const auto shard = seq_i % shards;
-
-                    const auto& h = glob_hist[shard][level];
-                    const auto& local_bv = glob_bv[shard].vec()[level];
-
-                    auto block_size = h[i] - init_offset;
-                    init_offset = 0; // TODO: remove this by doing a initial pass
-                    auto& local_cursor = cursors[level][shard];
-
-                    // TODO: copy over whole block
-                    while(block_size != 0) {
-                        if (j >= target_right) {
-                            break;
-                        }
-
-                        block_size--;
-                        const auto src_pos = local_cursor++;
-                        const auto pos = j++;
-                        const bool bit = bit_at(local_bv, src_pos);
-
-                        _bv[level][pos >> 6] |= (uint64_t(bit) << (63ULL - (pos & 63ULL)));
-                    }
-
-                    if (j >= target_right) {
-                        break;
-                    }
-
-                    seq_i++;
-                }
-            }
-        }
+        auto bv = merge_bvs<SizeType>(size, levels, shards, glob_hist, glob_bv, rho);
+        _bv = std::move(bv.vec());
 
     }
 
