@@ -29,28 +29,33 @@ public:
 
         if(text.size() == 0) { return; }
 
-        // TODO: flatten vectors
-
         const SizeType shards = omp_get_max_threads();
 
-        // This will be used for merging
+        // Do all bulk allocations in the same thread:
+        // TODO: flatten vectors where possible, to reduce indirection
+
         auto glob_zeros = std::vector<std::vector<SizeType>>(
             shards, std::vector<SizeType>(levels));
-        auto glob_bv = std::vector<Bvs<SizeType>>(
-            shards
-        );
+        auto glob_bv = std::vector<Bvs<SizeType>>(shards);
         auto glob_hist = std::vector<std::vector<std::vector<SizeType>>>(
             shards, std::vector<std::vector<SizeType>>(
                 levels + 1, std::vector<SizeType>((1 << levels), 0)));
-
-        // This just exists for central allocation
         auto glob_borders = std::vector<std::vector<SizeType>>(
             shards, std::vector<SizeType>((1 << levels), 0));
+
+        for (size_t shard = 0; shard < shards; shard++) {
+            const SizeType local_size = (size / shards) +
+                ((shard < size % shards) ? 1 : 0);
+
+            glob_bv[shard] = Bvs<SizeType>(local_size, levels);
+        }
 
         #pragma omp parallel
         {
             const size_t omp_rank = omp_get_thread_num();
             const size_t omp_size = omp_get_num_threads();
+
+            DCHECK_EQ(omp_size, shards);
 
             const SizeType local_size = (size / omp_size) +
                 ((omp_rank < size % omp_size) ? 1 : 0);
@@ -63,10 +68,7 @@ public:
             auto& zeros = glob_zeros[omp_rank];
             auto& borders = glob_borders[omp_rank];
             auto& hist = glob_hist[omp_rank];
-            auto& tmp_bv = glob_bv[omp_rank];
-
-            // TODO: allocate on the outside
-            tmp_bv = Bvs<SizeType>(size, levels);
+            auto& bv = glob_bv[omp_rank];
 
             // While initializing the histogram, we also compute the fist level
             SizeType cur_pos = 0;
@@ -77,7 +79,7 @@ public:
                     word <<= 1;
                     word |= ((text[cur_pos + i] >> (levels - 1)) & 1ULL);
                 }
-                tmp_bv.vec()[0][cur_pos >> 6] = word;
+                bv.vec()[0][cur_pos >> 6] = word;
             }
             if (local_size & 63ULL) {
                 uint64_t word = 0ULL;
@@ -87,7 +89,7 @@ public:
                     word |= ((text[cur_pos + i] >> (levels - 1)) & 1ULL);
                 }
                 word <<= (64 - (local_size & 63ULL));
-                tmp_bv.vec()[0][local_size >> 6] = word;
+                bv.vec()[0][local_size >> 6] = word;
             }
 
             // The number of 0s at the last level is the number of "even" characters
@@ -123,7 +125,7 @@ public:
                 // Now we insert the bits with respect to their bit prefixes
                 for (SizeType i = offset; i < local_size + offset; ++i) {
                     const SizeType pos = borders[text[i] >> prefix_shift]++;
-                    tmp_bv.vec()[level][pos >> 6] |= (((text[i] >> cur_bit_shift) & 1ULL)
+                    bv.vec()[level][pos >> 6] |= (((text[i] >> cur_bit_shift) & 1ULL)
                         << (63ULL - (pos & 63ULL)));
                 }
             }
