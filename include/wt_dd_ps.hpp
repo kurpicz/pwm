@@ -1,5 +1,5 @@
 /*******************************************************************************
- * include/wm_dd_pc.hpp
+ * include/wt_dd_ps.hpp
  *
  * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
  *
@@ -7,8 +7,8 @@
  ******************************************************************************/
 
 #pragma once
-#ifndef WM_DOMAIN_DECOMPOSITION_PREFIX_COUNTING
-#define WM_DOMAIN_DECOMPOSITION_PREFIX_COUNTING
+#ifndef WT_DOMAIN_DECOMPOSITION_PREFIX_SORTING
+#define WT_DOMAIN_DECOMPOSITION_PREFIX_SORTING
 
 #include <algorithm>
 #include <cstring>
@@ -19,13 +19,12 @@
 #include "merge.hpp"
 
 template <typename AlphabetType, typename SizeType>
-class wm_dd_pc {
+class wt_dd_ps {
 
 public:
-    wm_dd_pc(const std::vector<AlphabetType>& global_text,
+    wt_dd_ps(const std::vector<AlphabetType>& global_text,
              const SizeType size,
-             const SizeType levels):
-        _zeros(levels, 0)
+             const SizeType levels)
     {
 
         if(global_text.size() == 0) { return; }
@@ -52,6 +51,8 @@ public:
             glob_bv[shard] = Bvs<SizeType>(local_size, levels);
         }
 
+        std::vector<AlphabetType> global_sorted_text(size);
+
         #pragma omp parallel
         {
             const SizeType omp_rank = omp_get_thread_num();
@@ -60,14 +61,14 @@ public:
             assert(omp_size == shards);
 
             const SizeType local_size = (size / omp_size) +
-                ((omp_rank < size % omp_size) ? 1 : 0);
+                ( (omp_rank < size % omp_size) ? 1 : 0);
             const SizeType offset = (omp_rank * (size / omp_size)) +
                 std::min<SizeType>(omp_rank, size % omp_size);
 
             const AlphabetType* text = global_text.data() + offset;
+            AlphabetType* sorted_text = global_sorted_text.data() + offset;
 
             SizeType cur_max_char = (1 << levels);
-            std::vector<SizeType> bit_reverse = BitReverse<SizeType>(levels - 1);
 
             auto& zeros = glob_zeros[omp_rank];
             auto& borders = glob_borders[omp_rank];
@@ -101,11 +102,7 @@ public:
                 zeros[levels - 1] += hist[levels][i];
             }
 
-            // Now we compute the WM bottom-up, i.e., the last level first
             for (SizeType level = levels - 1; level > 0; --level) {
-                const SizeType prefix_shift = (levels - level);
-                const SizeType cur_bit_shift = prefix_shift - 1;
-
                 // Update the maximum value of a feasible a bit prefix and update the
                 // histogram of the bit prefixes
                 cur_max_char >>= 1;
@@ -118,19 +115,38 @@ public:
                 // bit prefixes and the bit-reversal permutation
                 borders[0] = 0;
                 for (SizeType i = 1; i < cur_max_char; ++i) {
-                    borders[bit_reverse[i]] = borders[bit_reverse[i - 1]] +
-                        hist[level][bit_reverse[i - 1]];
-                    bit_reverse[i - 1] >>= 1;
+                    borders[i] = borders[i - 1] + hist[level][i - 1];
                 }
 
                 // The number of 0s is the position of the first 1 in the previous level
                 zeros[level - 1] = borders[1];
 
-                // Now we insert the bits with respect to their bit prefixes
+                // Now we sort the text utilizing counting sort and the starting positions
+                // that we have computed before
                 for (SizeType i = 0; i < local_size; ++i) {
-                    const SizeType pos = borders[text[i] >> prefix_shift]++;
-                    bv.vec()[level][pos >> 6] |= (((text[i] >> cur_bit_shift) & 1ULL)
-                        << (63ULL - (pos & 63ULL)));
+                    const AlphabetType cur_char = text[i];
+                    sorted_text[borders[cur_char >> (levels - level)]++] = cur_char;
+                }
+
+                // Since we have sorted the text, we can simply scan it from left to right
+                // and for the character at position $i$ we set the $i$-th bit in the
+                // bit vector accordingly
+                for (cur_pos = 0; cur_pos + 63 < local_size; cur_pos += 64) {
+                    uint64_t word = 0ULL;
+                    for (SizeType i = 0; i < 64; ++i) {
+                        word <<= 1;
+                        word |= ((sorted_text[cur_pos + i] >> ((levels - 1) - level)) & 1ULL);
+                    }
+                    bv.vec()[level][cur_pos >> 6] = word;
+                }
+                if (local_size & 63ULL) {
+                    uint64_t word = 0ULL;
+                    for (SizeType i = 0; i < local_size - cur_pos; ++i) {
+                        word <<= 1;
+                        word |= ((sorted_text[cur_pos + i] >> ((levels - 1) - level)) & 1ULL);
+                    }
+                    word <<= (64 - (local_size & 63ULL));
+                    bv.vec()[level][local_size >> 6] = word;
                 }
             }
 
@@ -142,29 +158,20 @@ public:
 
         // TODO: Add abstraction for allocating the bitvector (no more bare vector of pointers)
 
-        const auto rho = rho_bit_reverse(levels);
+        const auto rho = rho_identity(levels);
 
         auto bv = merge_bvs<SizeType>(size, levels, shards, glob_hist, glob_bv, rho);
         _bv = std::move(bv.vec());
-
-        #pragma omp parallel for
-        for(size_t level = 0; level < levels; level++) {
-            for(size_t shard = 0; shard < glob_bv.size(); shard++) {
-                _zeros[level] += glob_zeros[shard][level];
-            }
-        }
-
     }
 
-    auto get_bv_and_zeros() const {
-        return std::make_pair(_bv, _zeros);
+    auto get_bv() const {
+        return _bv;
     }
 
 private:
     std::vector<uint64_t*> _bv;
-    std::vector<SizeType> _zeros;
-}; // class wm_dd_pc
+}; // class wt_dd_ps
 
-#endif // WM_DOMAIN_DECOMPOSITION_PREFIX_COUNTING
+#endif // WT_DOMAIN_DECOMPOSITION_PREFIX_SORTING
 
 /******************************************************************************/

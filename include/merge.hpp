@@ -1,6 +1,8 @@
 #pragma once
 
 #include "common.hpp"
+#include "debug.hpp"
+#include <cassert>
 
 template<typename SizeType, typename Rho>
 inline auto merge_bvs(SizeType size,
@@ -8,7 +10,7 @@ inline auto merge_bvs(SizeType size,
                       SizeType shards,
                       const std::vector<std::vector<std::vector<SizeType>>>& glob_hist,
                       const std::vector<Bvs<SizeType>>& glob_bv,
-                      Rho rho) -> Bvs<SizeType>
+                      const Rho& rho) -> Bvs<SizeType>
 {
     assert(shards == glob_bv.size());
     assert(shards == glob_hist.size());
