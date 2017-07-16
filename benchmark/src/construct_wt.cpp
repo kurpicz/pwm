@@ -16,6 +16,7 @@
 
 #include "wt_naive.hpp"
 #include "wt_pc.hpp"
+#include "wt_dd_pc.hpp"
 #include "wt_ppc.hpp"
 #include "wt_ps.hpp"
 #include "wt_pps.hpp"
