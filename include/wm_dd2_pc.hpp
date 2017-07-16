@@ -172,10 +172,6 @@ public:
             levels, std::vector<SizeType>(shards + 1)
         );
 
-        std::cout << "================================================\n";
-        std::cout << "global size: " << size << "\n";
-        std::cout << "word size:  " << word_size(size) << "\n";
-        std::cout << "================================================\n";
         for (size_t rank = 1; rank < shards; rank++) {
             const size_t omp_rank = rank;
             const size_t omp_size = shards;
@@ -187,43 +183,12 @@ public:
         }
         offsets[shards - 1] = word_size(size) * 64ull;
 
-        size_t last = 0;
-        for (size_t rank = 0; rank < shards; rank++) {
-            std::cout << "offset: " << offsets[rank] << ", " << (offsets[rank] - last) << "\n";
-            last = offsets[rank];
-        }
-
-        std::cout << "================================================\n";
-
         // TODO: fix
         for(size_t level = 0; level < levels; level++) {
             const auto& br = bit_reverse[level];
             const size_t br_size = 1ull << level;
             size_t j = 0;
             size_t oi = 0;
-
-            auto body = [&](auto j, auto block_size, char sym, size_t x, size_t y) {
-                std::cout
-                    << sym <<
-                    " j: " << std::setw(3)<< (j - block_size)
-                    << " += " << std::setw(3)<< block_size
-                    << " == " << std::setw(3)<< j
-                    << "\n";
-                for (size_t a = 0; a < shards; a++) {
-                    std::cout <<
-                        "  shard: " << a <<
-                        ", offset: ";
-                    for (size_t b = 0; b < shards; b++) {
-                        char mark = ' ';
-                        if (a == y && b == x) mark = '+';
-                        std::cout << mark << std::setw(3) << local_offsets[level][a][b] << ", ";
-                    }
-                    char mark = ' ';
-                    if (a == y && shards == x) mark = '+';
-                    std::cout << "| " << mark << std::setw(3) << local_offsets[level][a][shards];
-                    std::cout << "\n";
-                }
-            };
 
             for(size_t i = 0; i < br_size * shards; i++) {
                 const auto bit_i = i / shards;
@@ -236,7 +201,7 @@ public:
                 local_offsets[level][shard][oi + 1] += block_size;
 
                 if (j <= offsets[oi]) {
-                    body(j, block_size, 'm', oi + 1, shard);
+                    // ...
                 } else {
                     size_t right = j - offsets[oi];
                     size_t left = block_size - right;
@@ -246,14 +211,12 @@ public:
 
                     j += left;
                     local_offsets[level][shard][oi + 1] += left;
-                    body(j, left, 'l', oi + 1, shard);
 
                     // TODO: rename word_offset to something like
                     // "offset in block"
                     word_offsets[level][oi + 1] = left;
                     block_seq_offsets[level][oi + 1] = i;
 
-                    std::cout << "------------------------------------------------\n";
                     if (oi + 2 < shards + 1) {
                         for(size_t s = 0; s < shards; s++) {
                             local_offsets[level][s][oi + 2] = local_offsets[level][s][oi + 1];
@@ -261,43 +224,11 @@ public:
                     }
                     oi++;
 
-                    // TODO: dcheck about block_seq_offsets, word_offsets
-
                     j += right;
                     local_offsets[level][shard][oi + 1] += right;
-                    body(j, right, 'r', oi + 1, shard);
                 }
-
-                //body(j, 0, 'f');
             }
-            //std::cout << "j: " << j << "\n";
-            std::cout << "================================================\n";
         }
-
-        // TODO: print out all data gathered before
-
-        for (size_t level = 0; level < levels; level++) {
-            for(size_t merge_shard = 0; merge_shard < shards; merge_shard++) {
-                std::cout << "merge shard " << merge_shard << ": ";
-
-                std::cout << "offsets = [";
-                for(size_t read_shard = 0; read_shard < shards; read_shard++) {
-                    std::cout << std::setw(3) << local_offsets[level][read_shard][merge_shard] << ", ";
-                }
-                std::cout << "]";
-
-                std::cout << ", block_seq_offset: " << block_seq_offsets[level][merge_shard];
-                std::cout << "(" << block_seq_offsets[level][merge_shard] / shards;
-                std::cout << ", " << block_seq_offsets[level][merge_shard] % shards;
-                std::cout << "), block_offset: " << word_offsets[level][merge_shard];
-
-                std::cout << "\n";
-            }
-
-            std::cout << "\n";
-        }
-
-        std::cout << "================================================\n";
 
         // TODO: factor out
         for(size_t level = 0; level < levels; level++) {
@@ -312,9 +243,9 @@ public:
 
         #pragma omp parallel for
         for(size_t merge_shard = 0; merge_shard < shards; merge_shard++) {
+
             const auto target_right = std::min(offsets[merge_shard], size);
             const auto target_left = std::min((merge_shard > 0 ? offsets[merge_shard - 1] : 0), target_right);
-            const auto target_size = target_right - target_left;
 
             auto cursors = std::vector<std::vector<size_t>>(
                 levels, std::vector<size_t>(shards)
@@ -327,27 +258,9 @@ public:
             }
 
             for (size_t level = 0; level < levels; level++) {
-                const size_t br_size = 1ull << level;
                 const auto& br = bit_reverse[level];
 
                 auto seq_i = block_seq_offsets[level][merge_shard];
-
-                {
-                    const auto i = seq_i / shards;
-                    const auto shard = seq_i % shards;
-
-                    std::cout << "read starting @ block "
-                        << i << "," << shard
-                        <<  " so many bits: " << target_size
-                        << " (" << target_left << " - " << target_right << ")"
-                        << " with initial offset " <<  word_offsets[level][merge_shard];
-                    std::cout << ", cursors = [";
-                    for(size_t read_shard = 0; read_shard < shards; read_shard++) {
-                        std::cout << std::setw(3) << cursors[level][read_shard] << ", ";
-                    }
-                    std::cout << "]\n";
-                }
-
 
                 size_t j = target_left;
                 size_t init_offset = word_offsets[level][merge_shard];
@@ -365,16 +278,16 @@ public:
 
                     // TODO: copy over whole block
                     while(block_size != 0) {
+                        if (j >= target_right) {
+                            break;
+                        }
+
                         block_size--;
                         const auto src_pos = local_cursor++;
                         const auto pos = j++;
                         const bool bit = bit_at(local_bv, src_pos);
 
                         _bv[level][pos >> 6] |= (uint64_t(bit) << (63ULL - (pos & 63ULL)));
-
-                        if (j >= target_right) {
-                            break;
-                        }
                     }
 
                     if (j >= target_right) {
@@ -383,50 +296,16 @@ public:
 
                     seq_i++;
                 }
-
-
-
             }
-            std::cout << "\n";
         }
 
-        auto cursors = std::vector<std::vector<size_t>>(
-            levels, std::vector<size_t>(shards)
-        );
-
-        //#pragma omp parallel for
+        #pragma omp parallel for
         for(size_t level = 0; level < levels; level++) {
-            const auto& br = bit_reverse[level];
-            size_t j = 0;
-            const size_t br_size = 1ull << level;
-
-            for(size_t seq_i = 0; seq_i < br_size * shards; seq_i++) {
-                const auto i = seq_i / shards;
-                const auto shard = seq_i % shards;
-
-                const auto& h = glob_hist[shard][level];
-                const auto& local_bv = glob_bv[shard][level];
-
-                auto block_size = h[br[i]];
-                auto& local_cursor = cursors[level][shard];
-
-                // TODO: copy over whole block
-                while(block_size != 0) {
-                    block_size--;
-                    const auto src_pos = local_cursor++;
-                    const auto pos = j++;
-                    const bool bit = bit_at(local_bv, src_pos);
-
-                    //_bv[level][pos >> 6] |= (uint64_t(bit) << (63ULL - (pos & 63ULL)));
-                }
-            }
             for(size_t shard = 0; shard < glob_bv.size(); shard++) {
                 _zeros[level] += glob_zeros[shard][level];
             }
         }
 
-        std::cout << "single merged:\n";
-        print_bv(_bv, size);
     }
 
     auto get_bv_and_zeros() const {
