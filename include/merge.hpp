@@ -4,6 +4,72 @@
 #include "debug.hpp"
 #include <cassert>
 
+template<typename SizeType>
+void copy_bits(uint64_t* dst,
+               uint64_t const* src,
+               SizeType& j,
+               SizeType& local_cursor,
+               SizeType const block_size) {
+
+    auto const end_j = j + block_size;
+
+
+    auto copy_bits = [&](auto end) {
+        while(j != end) {
+            const bool bit = bit_at(src, local_cursor++);
+            const auto pos = j++;
+
+            dst[pos >> 6] |= (uint64_t(bit) << (63ULL - (pos & 63ULL)));
+        }
+    };
+
+    auto word_align = (64ull - (j % 64ull));
+
+    if (block_size < word_align) {
+        copy_bits(end_j);
+    } else {
+
+        // TODO: Use one word shift somehow
+        copy_bits(j + word_align);
+
+        // TODO: Reduce this to just "words"
+        auto const word_end = (end_j >> 6 << 6);
+
+        std::stringstream ss;
+
+        ss << "j: "
+            << (j - word_align)
+            << " - "
+            << j
+            << " - "
+            << word_end
+            << " - "
+            << end_j
+            << "\n";
+        std::cout << ss.str();
+
+        auto const words = (word_end - j) >> 6;
+
+        uint64_t* dst = &dst[j >> 6];
+        uint64_t* const dst_end = dst + words;
+
+        uint64_t const* src = &src[local_cursor >> 6];
+
+        auto const shift = local_cursor % 64;
+
+        while (dst != dst_end) {
+            *dst++;
+            *src << shift | *src++ >> (63ull - shift);
+        }
+
+        //j = word_end;
+        //local_cursor += words * 64;
+
+        copy_bits(word_end);
+        copy_bits(end_j);
+    }
+}
+
 template<typename SizeType, typename Rho>
 inline auto merge_bvs(SizeType size,
                       SizeType levels,
@@ -114,39 +180,26 @@ inline auto merge_bvs(SizeType size,
             while (j < target_right) {
                 const auto i = seq_i / shards;
                 const auto shard = seq_i % shards;
+                seq_i++;
 
                 const auto& h = glob_hist[shard][level];
                 const auto& local_bv = glob_bv[shard].vec()[level];
 
-                auto block_size = h[rho(level, i)] - init_offset;
+                auto const block_size = std::min(
+                    target_right - j,
+                    h[rho(level, i)] - init_offset
+                );
                 init_offset = 0; // TODO: remove this by doing a initial pass
-
-                block_size = std::min(target_right - j, block_size);
-
-                auto const end_j = j + block_size;
 
                 auto& local_cursor = cursors[level][shard];
 
-
-                /*if ((local_cursor % 64) <= (j % 64)) {
-                    while (block_size >= 64) {
-
-                    }
-                } else {
-                   while (block_size >= 64) {
-
-                    }
-                }*/
-
-                // TODO: copy over whole block
-                while(j != end_j) {
-                    const bool bit = bit_at(local_bv, local_cursor++);
-                    const auto pos = j++;
-
-                    _bv[level][pos >> 6] |= (uint64_t(bit) << (63ULL - (pos & 63ULL)));
-                }
-
-                seq_i++;
+                copy_bits(
+                    _bv[level],
+                    local_bv,
+                    j,
+                    local_cursor,
+                    block_size
+                );
             }
         }
     }

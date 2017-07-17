@@ -17,6 +17,7 @@
 
 #include "common.hpp"
 #include "merge.hpp"
+#include "pc.hpp"
 
 template <typename AlphabetType, typename SizeType>
 class wm_dd_pc {
