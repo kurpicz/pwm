@@ -13,6 +13,7 @@
 #include <vector>
 #include <cassert>
 #include <type_traits>
+#include <climits>
 
 template <typename SizeType>
 static inline std::vector<SizeType> BitReverse(const SizeType levels) {
@@ -138,6 +139,10 @@ void drop_me(T const&&) = delete;
 template <typename T>
 void drop_me(T&& t) {
     std::remove_reference_t<T>(std::move(t));
+}
+
+constexpr size_t log2(size_t n) {
+    return (n < 2) ? 1 : 1 + log2(n / 2);
 }
 
 #endif // COMMON

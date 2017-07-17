@@ -3,37 +3,65 @@
 #include "common.hpp"
 #include "debug.hpp"
 #include <cassert>
+#include <climits>
+#include <omp.h>
 
-template<typename SizeType>
-void copy_bits(uint64_t* dst,
-               uint64_t const* src,
+template<typename SizeType, typename WordType>
+void copy_bits(WordType* dst,
+               WordType const* src,
                SizeType& j,
                SizeType& local_cursor,
-               SizeType const block_size) {
+               SizeType const block_size,
+               SizeType const words_size) {
+
+    constexpr WordType BITS = (sizeof(WordType) * CHAR_BIT);
+    constexpr WordType MOD_MASK = BITS - 1;
+    constexpr WordType SHIFT = log2(MOD_MASK);
+
+    if (block_size == 0) {
+        return;
+    }
+
+    //std::cout << BITS << ", " << MOD_MASK << ", " << SHIFT << "\n";
 
     auto const end_j = j + block_size;
 
-
     auto copy_bits = [&](auto end) {
         while(j != end) {
-            const bool bit = bit_at(src, local_cursor++);
+            const bool bit = bit_at<WordType>(src, local_cursor++);
             const auto pos = j++;
 
-            dst[pos >> 6] |= (uint64_t(bit) << (63ULL - (pos & 63ULL)));
+            dst[pos >> SHIFT] |= (WordType(bit) << (MOD_MASK - (pos & MOD_MASK)));
         }
     };
 
-    auto word_align = (64ull - (j % 64ull));
+    auto word_align = (BITS - (j & MOD_MASK));
 
     if (block_size < word_align) {
+        std::cout << "i " << bit_string<WordType>(dst, words_size) << "\n";
         copy_bits(end_j);
+        std::cout << "e " << bit_string<WordType>(dst, words_size) << "\n";
+        std::stringstream ss;
+
+        ss << "j: "
+            << (j - block_size)
+            << " - "
+            << end_j
+            << "\n";
+
+        std::cout << ss.str();
     } else {
+        std::cout << "i " << bit_string<WordType>(dst, words_size) << "\n";
+
+        // TODO: remove entire words_size paramter passing chain starting from merge()
 
         // TODO: Use one word shift somehow
         copy_bits(j + word_align);
 
+        std::cout << "b " << bit_string<WordType>(dst, words_size) << "\n";
+
         // TODO: Reduce this to just "words"
-        auto const word_end = (end_j >> 6 << 6);
+        auto const word_end = (end_j >> SHIFT << SHIFT);
 
         std::stringstream ss;
 
@@ -46,27 +74,31 @@ void copy_bits(uint64_t* dst,
             << " - "
             << end_j
             << "\n";
-        std::cout << ss.str();
 
-        auto const words = (word_end - j) >> 6;
+        auto const words = (word_end - j) >> SHIFT;
 
-        uint64_t* dst = &dst[j >> 6];
-        uint64_t* const dst_end = dst + words;
+        WordType* ds = &dst[j >> SHIFT];
+        WordType* const dst_end = ds + words;
 
-        uint64_t const* src = &src[local_cursor >> 6];
+        WordType const* sr = &src[local_cursor >> SHIFT];
 
-        auto const shift = local_cursor % 64;
+        auto const shift = local_cursor & MOD_MASK;
 
-        while (dst != dst_end) {
-            *dst++;
-            *src << shift | *src++ >> (63ull - shift);
+        while (ds != dst_end) {
+            *ds++ = (*sr << shift) | (*(sr + 1) >> (BITS - shift));
+            sr++;
+            std::cout << "w " << bit_string<WordType>(dst, words_size) << "\n";
         }
 
-        //j = word_end;
-        //local_cursor += words * 64;
+        j = word_end;
+        local_cursor += words * BITS;
 
-        copy_bits(word_end);
+        //copy_bits(word_end);
         copy_bits(end_j);
+
+        std::cout << "e " << bit_string<WordType>(dst, words_size) << "\n";
+
+        std::cout << ss.str();
     }
 }
 
@@ -154,11 +186,14 @@ inline auto merge_bvs(SizeType size,
     auto r = Bvs<SizeType>(size, levels);
     auto& _bv = r.vec();
 
-    #pragma omp parallel
+    //#pragma omp parallel
+    for(size_t omp_rank = 0; omp_rank < shards; omp_rank++)
     {
-        const size_t merge_shard = omp_get_thread_num();
+        //assert(size_t(omp_get_num_threads()) == shards);
+        //const size_t omp_rank = omp_get_thread_num();
+        const size_t omp_size = shards;
 
-        assert(size_t(omp_get_num_threads()) == shards);
+        const size_t merge_shard = omp_rank;
 
         const auto target_right = std::min(offsets[merge_shard], size);
         const auto target_left = std::min((merge_shard > 0 ? offsets[merge_shard - 1] : 0), target_right);
@@ -198,7 +233,8 @@ inline auto merge_bvs(SizeType size,
                     local_bv,
                     j,
                     local_cursor,
-                    block_size
+                    block_size,
+                    word_size(target_right - target_left)
                 );
             }
         }

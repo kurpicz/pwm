@@ -1,11 +1,25 @@
 #pragma once
 
+template<typename WordType = uint64_t, typename bv_t>
+inline auto bit_at(const bv_t& bv, size_t i) -> bool {
+    constexpr WordType BITS = (sizeof(WordType) * CHAR_BIT);
+    constexpr WordType MOD_MASK = BITS - 1;
 
-template<typename bv_t>
-inline auto bit_at(const bv_t& bv, size_t i) -> uint8_t {
-    size_t offset = i / 64ull;
-    size_t word_offset = i % 64ull;
-    return (bv[offset] >> (63ull - word_offset)) & 1ull;
+    size_t offset = i / BITS;
+    size_t word_offset = i & MOD_MASK;
+    return (bv[offset] >> (MOD_MASK - word_offset)) & 1ull;
+}
+
+template<typename WordType, typename bv_t>
+std::string bit_string(bv_t const& bv, size_t const size) {
+    constexpr WordType BITS = (sizeof(WordType) * CHAR_BIT);
+
+    auto s = std::string(size * BITS, '0');
+    for (size_t bit = 0; bit < size * BITS; bit++) {
+        s[bit] += bit_at<WordType>(bv, bit);
+    }
+
+    return s;
 }
 
 std::vector<std::vector<size_t>> level_sizes(
