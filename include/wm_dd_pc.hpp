@@ -111,10 +111,11 @@ public:
                 // Update the maximum value of a feasible a bit prefix and update the
                 // histogram of the bit prefixes
                 cur_max_char >>= 1;
+
+                hist[level].resize(1ull << level);
                 for (SizeType i = 0; i < cur_max_char; ++i) {
                     hist[level][i] = hist[level + 1][i << 1] + hist[level + 1][(i << 1) + 1];
                 }
-                hist[level].resize(cur_max_char);
 
                 // Compute the starting positions of characters with respect to their
                 // bit prefixes and the bit-reversal permutation
@@ -135,7 +136,7 @@ public:
                 }
             }
 
-            hist[0].resize(1);
+            hist[0].resize(1ull << 0);
             if (hist.size() > 1) {
                 hist[0][0] = hist[1][0] + hist[1][1];
             }

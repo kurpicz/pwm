@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "common.hpp"
+#include "pc.hpp"
 
 template <typename AlphabetType, typename SizeType>
 class wm_pc {
@@ -27,19 +28,21 @@ public:
 
         SizeType cur_max_char = (1 << levels);
         std::vector<SizeType> bit_reverse = BitReverse<SizeType>(levels - 1);
-        std::vector<SizeType> s_pos(cur_max_char, 0);
-        std::vector<SizeType> hist(cur_max_char, 0);
         std::vector<SizeType> borders(cur_max_char, 0);
 
-        _bv[0] = new uint64_t[(size + 63ULL) >> 6];
+        auto ctx = SingleThreaded<SizeType> {
+            levels, cur_max_char
+        };
+
+        _bv[0] = new uint64_t[word_size(size)];
         // memset is ok (all to 0)
-        memset(_bv[0], 0, ((size + 63ULL) >> 6) * sizeof(uint64_t));
+        memset(_bv[0], 0, (word_size(size)) * sizeof(uint64_t));
         // While initializing the histogram, we also compute the first level
         SizeType cur_pos = 0;
         for (; cur_pos + 64 <= size; cur_pos += 64) {
             uint64_t word = 0ULL;
             for (SizeType i = 0; i < 64; ++i) {
-                ++hist[text[cur_pos + i]];
+                ++ctx.hist(levels, text[cur_pos + i]);
                 word <<= 1;
                 word |= ((text[cur_pos + i] >> (levels - 1)) & 1ULL);
             }
@@ -48,7 +51,7 @@ public:
         if (size & 63ULL) {
             uint64_t word = 0ULL;
             for (SizeType i = 0; i < size - cur_pos; ++i) {
-                ++hist[text[cur_pos + i]];
+                ++ctx.hist(levels, text[cur_pos + i]);
                 word <<= 1;
                 word |= ((text[cur_pos + i] >> (levels - 1)) & 1ULL);
             }
@@ -58,7 +61,7 @@ public:
 
         // The number of 0s at the last level is the number of "even" characters
         for (SizeType i = 0; i < cur_max_char; i += 2) {
-            _zeros[levels - 1] += hist[i];
+            _zeros[levels - 1] += ctx.hist(levels, i);
         }
 
         // Now we compute the WM bottom-up, i.e., the last level first
@@ -66,15 +69,16 @@ public:
             const SizeType prefix_shift = (levels - level);
             const SizeType cur_bit_shift = prefix_shift - 1;
 
-            _bv[level] = new uint64_t[(size + 63ULL) >> 6];
+            _bv[level] = new uint64_t[word_size(size)];
             // memset is ok (all to 0)
-            memset(_bv[level], 0, ((size + 63ULL) >> 6) * sizeof(uint64_t));
+            memset(_bv[level], 0, (word_size(size)) * sizeof(uint64_t));
 
             // Update the maximum value of a feasible a bit prefix and update the
             // histogram of the bit prefixes
             cur_max_char >>= 1;
             for (SizeType i = 0; i < cur_max_char; ++i) {
-                hist[i] = hist[i << 1] + hist[(i << 1) + 1];
+                ctx.hist(level, i)
+                    = ctx.hist(level + 1, i << 1) + ctx.hist(level + 1, (i << 1) + 1);
             }
 
             // Compute the starting positions of characters with respect to their
@@ -82,7 +86,7 @@ public:
             borders[0] = 0;
             for (SizeType i = 1; i < cur_max_char; ++i) {
                 borders[bit_reverse[i]] = borders[bit_reverse[i - 1]] +
-                hist[bit_reverse[i - 1]];
+                ctx.hist(level, bit_reverse[i - 1]);
                 bit_reverse[i - 1] >>= 1;
             }
             // The number of 0s is the position of the first 1 in the previous level
