@@ -111,7 +111,7 @@ inline auto merge_bvs(SizeType size,
             size_t j = target_left;
             size_t init_offset = word_offsets[level][merge_shard];
 
-            while (true) {
+            while (j < target_right) {
                 const auto i = seq_i / shards;
                 const auto shard = seq_i % shards;
 
@@ -120,24 +120,30 @@ inline auto merge_bvs(SizeType size,
 
                 auto block_size = h[rho(level, i)] - init_offset;
                 init_offset = 0; // TODO: remove this by doing a initial pass
+
+                block_size = std::min(target_right - j, block_size);
+
+                auto const end_j = j + block_size;
+
                 auto& local_cursor = cursors[level][shard];
 
-                // TODO: copy over whole block
-                while(block_size != 0) {
-                    if (j >= target_right) {
-                        break;
-                    }
 
-                    block_size--;
-                    const auto src_pos = local_cursor++;
+                /*if ((local_cursor % 64) <= (j % 64)) {
+                    while (block_size >= 64) {
+
+                    }
+                } else {
+                   while (block_size >= 64) {
+
+                    }
+                }*/
+
+                // TODO: copy over whole block
+                while(j != end_j) {
+                    const bool bit = bit_at(local_bv, local_cursor++);
                     const auto pos = j++;
-                    const bool bit = bit_at(local_bv, src_pos);
 
                     _bv[level][pos >> 6] |= (uint64_t(bit) << (63ULL - (pos & 63ULL)));
-                }
-
-                if (j >= target_right) {
-                    break;
                 }
 
                 seq_i++;
