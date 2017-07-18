@@ -34,8 +34,8 @@ script:
   - make bit_copy
   - make build_check
   - cd test
-  - ./wm_dd_pc_test_testrunner || RESULT=$?
   - ulimit -c unlimited -S
+  - ./wm_dd_pc_test_testrunner || RESULT=$?
   - ls -l
   - if [[ ${RESULT} != 139 ]]; then echo "expected segfault and 139 exit but instead exited with ${RESULT}" && exit 1; fi;
   - for i in $(find ./ -maxdepth 1 -name 'core*' -print); do gdb $(pwd)/wm_dd_pc_test_testrunner core* -ex "thread apply all bt" -ex "set pagination 0" -batch; done;
