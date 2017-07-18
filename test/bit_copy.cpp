@@ -114,3 +114,7 @@ TEST(BitCopy, test2) {
     /////////////////////////////////////////
 
 }
+
+TEST(BitCopy, test3) {
+    std::cout << "size_t size: " << sizeof(size_t) * CHAR_BIT << "\n";
+}

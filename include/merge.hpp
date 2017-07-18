@@ -26,7 +26,7 @@ void copy_bits(WordType* const dst,
 
     // NB: Check if source and target block are aligned the same way
     // This is needed because the non-aligned code path would
-    // trigger undefined behavior in the aligned case
+    // trigger undefined behavior in the aligned case.
     if ((dst_off & MOD_MASK) == (src_off & MOD_MASK)) {
         // Copy unaligned leading bits
         {
@@ -43,9 +43,10 @@ void copy_bits(WordType* const dst,
         {
             auto const words = (dst_off_end - dst_off) >> SHIFT;
 
-            auto ds = dst + (dst_off >> SHIFT);
-            auto sr = src + (src_off >> SHIFT);
-            auto const ds_end = ds + words;
+            WordType*       ds = dst + (dst_off >> SHIFT);
+            WordType const* sr = src + (src_off >> SHIFT);
+
+            WordType const* const ds_end = ds + words;
 
             while (ds != ds_end) {
                 *ds++ = *sr++;
@@ -56,14 +57,18 @@ void copy_bits(WordType* const dst,
         }
 
         // Copy unaligned trailing bits
-        {
-            auto& word = dst[dst_off >> SHIFT];
+        WordType const last_bits = dst_off_end - dst_off;
+        if (last_bits != 0) {
+            WordType src_word = src[src_off >> SHIFT];
 
-            while (dst_off != dst_off_end) {
-                bool const bit = bit_at<WordType>(src, src_off++);
+            // Mask out last bits:
+            src_word >>= (BITS - last_bits);
+            src_word <<= (BITS - last_bits);
 
-                word |= (WordType(bit) << (MOD_MASK - (dst_off++ & MOD_MASK)));
-            }
+            dst[dst_off >> SHIFT] |= src_word;
+
+            dst_off += last_bits;
+            src_off += last_bits;
         }
     } else {
         // Copy unaligned leading bits
@@ -89,7 +94,7 @@ void copy_bits(WordType* const dst,
             auto const ds_end = ds + words;
 
             while (ds != ds_end) {
-                *ds++ = (*sr) << src_shift_a | (*(sr + 1)) >> src_shift_b;
+                *ds++ = (*sr << src_shift_a) | (*(sr + 1) >> src_shift_b);
                 sr++;
             }
 
