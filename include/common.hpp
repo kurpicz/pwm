@@ -79,7 +79,7 @@ class Bvs {
 public:
     inline Bvs(): m_size(0) {}
     inline Bvs(SizeType size, SizeType levels):
-        m_data(levels)
+        m_data(levels), m_size(size)
     {
         assert(levels != 0);
 
@@ -115,14 +115,14 @@ public:
 
     inline Bvs(Bvs&& other):
         m_data(std::move(other.m_data)),
-        m_size(std::move(other.m_size)) {}
+        m_size(other.m_size) {}
 
     inline Bvs& operator=(Bvs&& other) {
         if (m_data.size() > 0) {
             delete[] m_data[0];
         }
         m_data = std::move(other.m_data);
-        m_size = std::move(other.m_size);
+        m_size = other.m_size;
 
         return *this;
     }

@@ -20,15 +20,16 @@ void copy_bits(WordType* const dst,
 
     SizeType dst_off = dst_off_ref;
     SizeType src_off = src_off_ref;
-
     auto const dst_off_end = dst_off + block_size;
 
     // Copy individual bits for unaligned leading bits
-    while ((dst_off & MOD_MASK) != 0 && dst_off != dst_off_end) {
-        bool const bit = bit_at<WordType>(src, src_off++);
-        auto const pos = dst_off++;
+    {
+        while ((dst_off & MOD_MASK) != 0 && dst_off != dst_off_end) {
+            bool const bit = bit_at<WordType>(src, src_off++);
+            auto const pos = dst_off++;
 
-        dst[pos >> SHIFT] |= (WordType(bit) << (MOD_MASK - (pos & MOD_MASK)));
+            dst[pos >> SHIFT] |= (WordType(bit) << (MOD_MASK - (pos & MOD_MASK)));
+        }
     }
 
     // Copy the the bulk in-between word-wise
@@ -60,11 +61,13 @@ void copy_bits(WordType* const dst,
     }
 
     // Copy individual bits for unaligned trailing bits
-    while (dst_off != dst_off_end) {
-        bool const bit = bit_at<WordType>(src, src_off++);
-        auto const pos = dst_off++;
+    {
+        while (dst_off != dst_off_end) {
+            bool const bit = bit_at<WordType>(src, src_off++);
+            auto const pos = dst_off++;
 
-        dst[pos >> SHIFT] |= (WordType(bit) << (MOD_MASK - (pos & MOD_MASK)));
+            dst[pos >> SHIFT] |= (WordType(bit) << (MOD_MASK - (pos & MOD_MASK)));
+        }
     }
 
     dst_off_ref += block_size;
