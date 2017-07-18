@@ -276,6 +276,8 @@ inline auto merge_bvs(SizeType size,
 
                 auto& local_cursor = cursors[level][shard];
 
+                std::cout << "j, local_cursor: " << j << ", " << local_cursor << "\n";
+
                 copy_bits(
                     _bv[level],
                     local_bv,
