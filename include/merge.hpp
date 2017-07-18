@@ -69,14 +69,21 @@ void copy_bits(WordType* const dst,
             }
         }
     } else {
+
+        std::cout << "[start]\n";
+
         // Copy unaligned leading bits
         {
             auto& word = dst[dst_off >> SHIFT];
+
+            std::cout << "src_off:  " << src_off << "\n";
 
             while ((dst_off & MOD_MASK) != 0 && dst_off != dst_off_end) {
                 bool const bit = bit_at<WordType>(src, src_off++);
 
                 word |= (WordType(bit) << (MOD_MASK - (dst_off++ & MOD_MASK)));
+
+                std::cout << "src_off:  " << src_off << "\n";
             }
         }
 
@@ -90,8 +97,6 @@ void copy_bits(WordType* const dst,
             WordType*       ds = dst + (dst_off >> SHIFT);
             WordType const* sr = src + (src_off >> SHIFT);
             WordType const* const ds_end = ds + words;
-
-            std::cout << "[start]\n";
 
             auto chk = [
                 full_words_size, src_shift_a, src_shift_b, dst_off, src_off
