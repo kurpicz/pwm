@@ -29,6 +29,6 @@ script:
   - mkdir build
   - cd build
   - cmake ..
-  - make
   - make bit_copy
   - make check
+  - make
