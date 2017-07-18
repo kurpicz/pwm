@@ -87,27 +87,31 @@ void copy_bits(WordType* const dst,
             WordType const src_shift_a = src_off & MOD_MASK;
             WordType const src_shift_b = BITS - src_shift_a;
 
-            auto ds = dst + (dst_off >> SHIFT);
-            auto sr = src + (src_off >> SHIFT);
-            auto const ds_end = ds + words;
+            WordType*       ds = dst + (dst_off >> SHIFT);
+            WordType const* sr = src + (src_off >> SHIFT);
+            WordType const* const ds_end = ds + words;
 
             auto chk = [&]() {
                 std::cout
                     << "dst ptr: " << (ds - dst)
                     << ", src ptr: " << (sr - src)
                     << ", len: " << full_words_size
-                    << ", shifts: " << src_shift_a << ", " << src_shift_b
+                    << ", shifts: " << size_t(src_shift_a) << ", " << size_t(src_shift_b)
                     << "\n";
                 assert((ds - dst) < full_words_size);
                 assert((sr - src) < full_words_size);
-                assert((sr - src + 1) < full_words_size);
+                assert(((sr - src) + 1) < full_words_size);
             };
 
             while (ds != ds_end) {
                 chk();
-                *ds++ = (*sr << src_shift_a) | (*(sr + 1) >> src_shift_b);
+
+                WordType const vala = *sr;
                 sr++;
-                chk();
+                WordType const valb = *sr;
+
+                *ds++ = (vala << src_shift_a) | (valb >> src_shift_b);
+
             }
 
             dst_off += words * BITS;
