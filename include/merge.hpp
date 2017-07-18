@@ -200,8 +200,20 @@ inline auto merge_bvs(SizeType size,
             const auto h = glob_hist[shard][level];
             const auto block_size = h[rho(level, bit_i)];
 
+            std::stringstream dump;
+            auto chk = [&](const auto& v) -> std::ostream& {
+                if (v > size) {
+                    return std::cout;
+                } else {
+                    return dump;
+                }
+            };
+
             j += block_size;
+
+            chk(local_offsets[level][shard][oi + 1]) << "a" << "\n";
             local_offsets[level][shard][oi + 1] += block_size;
+            chk(local_offsets[level][shard][oi + 1]) << "b" << "\n";
 
             if (j <= offsets[oi]) {
                 // ...
@@ -211,9 +223,11 @@ inline auto merge_bvs(SizeType size,
 
                 j -= block_size;
                 local_offsets[level][shard][oi + 1] -= block_size;
+                chk(local_offsets[level][shard][oi + 1]) << "c" << "\n";
 
                 j += left;
                 local_offsets[level][shard][oi + 1] += left;
+                chk(local_offsets[level][shard][oi + 1]) << "d" << "\n";
 
                 // TODO: rename word_offset to something like
                 // "offset in block"
@@ -223,12 +237,15 @@ inline auto merge_bvs(SizeType size,
                 if (oi + 2 < shards + 1) {
                     for(size_t s = 0; s < shards; s++) {
                         local_offsets[level][s][oi + 2] = local_offsets[level][s][oi + 1];
+                        chk(local_offsets[level][shard][oi + 2]) << "e" << "\n";
                     }
                 }
                 oi++;
 
                 j += right;
                 local_offsets[level][shard][oi + 1] += right;
+
+                chk(local_offsets[level][shard][oi + 1]) << "f" << "\n";
             }
         }
     }
