@@ -171,9 +171,9 @@ inline auto merge_bvs(SizeType size,
         levels, std::vector<SizeType>(shards + 1));
     auto block_seq_offsets = std::vector<std::vector<SizeType>>(
         levels, std::vector<SizeType>(shards + 1));
-    auto glob_cursors = std::vector<std::vector<std::vector<size_t>>>(
-        shards, std::vector<std::vector<size_t>>(
-            levels, std::vector<size_t>(shards)
+    auto glob_cursors = std::vector<std::vector<std::vector<SizeType>>>(
+        shards, std::vector<std::vector<SizeType>>(
+            levels, std::vector<SizeType>(shards)
         ));
 
     for (size_t rank = 1; rank < shards; rank++) {
@@ -257,7 +257,7 @@ inline auto merge_bvs(SizeType size,
         for (size_t level = 0; level < levels; level++) {
             auto seq_i = block_seq_offsets[level][merge_shard];
 
-            size_t j = target_left;
+            SizeType j = target_left;
             size_t init_offset = word_offsets[level][merge_shard];
 
             while (j < target_right) {
@@ -268,7 +268,7 @@ inline auto merge_bvs(SizeType size,
                 const auto& h = glob_hist[shard][level];
                 const auto& local_bv = glob_bv[shard].vec()[level];
 
-                auto const block_size = std::min(
+                auto const block_size = std::min<SizeType>(
                     target_right - j,
                     h[rho(level, i)] - init_offset
                 );
@@ -278,7 +278,7 @@ inline auto merge_bvs(SizeType size,
 
                 std::cout << "j, local_cursor: " << j << ", " << local_cursor << "\n";
 
-                copy_bits(
+                copy_bits<SizeType, uint64_t>(
                     _bv[level],
                     local_bv,
                     j,
