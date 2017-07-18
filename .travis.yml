@@ -19,6 +19,8 @@ matrix:
             - g++-6
             - cmake
             - cmake-data
+            - gdb
+            - apport
             #- python3
             #- python
           sources:
@@ -28,6 +30,12 @@ script:
   - git submodule update --init
   - mkdir build
   - cd build
-  - cmake ..
-  - make
-  - make check
+  - cmake -DCMAKE_BUILD_TYPE=Debug ..
+  - make bit_copy
+  - make build_check
+  - cd test
+  - ulimit -c unlimited -S
+  - gdb wm_dd_pc_test_testrunner -ex "run" -ex "thread apply all bt" -ex "set pagination 0" -batch
+  - ls -l
+
+#  - make

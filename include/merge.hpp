@@ -12,59 +12,118 @@ void copy_bits(WordType* const dst,
                SizeType& dst_off_ref,
                SizeType& src_off_ref,
                SizeType const block_size,
-               SizeType const words_size)
+               SizeType const words_size,
+               SizeType const full_words_size
+              )
 {
+    if (block_size == 0) return;
+
     WordType constexpr BITS = (sizeof(WordType) * CHAR_BIT);
     WordType constexpr MOD_MASK = BITS - 1;
     WordType constexpr SHIFT = log2(MOD_MASK);
 
     SizeType dst_off = dst_off_ref;
     SizeType src_off = src_off_ref;
-
     auto const dst_off_end = dst_off + block_size;
 
-    // Copy individual bits for unaligned leading bits
-    while ((dst_off & MOD_MASK) != 0 && dst_off != dst_off_end) {
-        bool const bit = bit_at<WordType>(src, src_off++);
-        auto const pos = dst_off++;
+    // NB: Check if source and target block are aligned the same way
+    // This is needed because the non-aligned code path would
+    // trigger undefined behavior in the aligned case.
+    if ((dst_off & MOD_MASK) == (src_off & MOD_MASK)) {
+        // Copy unaligned leading bits
+        {
+            auto& word = dst[dst_off >> SHIFT];
 
-        dst[pos >> SHIFT] |= (WordType(bit) << (MOD_MASK - (pos & MOD_MASK)));
-    }
+            while ((dst_off & MOD_MASK) != 0 && dst_off != dst_off_end) {
+                bool const bit = bit_at<WordType>(src, src_off++);
 
-    // Copy the the bulk in-between word-wise
-    {
-        auto const words = (dst_off_end - dst_off) >> SHIFT;
-
-        WordType const src_shift_a = src_off & MOD_MASK;
-        WordType const src_shift_b = BITS - src_shift_a;
-
-        auto ds = dst + (dst_off >> SHIFT);
-        auto sr = src + (src_off >> SHIFT);
-        auto const ds_end = ds + words;
-
-        // NB: shift by maximum bit width is undefined behavior,
-        // so we have to catch the src_shift_b == BITS case
-        if (src_shift_a == 0) {
-            while (ds != ds_end) {
-                *ds++ = *sr++;
-            }
-        } else {
-            while (ds != ds_end) {
-                *ds++ = (*sr) << src_shift_a | (*(sr + 1)) >> src_shift_b;
-                sr++;
+                word |= (WordType(bit) << (MOD_MASK - (dst_off++ & MOD_MASK)));
             }
         }
 
-        dst_off += words * BITS;
-        src_off += words * BITS;
-    }
+        // Copy the the bulk in-between word-wise
+        {
+            auto const words = (dst_off_end - dst_off) >> SHIFT;
 
-    // Copy individual bits for unaligned trailing bits
-    while (dst_off != dst_off_end) {
-        bool const bit = bit_at<WordType>(src, src_off++);
-        auto const pos = dst_off++;
+            WordType*       ds = dst + (dst_off >> SHIFT);
+            WordType const* sr = src + (src_off >> SHIFT);
 
-        dst[pos >> SHIFT] |= (WordType(bit) << (MOD_MASK - (pos & MOD_MASK)));
+            WordType const* const ds_end = ds + words;
+
+            while (ds != ds_end) {
+                *ds++ = *sr++;
+            }
+
+            dst_off += words * BITS;
+            src_off += words * BITS;
+        }
+
+        // Copy unaligned trailing bits
+        {
+            auto& word = dst[dst_off >> SHIFT];
+
+            while (dst_off != dst_off_end) {
+                bool const bit = bit_at<WordType>(src, src_off++);
+
+                word |= (WordType(bit) << (MOD_MASK - (dst_off++ & MOD_MASK)));
+            }
+        }
+    } else {
+        // Copy unaligned leading bits
+        {
+            auto& word = dst[dst_off >> SHIFT];
+
+            while ((dst_off & MOD_MASK) != 0 && dst_off != dst_off_end) {
+                bool const bit = bit_at<WordType>(src, src_off++);
+
+                word |= (WordType(bit) << (MOD_MASK - (dst_off++ & MOD_MASK)));
+            }
+        }
+
+        // Copy the the bulk in-between word-wise
+        {
+            auto const words = (dst_off_end - dst_off) >> SHIFT;
+
+            WordType const src_shift_a = src_off & MOD_MASK;
+            WordType const src_shift_b = BITS - src_shift_a;
+
+            WordType*       ds = dst + (dst_off >> SHIFT);
+            WordType const* sr = src + (src_off >> SHIFT);
+            WordType const* const ds_end = ds + words;
+
+            auto chk = [
+                full_words_size, src_shift_a, src_shift_b, dst_off, src_off
+            ](auto ds, auto dst, auto sr, auto src) {
+                assert((ds - dst) < full_words_size);
+                assert((sr - src) < full_words_size);
+                assert(((sr - src) + 1) < full_words_size);
+            };
+
+            while (ds != ds_end) {
+                chk(ds, dst, sr, src);
+
+                WordType const vala = *sr;
+                sr++;
+                WordType const valb = *sr;
+
+                *ds++ = (vala << src_shift_a) | (valb >> src_shift_b);
+
+            }
+
+            dst_off += words * BITS;
+            src_off += words * BITS;
+        }
+
+        // Copy unaligned trailing bits
+        {
+            auto& word = dst[dst_off >> SHIFT];
+
+            while (dst_off != dst_off_end) {
+                bool const bit = bit_at<WordType>(src, src_off++);
+
+                word |= (WordType(bit) << (MOD_MASK - (dst_off++ & MOD_MASK)));
+            }
+        }
     }
 
     dst_off_ref += block_size;
@@ -86,13 +145,13 @@ inline auto merge_bvs(SizeType size,
     auto local_offsets = std::vector<std::vector<std::vector<SizeType>>>(
         levels, std::vector<std::vector<SizeType>>(
             shards, std::vector<SizeType>(shards + 1)));
-    auto word_offsets = std::vector<std::vector<SizeType>>(
+    auto offsets_in_word = std::vector<std::vector<SizeType>>(
         levels, std::vector<SizeType>(shards + 1));
     auto block_seq_offsets = std::vector<std::vector<SizeType>>(
         levels, std::vector<SizeType>(shards + 1));
-    auto glob_cursors = std::vector<std::vector<std::vector<size_t>>>(
-        shards, std::vector<std::vector<size_t>>(
-            levels, std::vector<size_t>(shards)
+    auto glob_cursors = std::vector<std::vector<std::vector<SizeType>>>(
+        shards, std::vector<std::vector<SizeType>>(
+            levels, std::vector<SizeType>(shards)
         ));
 
     for (size_t rank = 1; rank < shards; rank++) {
@@ -117,37 +176,56 @@ inline auto merge_bvs(SizeType size,
             const auto shard = i % shards;
 
             const auto h = glob_hist[shard][level];
-            const auto block_size = h[rho(level, bit_i)];
+
+            auto block_size = h[rho(level, bit_i)];
+
+            if (block_size == 0) {
+                continue;
+            }
 
             j += block_size;
             local_offsets[level][shard][oi + 1] += block_size;
 
-            if (j <= offsets[oi]) {
-                // ...
-            } else {
-                size_t right = j - offsets[oi];
-                size_t left = block_size - right;
-
+            // If we passed the current right border, split up the block
+            if (j > offsets[oi]) {
+                // Take back the last step
                 j -= block_size;
                 local_offsets[level][shard][oi + 1] -= block_size;
 
-                j += left;
-                local_offsets[level][shard][oi + 1] += left;
+                SizeType offset_in_word = 0;
+                do {
+                    // Split up the block like this:
+                    //  [ left_block_size |    right_block_size     ]
+                    //  ^                 ^                         ^
+                    // (j)           (offsets[oi])           (j + block_size)
 
-                // TODO: rename word_offset to something like
-                // "offset in block"
-                word_offsets[level][oi + 1] = left;
-                block_seq_offsets[level][oi + 1] = i;
+                    auto const left_block_size = offsets[oi] - j;
 
-                if (oi + 2 < shards + 1) {
-                    for(size_t s = 0; s < shards; s++) {
-                        local_offsets[level][s][oi + 2] = local_offsets[level][s][oi + 1];
+                    j += left_block_size;
+                    local_offsets[level][shard][oi + 1] += left_block_size;
+
+                    // TODO: rename offset_in_word to something like
+                    // "offset in block"
+                    offset_in_word += left_block_size;
+                    offsets_in_word[level][oi + 1] = offset_in_word;
+                    block_seq_offsets[level][oi + 1] = i;
+
+                    if (oi + 1 < shards) {
+                        for(size_t s = 0; s < shards; s++) {
+                            local_offsets[level][s][oi + 2] = local_offsets[level][s][oi + 1];
+                        }
                     }
-                }
-                oi++;
+                    oi++;
 
-                j += right;
-                local_offsets[level][shard][oi + 1] += right;
+                    // Iterate on remaining block
+                    block_size -= left_block_size;
+                } while ((j + block_size) > offsets[oi]);
+
+                // Process remainder of block
+                j += block_size;
+                local_offsets[level][shard][oi + 1] += block_size;
+
+                assert(j <= offsets[oi]);
             }
         }
     }
@@ -176,8 +254,8 @@ inline auto merge_bvs(SizeType size,
         for (size_t level = 0; level < levels; level++) {
             auto seq_i = block_seq_offsets[level][merge_shard];
 
-            size_t j = target_left;
-            size_t init_offset = word_offsets[level][merge_shard];
+            SizeType j = target_left;
+            size_t init_offset = offsets_in_word[level][merge_shard];
 
             while (j < target_right) {
                 const auto i = seq_i / shards;
@@ -187,7 +265,7 @@ inline auto merge_bvs(SizeType size,
                 const auto& h = glob_hist[shard][level];
                 const auto& local_bv = glob_bv[shard].vec()[level];
 
-                auto const block_size = std::min(
+                auto const block_size = std::min<SizeType>(
                     target_right - j,
                     h[rho(level, i)] - init_offset
                 );
@@ -195,13 +273,16 @@ inline auto merge_bvs(SizeType size,
 
                 auto& local_cursor = cursors[level][shard];
 
-                copy_bits(
+                assert(local_cursor < size);
+
+                copy_bits<SizeType, uint64_t>(
                     _bv[level],
                     local_bv,
                     j,
                     local_cursor,
                     block_size,
-                    word_size(target_right - target_left)
+                    word_size(target_right - target_left),
+                    word_size(size)
                 );
             }
         }

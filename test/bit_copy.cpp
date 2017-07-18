@@ -41,7 +41,7 @@ TEST(BitCopy, test0) {
         0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,
     };
     auto test = [&](size_t dst_off, size_t src_off, size_t block_size) {
-        copy_bits<size_t, uint8_t>(dst.data(), src.data(), dst_off, src_off, block_size, src.size());
+        copy_bits<size_t, uint8_t>(dst.data(), src.data(), dst_off, src_off, block_size, src.size(), src.size());
     };
 
     /////////////////////////////////////////
@@ -74,7 +74,7 @@ TEST(BitCopy, test1) {
         0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,
     };
     auto test = [&](size_t dst_off, size_t src_off, size_t block_size) {
-        copy_bits<size_t, uint8_t>(dst.data(), src.data(), dst_off, src_off, block_size, src.size());
+        copy_bits<size_t, uint8_t>(dst.data(), src.data(), dst_off, src_off, block_size, src.size(), src.size());
     };
 
     /////////////////////////////////////////
@@ -84,11 +84,6 @@ TEST(BitCopy, test1) {
         0b00011111,0b11111111,0b11111111,0b11110000,0b00000000,0b00000000,0b00000000,
     });
 
-    /*test(32, 32, 10);
-    bit_compare(dst, std::vector<uint8_t> {
-        0b00011111,0b11111111,0b11111111,0b11110000,0b11111111,0b11000000,0b00000000,
-    });*/
-
     test(34, 34, 16);
     bit_compare(dst, std::vector<uint8_t> {
         0b00011111,0b11111111,0b11111111,0b11110000,0b00111111,0b11111111,0b11000000,
@@ -96,4 +91,31 @@ TEST(BitCopy, test1) {
 
     /////////////////////////////////////////
 
+}
+
+TEST(BitCopy, test2) {
+    auto const src = std::vector<uint8_t> {
+        0b11111111,0b11111111,0b11111111,0b11111111,0b11111111,0b11111111,0b11111111,
+    };
+    auto dst = std::vector<uint8_t> {
+        0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,
+    };
+    auto test = [&](size_t dst_off, size_t src_off, size_t block_size) {
+        copy_bits<size_t, uint8_t>(dst.data(), src.data(), dst_off, src_off, block_size, src.size(), src.size());
+    };
+
+    /////////////////////////////////////////
+
+    test(32, 32, 16);
+    bit_compare(dst, std::vector<uint8_t> {
+        0b00000000,0b00000000,0b00000000,0b00000000,0b11111111,0b11111111,0b00000000,
+    });
+
+    /////////////////////////////////////////
+
+}
+
+TEST(BitCopy, env_debug) {
+    std::cout << "size_t size: " << sizeof(size_t) * CHAR_BIT << "\n";
+    std::cout << "omp size: " << omp_get_max_threads() << "\n";
 }
