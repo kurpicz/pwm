@@ -93,7 +93,9 @@ void copy_bits(WordType* const dst,
 
             std::cout << "[start]\n";
 
-            auto chk = [full_words_size, src_shift_a, src_shift_b](auto ds, auto dst, auto sr, auto src) {
+            auto chk = [
+                full_words_size, src_shift_a, src_shift_b, dst_off, src_off
+            ](auto ds, auto dst, auto sr, auto src) {
                 std::cout
                     << "dst ptr: " << (ds - dst)
                     << ", src ptr: " << (sr - src)
