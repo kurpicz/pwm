@@ -98,6 +98,8 @@ void copy_bits(WordType* const dst,
                     << ", len: " << full_words_size
                     << ", shifts: " << size_t(src_shift_a) << ", " << size_t(src_shift_b)
                     << "\n";
+                std::cout << "sr:  " << size_t(sr) << "\n";
+                std::cout << "src: " << size_t(src) << "\n";
                 assert((ds - dst) < full_words_size);
                 assert((sr - src) < full_words_size);
                 assert(((sr - src) + 1) < full_words_size);
