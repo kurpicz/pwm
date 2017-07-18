@@ -14,6 +14,8 @@ void copy_bits(WordType* const dst,
                SizeType const block_size,
                SizeType const words_size)
 {
+    if (block_size == 0) return;
+
     WordType constexpr BITS = (sizeof(WordType) * CHAR_BIT);
     WordType constexpr MOD_MASK = BITS - 1;
     WordType constexpr SHIFT = log2(MOD_MASK);
@@ -22,51 +24,88 @@ void copy_bits(WordType* const dst,
     SizeType src_off = src_off_ref;
     auto const dst_off_end = dst_off + block_size;
 
-    // Copy individual bits for unaligned leading bits
-    {
-        while ((dst_off & MOD_MASK) != 0 && dst_off != dst_off_end) {
-            bool const bit = bit_at<WordType>(src, src_off++);
-            auto const pos = dst_off++;
+    // NB: Check if source and target block are aligned the same way
+    // This is needed because the non-aligned code path would
+    // trigger undefined behavior in the aligned case
+    if ((dst_off & MOD_MASK) == (src_off & MOD_MASK)) {
+        // Copy unaligned leading bits
+        {
+            auto& word = dst[dst_off >> SHIFT];
 
-            dst[pos >> SHIFT] |= (WordType(bit) << (MOD_MASK - (pos & MOD_MASK)));
+            while ((dst_off & MOD_MASK) != 0 && dst_off != dst_off_end) {
+                bool const bit = bit_at<WordType>(src, src_off++);
+
+                word |= (WordType(bit) << (MOD_MASK - (dst_off++ & MOD_MASK)));
+            }
         }
-    }
 
-    // Copy the the bulk in-between word-wise
-    {
-        auto const words = (dst_off_end - dst_off) >> SHIFT;
+        // Copy the the bulk in-between word-wise
+        {
+            auto const words = (dst_off_end - dst_off) >> SHIFT;
 
-        WordType const src_shift_a = src_off & MOD_MASK;
-        WordType const src_shift_b = BITS - src_shift_a;
+            auto ds = dst + (dst_off >> SHIFT);
+            auto sr = src + (src_off >> SHIFT);
+            auto const ds_end = ds + words;
 
-        auto ds = dst + (dst_off >> SHIFT);
-        auto sr = src + (src_off >> SHIFT);
-        auto const ds_end = ds + words;
-
-        // NB: shift by maximum bit width is undefined behavior,
-        // so we have to catch the src_shift_b == BITS case
-        if (src_shift_a == 0) {
             while (ds != ds_end) {
                 *ds++ = *sr++;
             }
-        } else {
+
+            dst_off += words * BITS;
+            src_off += words * BITS;
+        }
+
+        // Copy unaligned trailing bits
+        {
+            auto& word = dst[dst_off >> SHIFT];
+
+            while (dst_off != dst_off_end) {
+                bool const bit = bit_at<WordType>(src, src_off++);
+
+                word |= (WordType(bit) << (MOD_MASK - (dst_off++ & MOD_MASK)));
+            }
+        }
+    } else {
+        // Copy unaligned leading bits
+        {
+            auto& word = dst[dst_off >> SHIFT];
+
+            while ((dst_off & MOD_MASK) != 0 && dst_off != dst_off_end) {
+                bool const bit = bit_at<WordType>(src, src_off++);
+
+                word |= (WordType(bit) << (MOD_MASK - (dst_off++ & MOD_MASK)));
+            }
+        }
+
+        // Copy the the bulk in-between word-wise
+        {
+            auto const words = (dst_off_end - dst_off) >> SHIFT;
+
+            WordType const src_shift_a = src_off & MOD_MASK;
+            WordType const src_shift_b = BITS - src_shift_a;
+
+            auto ds = dst + (dst_off >> SHIFT);
+            auto sr = src + (src_off >> SHIFT);
+            auto const ds_end = ds + words;
+
             while (ds != ds_end) {
                 *ds++ = (*sr) << src_shift_a | (*(sr + 1)) >> src_shift_b;
                 sr++;
             }
+
+            dst_off += words * BITS;
+            src_off += words * BITS;
         }
 
-        dst_off += words * BITS;
-        src_off += words * BITS;
-    }
+        // Copy unaligned trailing bits
+        {
+            auto& word = dst[dst_off >> SHIFT];
 
-    // Copy individual bits for unaligned trailing bits
-    {
-        while (dst_off != dst_off_end) {
-            bool const bit = bit_at<WordType>(src, src_off++);
-            auto const pos = dst_off++;
+            while (dst_off != dst_off_end) {
+                bool const bit = bit_at<WordType>(src, src_off++);
 
-            dst[pos >> SHIFT] |= (WordType(bit) << (MOD_MASK - (pos & MOD_MASK)));
+                word |= (WordType(bit) << (MOD_MASK - (dst_off++ & MOD_MASK)));
+            }
         }
     }
 
