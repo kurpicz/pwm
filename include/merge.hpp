@@ -91,6 +91,8 @@ void copy_bits(WordType* const dst,
             WordType const* sr = src + (src_off >> SHIFT);
             WordType const* const ds_end = ds + words;
 
+            std::cout << "[start]\n";
+
             auto chk = [full_words_size, src_shift_a, src_shift_b](auto ds, auto dst, auto sr, auto src) {
                 std::cout
                     << "dst ptr: " << (ds - dst)
@@ -100,9 +102,12 @@ void copy_bits(WordType* const dst,
                     << "\n";
                 std::cout << "sr:  " << size_t(sr) << "\n";
                 std::cout << "src: " << size_t(src) << "\n";
+                std::cout << "dst_off:  " << dst_off << "\n";
+                std::cout << "src_off:  " << src_off << "\n";
                 assert((ds - dst) < full_words_size);
                 assert((sr - src) < full_words_size);
                 assert(((sr - src) + 1) < full_words_size);
+                std::cout << "---\n";
             };
 
             while (ds != ds_end) {
@@ -117,6 +122,8 @@ void copy_bits(WordType* const dst,
                 *ds++ = (vala << src_shift_a) | (valb >> src_shift_b);
 
             }
+
+            std::cout << "[end]\n";
 
             dst_off += words * BITS;
             src_off += words * BITS;
