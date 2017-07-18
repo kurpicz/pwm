@@ -35,9 +35,7 @@ script:
   - make build_check
   - cd test
   - ulimit -c unlimited -S
-  - ./wm_dd_pc_test_testrunner || false
+  - gdb wm_dd_pc_test_testrunner -ex "run" -ex "thread apply all bt" -ex "set pagination 0" -batch
   - ls -l
-  - for i in $(find ./ -maxdepth 1 -name 'core*' -print); do gdb $(pwd)/wm_dd_pc_test_testrunner core* -ex "thread apply all bt" -ex "set pagination 0" -batch; done;
-
 
 #  - make
