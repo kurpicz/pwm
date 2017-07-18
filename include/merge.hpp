@@ -82,31 +82,30 @@ void copy_bits2(WordType* const dst,
 
     auto const dst_off_end = dst_off + block_size;
 
-    std::cout << "dst/str_off: " << dst_off << ", " << src_off << "\n";
+    // Copy individual bits for unaligned leading bits
     while ((dst_off & MOD_MASK) != 0 && dst_off != dst_off_end) {
-        const bool bit = bit_at<WordType>(src, src_off++);
-        const auto pos = dst_off++;
+        bool const bit = bit_at<WordType>(src, src_off++);
+        auto const pos = dst_off++;
 
         dst[pos >> SHIFT] |= (WordType(bit) << (MOD_MASK - (pos & MOD_MASK)));
-        std::cout << "dst/str_off: " << dst_off << ", " << src_off << "\n";
     }
 
+    // Copy the the bulk in-between word-wise
     {
         auto const words = (dst_off_end - dst_off) >> SHIFT;
-        std::cout << "copy " << words << " words\n";
 
         WordType const src_shift_a = src_off & MOD_MASK;
         WordType const src_shift_b = BITS - src_shift_a;
 
         auto ds = dst + (dst_off >> SHIFT);
         auto sr = src + (src_off >> SHIFT);
-        const auto ds_end = ds + words;
+        auto const ds_end = ds + words;
 
         // NB: shift by maximum bit width is undefined behavior,
         // so we ave to catch the src_shift_b == BITS case
         if (src_shift_a == 0) {
             while (ds != ds_end) {
-                *ds++ = *sr++ << src_shift_a;
+                *ds++ = *sr++;
             }
         } else {
             while (ds != ds_end) {
@@ -119,20 +118,16 @@ void copy_bits2(WordType* const dst,
         src_off += words * BITS;
     }
 
-    std::cout << "dst/str_off: " << dst_off << ", " << src_off << "\n";
-
+    // Copy individual bits for unaligned trailing bits
     while (dst_off != dst_off_end) {
-        const bool bit = bit_at<WordType>(src, src_off++);
-        const auto pos = dst_off++;
+        bool const bit = bit_at<WordType>(src, src_off++);
+        auto const pos = dst_off++;
 
         dst[pos >> SHIFT] |= (WordType(bit) << (MOD_MASK - (pos & MOD_MASK)));
-        std::cout << "dst/str_off: " << dst_off << ", " << src_off << "\n";
     }
 
     dst_off_ref += block_size;
     src_off_ref += block_size;
-
-    std::cout << "copy done\n\n";
 }
 
 template<typename SizeType, typename Rho>
@@ -224,8 +219,6 @@ inline auto merge_bvs(SizeType size,
     {
         //assert(size_t(omp_get_num_threads()) == shards);
         //const size_t omp_rank = omp_get_thread_num();
-        const size_t omp_size = shards;
-
         const size_t merge_shard = omp_rank;
 
         const auto target_right = std::min(offsets[merge_shard], size);
