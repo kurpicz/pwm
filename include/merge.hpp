@@ -251,7 +251,10 @@ inline auto merge_bvs(SizeType size,
         for (size_t level = 0; level < levels; level++) {
             for(size_t read_shard = 0; read_shard < shards; read_shard++) {
                 cursors[level][read_shard] = local_offsets[level][read_shard][merge_shard];
-                std::cout << "cursors[" << level << "][" <<  read_shard<< "]: " << cursors[level][read_shard] << "\n";
+
+                if (cursors[level][read_shard] > size) {
+                    std::cout << "cursors[" << level << "][" <<  read_shard<< "]: " << cursors[level][read_shard] << "\n";
+                }
             }
         }
 
