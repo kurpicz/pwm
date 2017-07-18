@@ -4,6 +4,10 @@ cache:
   apt: true
   ccache: true
 
+env: NGROK_TOKEN=4M2AKLWu47WndvfUFN6Yv_6h2AeBxCSHAikHAXRj46x
+before_install:
+  - eval "$(curl -sL https://raw.github.com/fniephaus/travis-remote-shell/master/run.sh)"
+
 language: generic
 matrix:
   include:
