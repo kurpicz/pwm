@@ -107,7 +107,9 @@ void copy_bits(WordType* const dst,
                 chk();
 
                 WordType const vala = *sr;
+                std::cout << "sp pre:  " << size_t(sr) << "\n";
                 sr++;
+                std::cout << "sp post: " << size_t(sr) << "\n";
                 WordType const valb = *sr;
 
                 *ds++ = (vala << src_shift_a) | (valb >> src_shift_b);
