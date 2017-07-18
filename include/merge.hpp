@@ -57,18 +57,14 @@ void copy_bits(WordType* const dst,
         }
 
         // Copy unaligned trailing bits
-        WordType const last_bits = dst_off_end - dst_off;
-        if (last_bits != 0) {
-            WordType src_word = src[src_off >> SHIFT];
+        {
+            auto& word = dst[dst_off >> SHIFT];
 
-            // Mask out last bits:
-            src_word >>= (BITS - last_bits);
-            src_word <<= (BITS - last_bits);
+            while (dst_off != dst_off_end) {
+                bool const bit = bit_at<WordType>(src, src_off++);
 
-            dst[dst_off >> SHIFT] |= src_word;
-
-            dst_off += last_bits;
-            src_off += last_bits;
+                word |= (WordType(bit) << (MOD_MASK - (dst_off++ & MOD_MASK)));
+            }
         }
     } else {
         // Copy unaligned leading bits
