@@ -10,7 +10,7 @@ template<typename SizeType, typename WordType>
 void copy_bits(WordType* dst,
                WordType const* src,
                SizeType& j,
-               SizeType& local_cursor,
+               SizeType& k,
                SizeType const block_size,
                SizeType const words_size) {
 
@@ -22,13 +22,9 @@ void copy_bits(WordType* dst,
         return;
     }
 
-    //std::cout << BITS << ", " << MOD_MASK << ", " << SHIFT << "\n";
-
-    auto const end_j = j + block_size;
-
     auto copy_bits = [&](auto end) {
         while(j != end) {
-            const bool bit = bit_at<WordType>(src, local_cursor++);
+            const bool bit = bit_at<WordType>(src, k++);
             const auto pos = j++;
 
             dst[pos >> SHIFT] |= (WordType(bit) << (MOD_MASK - (pos & MOD_MASK)));
@@ -38,68 +34,105 @@ void copy_bits(WordType* dst,
     auto word_align = (BITS - (j & MOD_MASK));
 
     if (block_size < word_align) {
-        std::cout << "i " << bit_string<WordType>(dst, words_size) << "\n";
-        copy_bits(end_j);
-        std::cout << "e " << bit_string<WordType>(dst, words_size) << "\n";
-        std::stringstream ss;
-
-        ss << "j: "
-            << (j - block_size)
-            << " - "
-            << end_j
-            << "\n";
-
-        std::cout << ss.str();
+        copy_bits(j + block_size);
     } else {
-        std::cout << "i " << bit_string<WordType>(dst, words_size) << "\n";
-
-        // TODO: remove entire words_size paramter passing chain starting from merge()
-
-        // TODO: Use one word shift somehow
         copy_bits(j + word_align);
 
-        std::cout << "b " << bit_string<WordType>(dst, words_size) << "\n";
-
-        // TODO: Reduce this to just "words"
-        auto const word_end = (end_j >> SHIFT << SHIFT);
-
-        std::stringstream ss;
-
-        ss << "j: "
-            << (j - word_align)
-            << " - "
-            << j
-            << " - "
-            << word_end
-            << " - "
-            << end_j
-            << "\n";
-
-        auto const words = (word_end - j) >> SHIFT;
+        auto const end_j = j + block_size;
+        auto const end_j_word_aligned = end_j & ~MOD_MASK;
+        auto const words = (end_j_word_aligned - j) >> SHIFT;
 
         WordType* ds = &dst[j >> SHIFT];
         WordType* const dst_end = ds + words;
 
-        WordType const* sr = &src[local_cursor >> SHIFT];
+        WordType const* sr = &src[k >> SHIFT];
 
-        auto const shift = local_cursor & MOD_MASK;
+        auto const shift = k & MOD_MASK;
 
         while (ds != dst_end) {
             *ds++ = (*sr << shift) | (*(sr + 1) >> (BITS - shift));
             sr++;
-            std::cout << "w " << bit_string<WordType>(dst, words_size) << "\n";
         }
 
-        j = word_end;
-        local_cursor += words * BITS;
+        j = end_j_word_aligned;
+        k += words * BITS;
 
-        //copy_bits(word_end);
+        //copy_bits(end_j_word_aligned);
         copy_bits(end_j);
-
-        std::cout << "e " << bit_string<WordType>(dst, words_size) << "\n";
-
-        std::cout << ss.str();
     }
+}
+
+
+template<typename SizeType, typename WordType>
+void copy_bits2(WordType* const dst,
+                WordType const* const src,
+                SizeType& dst_off_ref,
+                SizeType& src_off_ref,
+                SizeType const block_size,
+                SizeType const words_size)
+{
+    if (block_size == 0) return;
+
+    constexpr WordType BITS = (sizeof(WordType) * CHAR_BIT);
+    constexpr WordType MOD_MASK = BITS - 1;
+    constexpr WordType SHIFT = log2(MOD_MASK);
+
+    SizeType dst_off = dst_off_ref;
+    SizeType src_off = src_off_ref;
+
+    auto const dst_off_end = dst_off + block_size;
+
+    std::cout << "dst/str_off: " << dst_off << ", " << src_off << "\n";
+    while ((dst_off & MOD_MASK) != 0 && dst_off != dst_off_end) {
+        const bool bit = bit_at<WordType>(src, src_off++);
+        const auto pos = dst_off++;
+
+        dst[pos >> SHIFT] |= (WordType(bit) << (MOD_MASK - (pos & MOD_MASK)));
+        std::cout << "dst/str_off: " << dst_off << ", " << src_off << "\n";
+    }
+
+    {
+        auto const words = (dst_off_end - dst_off) >> SHIFT;
+        std::cout << "copy " << words << " words\n";
+
+        WordType const src_shift_a = src_off & MOD_MASK;
+        WordType const src_shift_b = BITS - src_shift_a;
+
+        auto ds = dst + (dst_off >> SHIFT);
+        auto sr = src + (src_off >> SHIFT);
+        const auto ds_end = ds + words;
+
+        // NB: shift by maximum bit width is undefined behavior,
+        // so we ave to catch the src_shift_b == BITS case
+        if (src_shift_a == 0) {
+            while (ds != ds_end) {
+                *ds++ = *sr++ << src_shift_a;
+            }
+        } else {
+            while (ds != ds_end) {
+                *ds++ = (*sr) << src_shift_a | (*(sr + 1)) >> src_shift_b;
+                sr++;
+            }
+        }
+
+        dst_off += words * BITS;
+        src_off += words * BITS;
+    }
+
+    std::cout << "dst/str_off: " << dst_off << ", " << src_off << "\n";
+
+    while (dst_off != dst_off_end) {
+        const bool bit = bit_at<WordType>(src, src_off++);
+        const auto pos = dst_off++;
+
+        dst[pos >> SHIFT] |= (WordType(bit) << (MOD_MASK - (pos & MOD_MASK)));
+        std::cout << "dst/str_off: " << dst_off << ", " << src_off << "\n";
+    }
+
+    dst_off_ref += block_size;
+    src_off_ref += block_size;
+
+    std::cout << "copy done\n\n";
 }
 
 template<typename SizeType, typename Rho>
@@ -228,7 +261,7 @@ inline auto merge_bvs(SizeType size,
 
                 auto& local_cursor = cursors[level][shard];
 
-                copy_bits(
+                copy_bits2(
                     _bv[level],
                     local_bv,
                     j,

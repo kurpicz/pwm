@@ -41,7 +41,7 @@ TEST(BitCopy, test0) {
         0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,
     };
     auto test = [&](size_t dst_off, size_t src_off, size_t block_size) {
-        copy_bits<size_t, uint8_t>(dst.data(), src.data(), dst_off, src_off, block_size, src.size());
+        copy_bits2<size_t, uint8_t>(dst.data(), src.data(), dst_off, src_off, block_size, src.size());
     };
 
     /////////////////////////////////////////
@@ -58,7 +58,40 @@ TEST(BitCopy, test0) {
 
     test(10, 27, 26);
     bit_compare(dst, std::vector<uint8_t> {
-        0b101'11010,0b11'101001,0b00011011,0b0011101'0,0b01010000,0b00000000,0b00000000,
+        0b10111010,0b11'101001,0b00011011,0b00111010,0b01010000,0b00000000,0b00000000,
+//                      101001   00011011   00111010   0101
+    });
+
+    /////////////////////////////////////////
+
+}
+
+TEST(BitCopy, test1) {
+    auto const src = std::vector<uint8_t> {
+        0b11111111,0b11111111,0b11111111,0b11111111,0b11111111,0b11111111,0b11111111,
+    };
+    auto dst = std::vector<uint8_t> {
+        0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,
+    };
+    auto test = [&](size_t dst_off, size_t src_off, size_t block_size) {
+        copy_bits2<size_t, uint8_t>(dst.data(), src.data(), dst_off, src_off, block_size, src.size());
+    };
+
+    /////////////////////////////////////////
+
+    test(3, 9, 25);
+    bit_compare(dst, std::vector<uint8_t> {
+        0b00011111,0b11111111,0b11111111,0b11110000,0b00000000,0b00000000,0b00000000,
+    });
+
+    /*test(32, 32, 10);
+    bit_compare(dst, std::vector<uint8_t> {
+        0b00011111,0b11111111,0b11111111,0b11110000,0b11111111,0b11000000,0b00000000,
+    });*/
+
+    test(34, 34, 16);
+    bit_compare(dst, std::vector<uint8_t> {
+        0b00011111,0b11111111,0b11111111,0b11110000,0b00111111,0b11111111,0b11000000,
     });
 
     /////////////////////////////////////////

@@ -83,7 +83,7 @@ std::vector<uint8_t> ostream_to_bytes(Lambda f) {
 template<class F>
 void roundtrip_batch(F f) {
 
-    /*
+
     std::vector<uint8_t> test {
         0,1,6,7,1,5,4,2,6,3
     };
@@ -171,9 +171,9 @@ void roundtrip_batch(F f) {
     //f(View(all_bytes));
 
 
-    */
 
-    /*
+
+
     f(
         "報チ申猛あち涙境ワセ周兵いわ郵入せすをだ漏告されて話巡わッき"
         "や間紙あいきり諤止テヘエラ鳥提フ健2銀稿97傷エ映田ヒマ役請多"
@@ -270,7 +270,7 @@ void roundtrip_batch(F f) {
         "暫械ゅにうて。関国ヘフヲオ場三をおか小都供セクヲ前俳著ゅ向深"
         "まも月10言スひす胆集ヌヱナ賀提63劇とやぽ生牟56詰ひめつそ総愛"
         "ス院攻せいまて報当アラノ日府ラのがし。"
-    );*/
+    );
 
 
     f(
