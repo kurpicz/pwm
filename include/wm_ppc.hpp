@@ -42,8 +42,8 @@ public:
 
     #pragma omp parallel num_threads(levels) firstprivate(hist_data_ptr)
     {
-      const auto omp_rank = omp_get_thread_num();
-      const auto omp_size = omp_get_num_threads();
+      const SizeType omp_rank = SizeType(omp_get_thread_num());
+      const SizeType omp_size = SizeType(omp_get_num_threads());
 
       const SizeType global_max_char = (1 << levels);
 

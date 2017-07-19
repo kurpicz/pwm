@@ -36,3 +36,6 @@ endmacro(define_wx)
 
 define_wx(wm WM_TYPE)
 define_wx(wt WT_TYPE)
+
+add_executable(benchmark_wm benchmark_wm.cpp)
+target_link_libraries(benchmark_wm ${INTERNAL_SRCS} rt)

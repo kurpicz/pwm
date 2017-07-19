@@ -10,10 +10,39 @@
 #ifndef COMMON
 #define COMMON
 
+#include <stdint.h>
 #include <vector>
 #include <cassert>
 #include <type_traits>
 #include <climits>
+
+template <typename SizeType>
+using permutation_type = std::vector<SizeType> (*)(const SizeType levels);
+
+template <typename SizeType>
+std::vector<SizeType> bit_reverse_permutation(const SizeType levels) {
+  std::vector<SizeType> result(1 << levels);
+  result[0] = 0;
+  result[1] = 1;
+  for (SizeType i = 1; i < levels; ++i) {
+    for (SizeType j = 0; j < (1u << i); ++j) {
+      result[j] <<= 1;
+    }
+    for (SizeType j = 0; j < (1u << i); ++j) {
+      result[j + (1 << i)] = result[j] + 1;
+    }
+  }
+  return result;
+}
+
+template <typename SizeType>
+std::vector<SizeType> identity_function(const SizeType levels) {
+  std::vector<SizeType> result(1 << levels);
+  for (SizeType i = 0; i < result.size(); ++i) {
+    result[i] = i;
+  }
+  return result;
+}
 
 template <typename SizeType>
 static inline std::vector<SizeType> BitReverse(const SizeType levels) {

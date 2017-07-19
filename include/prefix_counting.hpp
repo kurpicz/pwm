@@ -1,0 +1,123 @@
+/*******************************************************************************
+ * include/prefix_counting.hpp
+ *
+ * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
+ *
+ * All rights reserved. Published under the BSD-2 license in the LICENSE file.
+ ******************************************************************************/
+
+#pragma once
+#ifndef PREFIX_COUNTING_HEADER
+#define PREFIX_COUNTING_HEADER
+
+#include <cstring>
+#include <vector>
+
+#include "common.hpp"
+#include "pc.hpp"
+
+template <typename AlphabetType,
+          typename SizeType,
+          permutation_type<SizeType> Permutation>
+class prefix_counting {
+
+public:
+    prefix_counting(const std::vector<AlphabetType>& text,
+          const SizeType size,
+          const SizeType levels) : _bv(levels), _zeros(levels, 0) {
+
+        if(text.size() == 0) { return; }
+
+        SizeType cur_max_char = (1 << levels);
+        std::vector<SizeType> perm = Permutation(levels - 1);
+        std::vector<SizeType> borders(cur_max_char, 0);
+
+        auto ctx = SingleThreaded<SizeType> {
+            levels, cur_max_char
+        };
+
+        _bv[0] = new uint64_t[word_size(size)];
+        // memset is ok (all to 0)
+        memset(_bv[0], 0, (word_size(size)) * sizeof(uint64_t));
+        // While initializing the histogram, we also compute the first level
+        SizeType cur_pos = 0;
+        for (; cur_pos + 64 <= size; cur_pos += 64) {
+            uint64_t word = 0ULL;
+            for (SizeType i = 0; i < 64; ++i) {
+                ++ctx.hist(levels, text[cur_pos + i]);
+                word <<= 1;
+                word |= ((text[cur_pos + i] >> (levels - 1)) & 1ULL);
+            }
+            _bv[0][cur_pos >> 6] = word;
+        }
+        if (size & 63ULL) {
+            uint64_t word = 0ULL;
+            for (SizeType i = 0; i < size - cur_pos; ++i) {
+                ++ctx.hist(levels, text[cur_pos + i]);
+                word <<= 1;
+                word |= ((text[cur_pos + i] >> (levels - 1)) & 1ULL);
+            }
+            word <<= (64 - (size & 63ULL));
+            _bv[0][size >> 6] = word;
+        }
+
+        // The number of 0s at the last level is the number of "even" characters
+        for (SizeType i = 0; i < cur_max_char; i += 2) {
+            _zeros[levels - 1] += ctx.hist(levels, i);
+        }
+
+        // Now we compute the WM bottom-up, i.e., the last level first
+        for (SizeType level = levels - 1; level > 0; --level) {
+            const SizeType prefix_shift = (levels - level);
+            const SizeType cur_bit_shift = prefix_shift - 1;
+
+            _bv[level] = new uint64_t[word_size(size)];
+            // memset is ok (all to 0)
+            memset(_bv[level], 0, (word_size(size)) * sizeof(uint64_t));
+
+            // Update the maximum value of a feasible a bit prefix and update the
+            // histogram of the bit prefixes
+            cur_max_char >>= 1;
+            for (SizeType i = 0; i < cur_max_char; ++i) {
+                ctx.hist(level, i)
+                    = ctx.hist(level + 1, i << 1) + ctx.hist(level + 1, (i << 1) + 1);
+            }
+
+            // Compute the starting positions of characters with respect to their
+            // bit prefixes and the bit-reversal permutation
+            borders[0] = 0;
+            for (SizeType i = 1; i < cur_max_char; ++i) {
+                borders[perm[i]] = borders[perm[i - 1]] +
+                ctx.hist(level, perm[i - 1]);
+                perm[i - 1] >>= 1;
+            }
+            // The number of 0s is the position of the first 1 in the previous level
+            _zeros[level - 1] = borders[1];
+
+            // Now we insert the bits with respect to their bit prefixes
+            for (SizeType i = 0; i < size; ++i) {
+                const SizeType pos = borders[text[i] >> prefix_shift]++;
+                _bv[level][pos >> 6] |= (((text[i] >> cur_bit_shift) & 1ULL)
+                << (63ULL - (pos & 63ULL)));
+            }
+        }
+    }
+
+    auto get_bv_and_zeros() const {
+        return std::make_pair(_bv, _zeros);
+    }
+
+private:
+    std::vector<uint64_t*> _bv;
+    std::vector<SizeType> _zeros;
+}; // class prefix_counting
+
+template <typename AlphabetType, typename SizeType>
+using wm_pc = prefix_counting<AlphabetType, SizeType, bit_reverse_permutation>;
+
+template <typename AlphabetType, typename SizeType>
+using wt_pc = prefix_counting<AlphabetType, SizeType, identity_function>;
+
+#endif // PREFIX_COUNTING_HEADER
+
+/******************************************************************************/
