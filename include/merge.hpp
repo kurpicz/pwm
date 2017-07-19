@@ -285,9 +285,11 @@ inline auto merge_bvs(SizeType size,
                 );
                 init_offset = 0; // TODO: remove this by doing a initial pass
 
-                auto& local_cursor = cursors[level][shard];
+                auto& local_cursor = cursors.at(level).at(shard);
 
-                std::cout << "j, local_cursor: " << j << ", " << local_cursor << "\n";
+                if (local_cursor > size) {
+                    std::cout << "j, local_cursor: " << j << ", " << local_cursor << "\n";
+                }
 
                 assert(local_cursor < size);
 
