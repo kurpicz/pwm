@@ -42,7 +42,7 @@ public:
       num_threads = omp_get_num_threads();
     }
 
-    #pragma single
+    #pragma omp single
     {
       hist.reserve(num_threads);
       borders.reserve(num_threads);

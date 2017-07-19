@@ -31,7 +31,7 @@ public:
     }
 
     std::vector<SizeType> hist;
-    #pragma single
+    #pragma omp single
     {
       hist = std::vector<SizeType>((1 << levels) * levels, 0);
     }

@@ -39,7 +39,7 @@ public:
       num_threads = omp_get_num_threads();
     }
 
-    #pragma single
+    #pragma omp single
     {
       hist.reserve(num_threads);
       borders.reserve(num_threads);
@@ -53,11 +53,9 @@ public:
 
     #pragma omp parallel
     {
-      const auto omp_rank = omp_get_thread_num();
-      const auto omp_size = omp_get_num_threads();
-
+      const SizeType omp_rank = SizeType(omp_get_thread_num());
+      const SizeType omp_size = SizeType(omp_get_num_threads());
       const SizeType global_max_char = (1 << levels);
-      SizeType cur_max_char = global_max_char;
 
       #pragma omp for
       for (SizeType cur_pos = 0; cur_pos <= size - 64; cur_pos += 64) {
@@ -88,7 +86,7 @@ public:
         for (SizeType i = 0; i < global_max_char; i += (1ULL << prefix_shift)) {
           borders[0][i] = 0;
           hist[0][i] += hist[0][i + (1ULL << cur_bit_shift)];
-          for (int32_t rank = 1; rank < omp_size; ++rank) {
+          for (SizeType rank = 1; rank < omp_size; ++rank) {
             hist[rank][i] += hist[rank][i + (1ULL << cur_bit_shift)];
             borders[rank][i] = borders[rank - 1][i] + hist[rank - 1][i];
           }
@@ -105,7 +103,7 @@ public:
         }
 
         #pragma omp for
-        for (int32_t rank = 0; rank < omp_size; ++rank) {
+        for (SizeType rank = 0; rank < omp_size; ++rank) {
           for (SizeType i = 0; i < global_max_char; i += (1ULL << prefix_shift)) {
             borders[rank][i] += offsets[i];
           }
