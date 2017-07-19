@@ -5,6 +5,7 @@
 #include <cassert>
 #include <climits>
 #include <omp.h>
+#include <sstream>
 
 template<typename SizeType, typename WordType>
 void copy_bits(WordType* const dst,
