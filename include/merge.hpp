@@ -253,7 +253,7 @@ inline auto merge_bvs(SizeType size,
         const auto target_right = std::min(offsets[merge_shard], size);
         const auto target_left = std::min((merge_shard > 0 ? offsets[merge_shard - 1] : 0), target_right);
 
-        auto& cursors = glob_cursors[merge_shard];
+        auto& cursors = glob_cursors.at(merge_shard);
 
         for (size_t level = 0; level < levels; level++) {
             for(size_t read_shard = 0; read_shard < shards; read_shard++) {
