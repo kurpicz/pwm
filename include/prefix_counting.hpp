@@ -112,12 +112,6 @@ private:
     std::vector<SizeType> _zeros;
 }; // class prefix_counting
 
-template <typename AlphabetType, typename SizeType>
-using wm_pc = prefix_counting<AlphabetType, SizeType, bit_reverse_permutation>;
-
-template <typename AlphabetType, typename SizeType>
-using wt_pc = prefix_counting<AlphabetType, SizeType, identity_function>;
-
 #endif // PREFIX_COUNTING_HEADER
 
 /******************************************************************************/

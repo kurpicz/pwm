@@ -1,4 +1,4 @@
-#include "prefix_counting.hpp"
+#include "prefix_counting.cpp"
 
 int main(int argc, char const *argv[]) {
   /* code */
