@@ -199,6 +199,13 @@ inline auto merge_bvs(SizeType size,
                 size_t right = j - offsets[oi];
                 size_t left = block_size - right;
 
+                std::cout << "j, offset[oi], block_size, right, left: "
+                    << uint64_t(j) << ", "
+                    << uint64_t(offsets[oi]) << ", "
+                    << uint64_t(block_size) << ", "
+                    << uint64_t(right) << ", "
+                    << uint64_t(left) << "\n";
+
                 j -= block_size;
                 local_offsets[level][shard][oi + 1] -= block_size;
                 chk(local_offsets[level][shard][oi + 1]) << "c" << "\n";
