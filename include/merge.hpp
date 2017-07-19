@@ -225,6 +225,18 @@ inline auto merge_bvs(SizeType size,
 
                 chk(local_offsets[level][shard][oi + 1]) << "f" << "\n";
             }
+
+            for (size_t level = 0; level < local_offsets.size(); level++) {
+                for (size_t shard = 0; shard < local_offsets.size(); shard++) {
+                    if ((level == 0 || level == 1) && shard == 30) {
+                        std::cout << "local_offsets[" << level << "][" << shard << "]: [";
+                        for (auto e : local_offsets[level][shard]) {
+                            std::cout << e << ", ";
+                        }
+                        std::cout << "]\n";
+                    }
+                }
+            }
         }
     }
 
