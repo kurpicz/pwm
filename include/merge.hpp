@@ -69,21 +69,14 @@ void copy_bits(WordType* const dst,
             }
         }
     } else {
-
-        std::cout << "[start]\n";
-
         // Copy unaligned leading bits
         {
             auto& word = dst[dst_off >> SHIFT];
-
-            std::cout << "src_off:  " << src_off << "\n";
 
             while ((dst_off & MOD_MASK) != 0 && dst_off != dst_off_end) {
                 bool const bit = bit_at<WordType>(src, src_off++);
 
                 word |= (WordType(bit) << (MOD_MASK - (dst_off++ & MOD_MASK)));
-
-                std::cout << "src_off:  " << src_off << "\n";
             }
         }
 
@@ -101,36 +94,21 @@ void copy_bits(WordType* const dst,
             auto chk = [
                 full_words_size, src_shift_a, src_shift_b, dst_off, src_off
             ](auto ds, auto dst, auto sr, auto src) {
-                std::cout
-                    << "dst ptr: " << (ds - dst)
-                    << ", src ptr: " << (sr - src)
-                    << ", len: " << full_words_size
-                    << ", shifts: " << size_t(src_shift_a) << ", " << size_t(src_shift_b)
-                    << "\n";
-                std::cout << "sr:  " << size_t(sr) << "\n";
-                std::cout << "src: " << size_t(src) << "\n";
-                std::cout << "dst_off:  " << dst_off << "\n";
-                std::cout << "src_off:  " << src_off << "\n";
                 assert((ds - dst) < full_words_size);
                 assert((sr - src) < full_words_size);
                 assert(((sr - src) + 1) < full_words_size);
-                std::cout << "---\n";
             };
 
             while (ds != ds_end) {
                 chk(ds, dst, sr, src);
 
                 WordType const vala = *sr;
-                std::cout << "sp pre:  " << size_t(sr) << "\n";
                 sr++;
-                std::cout << "sp post: " << size_t(sr) << "\n";
                 WordType const valb = *sr;
 
                 *ds++ = (vala << src_shift_a) | (valb >> src_shift_b);
 
             }
-
-            std::cout << "[end]\n";
 
             dst_off += words * BITS;
             src_off += words * BITS;
