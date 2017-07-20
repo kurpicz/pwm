@@ -124,19 +124,33 @@ inline auto merge_bvs(SizeType size,
     assert(shards == glob_bv.size());
     assert(shards == glob_hist.size());
 
-    auto offsets = std::vector<SizeType>(shards);
+    // Initialize bulk data structures centrally
+
+    struct MergeCtx {
+        SizeType offset = 0;
+        std::vector<std::vector<SizeType>> read_offsets;
+    };
+
+    auto ctxs = std::vector<MergeCtx>(shards, MergeCtx {
+        0,
+        std::vector<std::vector<SizeType>>(
+            levels, std::vector<SizeType>(shards)
+        )
+    });
+
     auto local_offsets = std::vector<std::vector<std::vector<SizeType>>>(
         levels, std::vector<std::vector<SizeType>>(
-            shards, std::vector<SizeType>(shards + 1)));
+            shards, std::vector<SizeType>(shards)));
     auto offsets_in_word = std::vector<std::vector<SizeType>>(
-        levels, std::vector<SizeType>(shards + 1));
+        levels, std::vector<SizeType>(shards));
     auto block_seq_offsets = std::vector<std::vector<SizeType>>(
-        levels, std::vector<SizeType>(shards + 1));
+        levels, std::vector<SizeType>(shards));
     auto glob_cursors = std::vector<std::vector<std::vector<SizeType>>>(
         shards, std::vector<std::vector<SizeType>>(
             levels, std::vector<SizeType>(shards)
         ));
 
+    // Calculate bit offset per merge shard (thread)
     for (size_t rank = 1; rank < shards; rank++) {
         const size_t omp_rank = rank;
         const size_t omp_size = shards;
@@ -144,9 +158,9 @@ inline auto merge_bvs(SizeType size,
         const SizeType offset = (omp_rank * (word_size(size) / omp_size)) +
             std::min<SizeType>(omp_rank, word_size(size) % omp_size);
 
-        offsets[rank - 1] = offset * 64ull;
+        ctxs[rank - 1].offset = offset * 64ull;
     }
-    offsets[shards - 1] = word_size(size) * 64ull;
+    ctxs[shards - 1].offset = word_size(size) * 64ull;
 
     for(size_t level = 0; level < levels; level++) {
         const size_t br_size = 1ull << level;
@@ -161,15 +175,11 @@ inline auto merge_bvs(SizeType size,
 
             auto block_size = h[rho(level, bit_i)];
 
-            if (block_size == 0) {
-                continue;
-            }
-
             j += block_size;
             local_offsets[level][shard][oi + 1] += block_size;
 
             // If we passed the current right border, split up the block
-            if (j > offsets[oi]) {
+            if (j > ctxs[oi].offset) {
                 // Take back the last step
                 j -= block_size;
                 local_offsets[level][shard][oi + 1] -= block_size;
@@ -179,9 +189,9 @@ inline auto merge_bvs(SizeType size,
                     // Split up the block like this:
                     //  [ left_block_size |    right_block_size     ]
                     //  ^                 ^                         ^
-                    // (j)           (offsets[oi])           (j + block_size)
+                    // (j)         (ctxs[oi].offset)         (j + block_size)
 
-                    auto const left_block_size = offsets[oi] - j;
+                    auto const left_block_size = ctxs[oi].offset - j;
 
                     j += left_block_size;
                     local_offsets[level][shard][oi + 1] += left_block_size;
@@ -197,17 +207,22 @@ inline auto merge_bvs(SizeType size,
                     }
                     oi++;
 
+                    if (oi == shards) {
+                        goto triple_loop_exit;
+                    }
+
                     // Iterate on remaining block
                     block_size -= left_block_size;
-                } while ((j + block_size) > offsets[oi]);
+                } while ((j + block_size) > ctxs[oi].offset);
 
                 // Process remainder of block
                 j += block_size;
                 local_offsets[level][shard][oi + 1] += block_size;
 
-                assert(j <= offsets[oi]);
+                assert(j <= ctxs[oi].offset);
             }
         }
+        triple_loop_exit:; // we are done
     }
 
     auto r = Bvs<SizeType>(size, levels);
@@ -220,8 +235,10 @@ inline auto merge_bvs(SizeType size,
         const size_t omp_rank = omp_get_thread_num();
         const size_t merge_shard = omp_rank;
 
-        const auto target_right = std::min(offsets[merge_shard], size);
-        const auto target_left = std::min((merge_shard > 0 ? offsets[merge_shard - 1] : 0), target_right);
+        auto const& ctx = ctxs[merge_shard];
+
+        const auto target_right = std::min(ctx.offset, size);
+        const auto target_left = std::min((merge_shard > 0 ? ctxs[merge_shard - 1].offset : 0), target_right);
 
         auto& cursors = glob_cursors[merge_shard];
 
