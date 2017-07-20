@@ -16,7 +16,7 @@
 #include "common.hpp"
 #include "pc.hpp"
 
-template <typename AlphabetType, typename SizeType>
+template <typename AlphabetType, typename SizeType = uint64_t>
 class wm_pc {
 
 public:
