@@ -10,7 +10,6 @@
 #ifndef WM_PREFIX_COUNTING
 #define WM_PREFIX_COUNTING
 
-#include <cstring>
 #include <vector>
 
 #include "common.hpp"
@@ -28,9 +27,7 @@ public:
 
         if(text.size() == 0) { return; }
 
-        auto ctx = SingleThreaded<SizeType> {
-            size, levels
-        };
+        auto ctx = SingleThreaded<SizeType>(size, levels);
 
         pc(text, size, levels, ctx);
 

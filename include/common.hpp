@@ -15,6 +15,7 @@
 #include <cassert>
 #include <type_traits>
 #include <climits>
+#include <cstring>
 
 template <typename SizeType>
 using permutation_type = std::vector<SizeType> (*)(const SizeType levels);
