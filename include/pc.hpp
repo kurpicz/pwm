@@ -7,8 +7,10 @@ struct SingleThreaded {
     std::vector<SizeType> m_hist;
     std::vector<SizeType> m_bit_reverse;
     std::vector<SizeType> m_borders;
+    std::vector<SizeType> m_zeros;
+    Bvs<SizeType> m_bv;
 
-    SingleThreaded(SizeType const levels) {
+    SingleThreaded(SizeType const size, SizeType const levels) {
         auto cur_max_char = (1ull << levels);
 
         m_hist.reserve(cur_max_char);
@@ -18,6 +20,11 @@ struct SingleThreaded {
 
         m_borders.reserve(cur_max_char);
         m_borders.resize(cur_max_char, 0);
+
+        m_zeros.reserve(levels);
+        m_zeros.resize(levels, 0);
+
+        m_bv = Bvs<SizeType>(size, levels);
     }
 
     SizeType const hist_size(SizeType const level) {
@@ -39,6 +46,14 @@ struct SingleThreaded {
     template<typename F>
     void if_zeros(F f) {
         f();
+    }
+
+    std::vector<SizeType>& zeros() {
+        return m_zeros;
+    }
+
+    Bvs<SizeType>& bv() {
+        return m_bv;
     }
 };
 
@@ -71,18 +86,14 @@ struct DdMultiThreaded {
 
 
 template<
-    typename AlphabetType,
+    typename Text,
     typename SizeType,
     typename Context
 >
-Bvs<SizeType> pc(AlphabetType const* text,
-                 SizeType const size,
-                 SizeType const levels,
-                 Context& context)
+void pc(Text const& text,
+        SizeType const size,
+        SizeType const levels,
+        Context& ctx)
 {
-    auto bv = Bvs<SizeType>(size, levels);
 
-
-
-    return bv;
 }

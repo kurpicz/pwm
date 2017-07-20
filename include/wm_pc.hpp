@@ -24,17 +24,17 @@ public:
 
     wm_pc(const std::vector<AlphabetType>& text,
           const SizeType size,
-          const SizeType levels) : _zeros(levels, 0) {
+          const SizeType levels) {
 
         if(text.size() == 0) { return; }
 
-        _bv = Bvs<SizeType>(size, levels);
         auto ctx = SingleThreaded<SizeType> {
-            levels
+            size, levels
         };
 
-        SizeType cur_max_char = (1 << levels);
+        pc(text, size, levels, ctx);
 
+        SizeType cur_max_char = (1 << levels);
 
         // While initializing the histogram, we also compute the first level
         SizeType cur_pos = 0;
@@ -45,7 +45,7 @@ public:
                 word <<= 1;
                 word |= ((text[cur_pos + i] >> (levels - 1)) & 1ULL);
             }
-            _bv.vec()[0][cur_pos >> 6] = word;
+            ctx.bv().vec()[0][cur_pos >> 6] = word;
         }
         if (size & 63ULL) {
             uint64_t word = 0ULL;
@@ -55,13 +55,13 @@ public:
                 word |= ((text[cur_pos + i] >> (levels - 1)) & 1ULL);
             }
             word <<= (64 - (size & 63ULL));
-            _bv.vec()[0][size >> 6] = word;
+            ctx.bv().vec()[0][size >> 6] = word;
         }
 
         // The number of 0s at the last level is the number of "even" characters
         ctx.if_zeros([&]() {
             for (SizeType i = 0; i < cur_max_char; i += 2) {
-                _zeros[levels - 1] += ctx.hist(levels, i);
+                ctx.zeros()[levels - 1] += ctx.hist(levels, i);
             }
         });
 
@@ -92,16 +92,19 @@ public:
 
             // The number of 0s is the position of the first 1 in the previous level
             ctx.if_zeros([&]() {
-               _zeros[level - 1] = borders[1];
+               ctx.zeros()[level - 1] = borders[1];
             });
 
             // Now we insert the bits with respect to their bit prefixes
             for (SizeType i = 0; i < size; ++i) {
                 const SizeType pos = borders[text[i] >> prefix_shift]++;
-                _bv.vec()[level][pos >> 6] |= (((text[i] >> cur_bit_shift) & 1ULL)
+                ctx.bv().vec()[level][pos >> 6] |= (((text[i] >> cur_bit_shift) & 1ULL)
                 << (63ULL - (pos & 63ULL)));
             }
         }
+
+        _zeros = std::move(ctx.zeros());
+        _bv = std::move(ctx.bv());
     }
 
     auto get_bv_and_zeros() const {
