@@ -124,24 +124,29 @@ inline auto merge_bvs(SizeType size,
     assert(shards == glob_bv.size());
     assert(shards == glob_hist.size());
 
-    // Initialize bulk data structures centrally
+    // Allocate data structures centrally
+
+    struct MergeLevelCtx {
+        std::vector<SizeType> read_offsets;
+        SizeType offset_in_first_word;
+        SizeType first_read_block;
+    };
 
     struct MergeCtx {
         SizeType offset;
-        std::vector<std::vector<SizeType>> read_offsets;
-        std::vector<SizeType> offsets_in_first_word;
-        std::vector<SizeType> first_read_block;
+        std::vector<MergeLevelCtx> levels;
     };
 
-    auto ctxs = std::vector<MergeCtx>(shards, MergeCtx {
+    auto ctxs = std::vector<MergeCtx>{shards, {
         0,
-        std::vector<std::vector<SizeType>>(
-            levels, std::vector<SizeType>(shards)),
-        std::vector<SizeType>(
-            levels),
-        std::vector<SizeType>(
-            levels),
-    });
+        std::vector<MergeLevelCtx> {
+            levels, {
+                std::vector<SizeType>(shards),
+                0,
+                0,
+            }
+        },
+    }};
 
     // Calculate bit offset per merge shard (thread)
     for (size_t rank = 1; rank < shards; rank++) {
@@ -166,7 +171,7 @@ inline auto merge_bvs(SizeType size,
             const auto read_shard = i % shards;
 
             auto read_offset = [&level, &ctxs](auto merge_shard, auto read_shard) -> SizeType& {
-                return ctxs[merge_shard].read_offsets[level][read_shard];
+                return ctxs[merge_shard].levels[level].read_offsets[read_shard];
             };
 
             const auto h = glob_hist[read_shard][level];
@@ -195,8 +200,8 @@ inline auto merge_bvs(SizeType size,
                     read_offset(merge_shard + 1, read_shard) += left_block_size;
 
                     offset_in_first_word += left_block_size;
-                    ctxs[merge_shard + 1].offsets_in_first_word[level] = offset_in_first_word;
-                    ctxs[merge_shard + 1].first_read_block[level] = i;
+                    ctxs[merge_shard + 1].levels[level].offset_in_first_word = offset_in_first_word;
+                    ctxs[merge_shard + 1].levels[level].first_read_block = i;
 
                     if (merge_shard + 2 < shards) {
                         for(size_t s = 0; s < shards; s++) {
@@ -243,10 +248,10 @@ inline auto merge_bvs(SizeType size,
         const auto target_left = std::min((merge_shard > 0 ? ctxs[merge_shard - 1].offset : 0), target_right);
 
         for (size_t level = 0; level < levels; level++) {
-            auto seq_i = ctx.first_read_block[level];
+            auto seq_i = ctx.levels[level].first_read_block;
 
             SizeType write_offset = target_left;
-            size_t init_offset = ctx.offsets_in_first_word[level];
+            size_t init_offset = ctx.levels[level].offset_in_first_word;
 
             while (write_offset < target_right) {
                 const auto i = seq_i / shards;
@@ -262,7 +267,7 @@ inline auto merge_bvs(SizeType size,
                 );
                 init_offset = 0; // TODO: remove this by doing a initial pass
 
-                auto& local_cursor = ctx.read_offsets[level][read_shard];
+                auto& local_cursor = ctx.levels[level].read_offsets[read_shard];
 
                 copy_bits<SizeType, uint64_t>(
                     _bv[level],
