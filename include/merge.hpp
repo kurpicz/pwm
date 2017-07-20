@@ -143,11 +143,6 @@ inline auto merge_bvs(SizeType size,
             levels),
     });
 
-    auto glob_cursors = std::vector<std::vector<std::vector<SizeType>>>(
-        shards, std::vector<std::vector<SizeType>>(
-            levels, std::vector<SizeType>(shards)
-        ));
-
     // Calculate bit offset per merge shard (thread)
     for (size_t rank = 1; rank < shards; rank++) {
         const size_t omp_rank = rank;
@@ -242,18 +237,10 @@ inline auto merge_bvs(SizeType size,
         const size_t omp_rank = omp_get_thread_num();
         const size_t merge_shard = omp_rank;
 
-        auto const& ctx = ctxs[merge_shard];
+        auto& ctx = ctxs[merge_shard];
 
         const auto target_right = std::min(ctx.offset, size);
         const auto target_left = std::min((merge_shard > 0 ? ctxs[merge_shard - 1].offset : 0), target_right);
-
-        auto& cursors = glob_cursors[merge_shard];
-
-        for (size_t level = 0; level < levels; level++) {
-            for(size_t read_shard = 0; read_shard < shards; read_shard++) {
-                cursors[level][read_shard] = ctx.read_offsets[level][read_shard];
-            }
-        }
 
         for (size_t level = 0; level < levels; level++) {
             auto seq_i = ctx.first_read_block[level];
@@ -275,7 +262,7 @@ inline auto merge_bvs(SizeType size,
                 );
                 init_offset = 0; // TODO: remove this by doing a initial pass
 
-                auto& local_cursor = cursors[level][shard];
+                auto& local_cursor = ctx.read_offsets[level][shard];
 
                 copy_bits<SizeType, uint64_t>(
                     _bv[level],
