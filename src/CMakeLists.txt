@@ -37,5 +37,13 @@ endmacro(define_wx)
 define_wx(wm WM_TYPE)
 define_wx(wt WT_TYPE)
 
-add_executable(benchmark_wm benchmark_wm.cpp)
-target_link_libraries(benchmark_wm ${INTERNAL_SRCS} rt)
+include_directories(.)
+
+set(INTERNAL_SRCS
+  prefix_counting.cpp
+  benchmark_wm.cpp)
+
+set(INTERNAL_LIBS dl)
+
+add_executable(benchmark_wm ${INTERNAL_SRCS})
+target_link_libraries(benchmark_wm ${INTERNAL_LIBS})
