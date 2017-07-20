@@ -11,10 +11,7 @@ void copy_bits(WordType* const dst,
                WordType const* const src,
                SizeType& dst_off_ref,
                SizeType& src_off_ref,
-               SizeType const block_size,
-               SizeType const words_size,
-               SizeType const full_words_size
-              )
+               SizeType const block_size)
 {
     if (block_size == 0) return;
 
@@ -91,23 +88,9 @@ void copy_bits(WordType* const dst,
             WordType const* sr = src + (src_off >> SHIFT);
             WordType const* const ds_end = ds + words;
 
-            auto chk = [
-                full_words_size, src_shift_a, src_shift_b, dst_off, src_off
-            ](auto ds, auto dst, auto sr, auto src) {
-                assert((ds - dst) < full_words_size);
-                assert((sr - src) < full_words_size);
-                assert(((sr - src) + 1) < full_words_size);
-            };
-
             while (ds != ds_end) {
-                chk(ds, dst, sr, src);
-
-                WordType const vala = *sr;
+                *ds++ = (*sr << src_shift_a) | (*(sr+1) >> src_shift_b);
                 sr++;
-                WordType const valb = *sr;
-
-                *ds++ = (vala << src_shift_a) | (valb >> src_shift_b);
-
             }
 
             dst_off += words * BITS;
@@ -273,16 +256,12 @@ inline auto merge_bvs(SizeType size,
 
                 auto& local_cursor = cursors[level][shard];
 
-                assert(local_cursor < size);
-
                 copy_bits<SizeType, uint64_t>(
                     _bv[level],
                     local_bv,
                     j,
                     local_cursor,
-                    block_size,
-                    word_size(target_right - target_left),
-                    word_size(size)
+                    block_size
                 );
             }
         }
