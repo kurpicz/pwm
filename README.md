@@ -30,3 +30,4 @@ Two p's indicate the parallel version of the algorithm.
 ## Contributors
 - Florian Kurpicz (author)
 - Johannes Fischer
+- Marvin Löbel
