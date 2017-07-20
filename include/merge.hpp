@@ -250,11 +250,11 @@ inline auto merge_bvs(SizeType size,
 
             while (write_offset < target_right) {
                 const auto i = seq_i / shards;
-                const auto shard = seq_i % shards;
+                const auto read_shard = seq_i % shards;
                 seq_i++;
 
-                const auto& h = glob_hist[shard][level];
-                const auto& local_bv = glob_bv[shard].vec()[level];
+                const auto& h = glob_hist[read_shard][level];
+                const auto& local_bv = glob_bv[read_shard].vec()[level];
 
                 auto const block_size = std::min<SizeType>(
                     target_right - write_offset,
@@ -262,7 +262,7 @@ inline auto merge_bvs(SizeType size,
                 );
                 init_offset = 0; // TODO: remove this by doing a initial pass
 
-                auto& local_cursor = ctx.read_offsets[level][shard];
+                auto& local_cursor = ctx.read_offsets[level][read_shard];
 
                 copy_bits<SizeType, uint64_t>(
                     _bv[level],
