@@ -3,14 +3,14 @@
 #include "common.hpp"
 
 template<typename SizeType>
-struct SingleThreaded {
+struct LevelSinglePass {
     std::vector<SizeType> m_hist;
     std::vector<SizeType> m_bit_reverse;
     std::vector<SizeType> m_borders;
     std::vector<SizeType> m_zeros;
     Bvs<SizeType> m_bv;
 
-    SingleThreaded(SizeType const size, SizeType const levels) {
+    LevelSinglePass(SizeType const size, SizeType const levels) {
         auto cur_max_char = (1ull << levels);
 
         m_hist.reserve(cur_max_char);
@@ -58,8 +58,8 @@ struct SingleThreaded {
 };
 
 template<typename SizeType>
-struct DdMultiThreaded {
-    DdMultiThreaded(SizeType const levels) {
+struct KeepLevel {
+    KeepLevel(SizeType const levels) {
     }
 
     SizeType const hist_size(SizeType const level) {
