@@ -127,20 +127,16 @@ inline auto merge_bvs(SizeType size,
     // Initialize bulk data structures centrally
 
     struct MergeCtx {
-        SizeType offset = 0;
+        SizeType offset;
         std::vector<std::vector<SizeType>> read_offsets;
     };
 
     auto ctxs = std::vector<MergeCtx>(shards, MergeCtx {
         0,
         std::vector<std::vector<SizeType>>(
-            levels, std::vector<SizeType>(shards)
-        )
+            levels, std::vector<SizeType>(shards)),
     });
 
-    auto local_offsets = std::vector<std::vector<std::vector<SizeType>>>(
-        levels, std::vector<std::vector<SizeType>>(
-            shards, std::vector<SizeType>(shards)));
     auto offsets_in_word = std::vector<std::vector<SizeType>>(
         levels, std::vector<SizeType>(shards));
     auto block_seq_offsets = std::vector<std::vector<SizeType>>(
@@ -164,70 +160,71 @@ inline auto merge_bvs(SizeType size,
 
     for(size_t level = 0; level < levels; level++) {
         const size_t br_size = 1ull << level;
-        size_t j = 0;
-        size_t oi = 0;
+
+        size_t write_offset = 0; // bit offset in destination bv
+        size_t merge_shard = 0; // index of merge thread
 
         for(size_t i = 0; i < br_size * shards; i++) {
             const auto bit_i = i / shards;
             const auto shard = i % shards;
 
-            auto read_offset = [&](auto merge_shard) -> SizeType& {
-                return local_offsets[level][shard][merge_shard];
+            auto read_offset = [&level, &ctxs](auto merge_shard, auto shard) -> SizeType& {
+                return ctxs[merge_shard].read_offsets[level][shard];
             };
 
             const auto h = glob_hist[shard][level];
 
             auto block_size = h[rho(level, bit_i)];
 
-            j += block_size;
-            read_offset(oi + 1) += block_size;
+            write_offset += block_size;
+            read_offset(merge_shard + 1, shard) += block_size;
 
             // If we passed the current right border, split up the block
-            if (j > ctxs[oi].offset) {
+            if (write_offset > ctxs[merge_shard].offset) {
                 // Take back the last step
-                j -= block_size;
-                read_offset(oi + 1) -= block_size;
+                write_offset -= block_size;
+                read_offset(merge_shard + 1, shard) -= block_size;
 
                 SizeType offset_in_word = 0;
                 do {
                     // Split up the block like this:
-                    //  [ left_block_size |    right_block_size     ]
-                    //  ^                 ^                         ^
-                    // (j)         (ctxs[oi].offset)         (j + block_size)
+                    //       [    left_block_size    |        right_block_size        ]
+                    //       ^                       ^                                ^
+                    // (write_offset)    (ctxs[merge_shard].offset)      (write_offset + block_size)
 
-                    auto const left_block_size = ctxs[oi].offset - j;
+                    auto const left_block_size = ctxs[merge_shard].offset - write_offset;
 
-                    j += left_block_size;
-                    read_offset(oi + 1) += left_block_size;
+                    write_offset += left_block_size;
+                    read_offset(merge_shard + 1, shard) += left_block_size;
 
                     offset_in_word += left_block_size;
-                    offsets_in_word[level][oi + 1] = offset_in_word;
-                    block_seq_offsets[level][oi + 1] = i;
+                    offsets_in_word[level][merge_shard + 1] = offset_in_word;
+                    block_seq_offsets[level][merge_shard + 1] = i;
 
-                    if (oi + 2 < shards) {
+                    if (merge_shard + 2 < shards) {
                         for(size_t s = 0; s < shards; s++) {
-                            local_offsets[level][s][oi + 2] = local_offsets[level][s][oi + 1];
+                            read_offset(merge_shard + 2, s) = read_offset(merge_shard + 1, s);
                         }
                     }
 
-                    oi++;
+                    merge_shard++;
 
                     // Once we have calculated the offsets for all merge threads,
                     // break out of the whole nested loop
-                    if (oi == shards) {
+                    if (merge_shard + 1 == shards) {
                         goto triple_loop_exit;
                     }
 
                     // Iterate on remaining block, because one block might
                     // span multiple threads
                     block_size -= left_block_size;
-                } while ((j + block_size) > ctxs[oi].offset);
+                } while ((write_offset + block_size) > ctxs[merge_shard].offset);
 
                 // Process remainder of block
-                j += block_size;
-                read_offset(oi + 1) += block_size;
+                write_offset += block_size;
+                read_offset(merge_shard + 1, shard) += block_size;
 
-                assert(j <= ctxs[oi].offset);
+                assert(write_offset <= ctxs[merge_shard].offset);
             }
         }
         triple_loop_exit:; // we are done
@@ -252,17 +249,17 @@ inline auto merge_bvs(SizeType size,
 
         for (size_t level = 0; level < levels; level++) {
             for(size_t read_shard = 0; read_shard < shards; read_shard++) {
-                cursors[level][read_shard] = local_offsets[level][read_shard][merge_shard];
+                cursors[level][read_shard] = ctx.read_offsets[level][read_shard];
             }
         }
 
         for (size_t level = 0; level < levels; level++) {
             auto seq_i = block_seq_offsets[level][merge_shard];
 
-            SizeType j = target_left;
+            SizeType write_offset = target_left;
             size_t init_offset = offsets_in_word[level][merge_shard];
 
-            while (j < target_right) {
+            while (write_offset < target_right) {
                 const auto i = seq_i / shards;
                 const auto shard = seq_i % shards;
                 seq_i++;
@@ -271,7 +268,7 @@ inline auto merge_bvs(SizeType size,
                 const auto& local_bv = glob_bv[shard].vec()[level];
 
                 auto const block_size = std::min<SizeType>(
-                    target_right - j,
+                    target_right - write_offset,
                     h[rho(level, i)] - init_offset
                 );
                 init_offset = 0; // TODO: remove this by doing a initial pass
@@ -281,7 +278,7 @@ inline auto merge_bvs(SizeType size,
                 copy_bits<SizeType, uint64_t>(
                     _bv[level],
                     local_bv,
-                    j,
+                    write_offset,
                     local_cursor,
                     block_size
                 );
