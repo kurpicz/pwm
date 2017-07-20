@@ -233,11 +233,11 @@ inline auto merge_bvs(SizeType size,
     auto r = Bvs<SizeType>(size, levels);
     auto& _bv = r.vec();
 
-    //#pragma omp parallel
-    for(size_t omp_rank = 0; omp_rank < shards; omp_rank++)
+    #pragma omp parallel
+    //for(size_t omp_rank = 0; omp_rank < shards; omp_rank++)
     {
-        //assert(size_t(omp_get_num_threads()) == shards);
-        //const size_t omp_rank = omp_get_thread_num();
+        assert(size_t(omp_get_num_threads()) == shards);
+        const size_t omp_rank = omp_get_thread_num();
         const size_t merge_shard = omp_rank;
 
         const auto target_right = std::min(offsets[merge_shard], size);
