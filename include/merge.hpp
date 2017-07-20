@@ -129,18 +129,20 @@ inline auto merge_bvs(SizeType size,
     struct MergeCtx {
         SizeType offset;
         std::vector<std::vector<SizeType>> read_offsets;
+        std::vector<SizeType> offsets_in_first_word;
+        std::vector<SizeType> first_read_block;
     };
 
     auto ctxs = std::vector<MergeCtx>(shards, MergeCtx {
         0,
         std::vector<std::vector<SizeType>>(
             levels, std::vector<SizeType>(shards)),
+        std::vector<SizeType>(
+            levels),
+        std::vector<SizeType>(
+            levels),
     });
 
-    auto offsets_in_word = std::vector<std::vector<SizeType>>(
-        levels, std::vector<SizeType>(shards));
-    auto block_seq_offsets = std::vector<std::vector<SizeType>>(
-        levels, std::vector<SizeType>(shards));
     auto glob_cursors = std::vector<std::vector<std::vector<SizeType>>>(
         shards, std::vector<std::vector<SizeType>>(
             levels, std::vector<SizeType>(shards)
@@ -185,7 +187,7 @@ inline auto merge_bvs(SizeType size,
                 write_offset -= block_size;
                 read_offset(merge_shard + 1, read_shard) -= block_size;
 
-                SizeType offset_in_word = 0;
+                SizeType offset_in_first_word = 0;
                 do {
                     // Split up the block like this:
                     //       [    left_block_size    |        right_block_size        ]
@@ -197,9 +199,9 @@ inline auto merge_bvs(SizeType size,
                     write_offset += left_block_size;
                     read_offset(merge_shard + 1, read_shard) += left_block_size;
 
-                    offset_in_word += left_block_size;
-                    offsets_in_word[level][merge_shard + 1] = offset_in_word;
-                    block_seq_offsets[level][merge_shard + 1] = i;
+                    offset_in_first_word += left_block_size;
+                    ctxs[merge_shard + 1].offsets_in_first_word[level] = offset_in_first_word;
+                    ctxs[merge_shard + 1].first_read_block[level] = i;
 
                     if (merge_shard + 2 < shards) {
                         for(size_t s = 0; s < shards; s++) {
@@ -254,10 +256,10 @@ inline auto merge_bvs(SizeType size,
         }
 
         for (size_t level = 0; level < levels; level++) {
-            auto seq_i = block_seq_offsets[level][merge_shard];
+            auto seq_i = ctx.first_read_block[level];
 
             SizeType write_offset = target_left;
-            size_t init_offset = offsets_in_word[level][merge_shard];
+            size_t init_offset = ctx.offsets_in_first_word[level];
 
             while (write_offset < target_right) {
                 const auto i = seq_i / shards;
