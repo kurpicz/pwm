@@ -148,7 +148,6 @@ inline auto merge_bvs(SizeType size,
     }
     offsets[shards - 1] = word_size(size) * 64ull;
 
-    // TODO: fix
     for(size_t level = 0; level < levels; level++) {
         const size_t br_size = 1ull << level;
         size_t j = 0;
@@ -187,8 +186,6 @@ inline auto merge_bvs(SizeType size,
                     j += left_block_size;
                     local_offsets[level][shard][oi + 1] += left_block_size;
 
-                    // TODO: rename offset_in_word to something like
-                    // "offset in block"
                     offset_in_word += left_block_size;
                     offsets_in_word[level][oi + 1] = offset_in_word;
                     block_seq_offsets[level][oi + 1] = i;
