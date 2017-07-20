@@ -5,17 +5,13 @@
 #include <cassert>
 #include <climits>
 #include <omp.h>
-#include <sstream>
 
 template<typename SizeType, typename WordType>
 void copy_bits(WordType* const dst,
                WordType const* const src,
                SizeType& dst_off_ref,
                SizeType& src_off_ref,
-               SizeType const block_size,
-               SizeType const words_size,
-               SizeType const full_words_size
-              )
+               SizeType const block_size)
 {
     if (block_size == 0) return;
 
@@ -92,23 +88,9 @@ void copy_bits(WordType* const dst,
             WordType const* sr = src + (src_off >> SHIFT);
             WordType const* const ds_end = ds + words;
 
-            auto chk = [
-                full_words_size, src_shift_a, src_shift_b, dst_off, src_off
-            ](auto ds, auto dst, auto sr, auto src) {
-                assert((ds - dst) < full_words_size);
-                assert((sr - src) < full_words_size);
-                assert(((sr - src) + 1) < full_words_size);
-            };
-
             while (ds != ds_end) {
-                chk(ds, dst, sr, src);
-
-                WordType const vala = *sr;
+                *ds++ = (*sr << src_shift_a) | (*(sr+1) >> src_shift_b);
                 sr++;
-                WordType const valb = *sr;
-
-                *ds++ = (vala << src_shift_a) | (valb >> src_shift_b);
-
             }
 
             dst_off += words * BITS;
@@ -146,7 +128,7 @@ inline auto merge_bvs(SizeType size,
     auto local_offsets = std::vector<std::vector<std::vector<SizeType>>>(
         levels, std::vector<std::vector<SizeType>>(
             shards, std::vector<SizeType>(shards + 1)));
-    auto word_offsets = std::vector<std::vector<SizeType>>(
+    auto offsets_in_word = std::vector<std::vector<SizeType>>(
         levels, std::vector<SizeType>(shards + 1));
     auto block_seq_offsets = std::vector<std::vector<SizeType>>(
         levels, std::vector<SizeType>(shards + 1));
@@ -166,7 +148,6 @@ inline auto merge_bvs(SizeType size,
     }
     offsets[shards - 1] = word_size(size) * 64ull;
 
-    // TODO: fix
     for(size_t level = 0; level < levels; level++) {
         const size_t br_size = 1ull << level;
         size_t j = 0;
@@ -177,73 +158,54 @@ inline auto merge_bvs(SizeType size,
             const auto shard = i % shards;
 
             const auto h = glob_hist[shard][level];
-            const auto block_size = h[rho(level, bit_i)];
 
-            std::stringstream dump;
-            auto chk = [&](const auto& v) -> std::ostream& {
-                if (v > size) {
-                    return std::cout;
-                } else {
-                    return dump;
-                }
-            };
+            auto block_size = h[rho(level, bit_i)];
 
-            j += block_size;
-
-            chk(local_offsets[level][shard][oi + 1]) << "a" << "\n";
-            local_offsets[level][shard][oi + 1] += block_size;
-            chk(local_offsets[level][shard][oi + 1]) << "b" << "\n";
-
-            if (j <= offsets[oi]) {
-                // ...
-            } else {
-                size_t right = j - offsets[oi];
-                size_t left = block_size - right;
-
-                std::cout << "j, offset[oi], block_size, right, left: "
-                    << uint64_t(j) << ", "
-                    << uint64_t(offsets[oi]) << ", "
-                    << uint64_t(block_size) << ", "
-                    << uint64_t(right) << ", "
-                    << uint64_t(left) << "\n";
-
-                j -= block_size;
-                local_offsets[level][shard][oi + 1] -= block_size;
-                chk(local_offsets[level][shard][oi + 1]) << "c" << "\n";
-
-                j += left;
-                local_offsets[level][shard][oi + 1] += left;
-                chk(local_offsets[level][shard][oi + 1]) << "d" << "\n";
-
-                // TODO: rename word_offset to something like
-                // "offset in block"
-                word_offsets[level][oi + 1] = left;
-                block_seq_offsets[level][oi + 1] = i;
-
-                if (oi + 2 < shards + 1) {
-                    for(size_t s = 0; s < shards; s++) {
-                        local_offsets[level][s][oi + 2] = local_offsets[level][s][oi + 1];
-                        chk(local_offsets[level][shard][oi + 2]) << "e" << "\n";
-                    }
-                }
-                oi++;
-
-                j += right;
-                local_offsets[level][shard][oi + 1] += right;
-
-                chk(local_offsets[level][shard][oi + 1]) << "f" << "\n";
+            if (block_size == 0) {
+                continue;
             }
 
-            for (size_t level = 0; level < local_offsets.size(); level++) {
-                for (size_t shard = 0; shard < local_offsets.size(); shard++) {
-                    if ((level == 0 || level == 1) && shard == 30) {
-                        std::cout << "local_offsets[" << level << "][" << shard << "]: [";
-                        for (auto e : local_offsets[level][shard]) {
-                            std::cout << e << ", ";
+            j += block_size;
+            local_offsets[level][shard][oi + 1] += block_size;
+
+            // If we passed the current right border, split up the block
+            if (j > offsets[oi]) {
+                // Take back the last step
+                j -= block_size;
+                local_offsets[level][shard][oi + 1] -= block_size;
+
+                SizeType offset_in_word = 0;
+                do {
+                    // Split up the block like this:
+                    //  [ left_block_size |    right_block_size     ]
+                    //  ^                 ^                         ^
+                    // (j)           (offsets[oi])           (j + block_size)
+
+                    auto const left_block_size = offsets[oi] - j;
+
+                    j += left_block_size;
+                    local_offsets[level][shard][oi + 1] += left_block_size;
+
+                    offset_in_word += left_block_size;
+                    offsets_in_word[level][oi + 1] = offset_in_word;
+                    block_seq_offsets[level][oi + 1] = i;
+
+                    if (oi + 1 < shards) {
+                        for(size_t s = 0; s < shards; s++) {
+                            local_offsets[level][s][oi + 2] = local_offsets[level][s][oi + 1];
                         }
-                        std::cout << "]\n";
                     }
-                }
+                    oi++;
+
+                    // Iterate on remaining block
+                    block_size -= left_block_size;
+                } while ((j + block_size) > offsets[oi]);
+
+                // Process remainder of block
+                j += block_size;
+                local_offsets[level][shard][oi + 1] += block_size;
+
+                assert(j <= offsets[oi]);
             }
         }
     }
@@ -251,25 +213,21 @@ inline auto merge_bvs(SizeType size,
     auto r = Bvs<SizeType>(size, levels);
     auto& _bv = r.vec();
 
-    //#pragma omp parallel
-    for(size_t omp_rank = 0; omp_rank < shards; omp_rank++)
+    #pragma omp parallel
+    //for(size_t omp_rank = 0; omp_rank < shards; omp_rank++)
     {
-        //assert(size_t(omp_get_num_threads()) == shards);
-        //const size_t omp_rank = omp_get_thread_num();
+        assert(size_t(omp_get_num_threads()) == shards);
+        const size_t omp_rank = omp_get_thread_num();
         const size_t merge_shard = omp_rank;
 
         const auto target_right = std::min(offsets[merge_shard], size);
         const auto target_left = std::min((merge_shard > 0 ? offsets[merge_shard - 1] : 0), target_right);
 
-        auto& cursors = glob_cursors.at(merge_shard);
+        auto& cursors = glob_cursors[merge_shard];
 
         for (size_t level = 0; level < levels; level++) {
             for(size_t read_shard = 0; read_shard < shards; read_shard++) {
                 cursors[level][read_shard] = local_offsets[level][read_shard][merge_shard];
-
-                if (cursors.at(level).at(read_shard) > size) {
-                    std::cout << "cursors[" << level << "][" <<  read_shard<< "]: " << cursors.at(level).at(read_shard) << "\n";
-                }
             }
         }
 
@@ -277,7 +235,7 @@ inline auto merge_bvs(SizeType size,
             auto seq_i = block_seq_offsets[level][merge_shard];
 
             SizeType j = target_left;
-            size_t init_offset = word_offsets[level][merge_shard];
+            size_t init_offset = offsets_in_word[level][merge_shard];
 
             while (j < target_right) {
                 const auto i = seq_i / shards;
@@ -293,22 +251,14 @@ inline auto merge_bvs(SizeType size,
                 );
                 init_offset = 0; // TODO: remove this by doing a initial pass
 
-                auto& local_cursor = cursors.at(level).at(shard);
-
-                if (local_cursor > size) {
-                    std::cout << "j, local_cursor: " << j << ", " << local_cursor << "\n";
-                }
-
-                assert(local_cursor < size);
+                auto& local_cursor = cursors[level][shard];
 
                 copy_bits<SizeType, uint64_t>(
                     _bv[level],
                     local_bv,
                     j,
                     local_cursor,
-                    block_size,
-                    word_size(target_right - target_left),
-                    word_size(size)
+                    block_size
                 );
             }
         }

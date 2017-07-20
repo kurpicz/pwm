@@ -41,7 +41,7 @@ TEST(BitCopy, test0) {
         0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,
     };
     auto test = [&](size_t dst_off, size_t src_off, size_t block_size) {
-        copy_bits<size_t, uint8_t>(dst.data(), src.data(), dst_off, src_off, block_size, src.size(), src.size());
+        copy_bits<size_t, uint8_t>(dst.data(), src.data(), dst_off, src_off, block_size);
     };
 
     /////////////////////////////////////////
@@ -74,7 +74,7 @@ TEST(BitCopy, test1) {
         0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,
     };
     auto test = [&](size_t dst_off, size_t src_off, size_t block_size) {
-        copy_bits<size_t, uint8_t>(dst.data(), src.data(), dst_off, src_off, block_size, src.size(), src.size());
+        copy_bits<size_t, uint8_t>(dst.data(), src.data(), dst_off, src_off, block_size);
     };
 
     /////////////////////////////////////////
@@ -101,7 +101,7 @@ TEST(BitCopy, test2) {
         0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,
     };
     auto test = [&](size_t dst_off, size_t src_off, size_t block_size) {
-        copy_bits<size_t, uint8_t>(dst.data(), src.data(), dst_off, src_off, block_size, src.size(), src.size());
+        copy_bits<size_t, uint8_t>(dst.data(), src.data(), dst_off, src_off, block_size);
     };
 
     /////////////////////////////////////////
@@ -115,7 +115,7 @@ TEST(BitCopy, test2) {
 
 }
 
-TEST(BitCopy, test3) {
+TEST(BitCopy, env_debug) {
     std::cout << "size_t size: " << sizeof(size_t) * CHAR_BIT << "\n";
     std::cout << "omp size: " << omp_get_max_threads() << "\n";
 }

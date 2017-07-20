@@ -30,12 +30,6 @@ script:
   - git submodule update --init
   - mkdir build
   - cd build
-  - cmake -DCMAKE_BUILD_TYPE=Debug ..
-  - make bit_copy
-  - make build_check
-  - cd test
-  - ulimit -c unlimited -S
-  - gdb wm_dd_pc_test_testrunner -ex "run" -ex "thread apply all bt" -ex "set pagination 0" -batch
-  - ls -l
-
-#  - make
+  - cmake -DCMAKE_BUILD_TYPE=Release ..
+  - make check
+  - make
