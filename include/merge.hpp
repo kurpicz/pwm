@@ -166,24 +166,24 @@ inline auto merge_bvs(SizeType size,
 
         for(size_t i = 0; i < br_size * shards; i++) {
             const auto bit_i = i / shards;
-            const auto shard = i % shards;
+            const auto read_shard = i % shards;
 
-            auto read_offset = [&level, &ctxs](auto merge_shard, auto shard) -> SizeType& {
-                return ctxs[merge_shard].read_offsets[level][shard];
+            auto read_offset = [&level, &ctxs](auto merge_shard, auto read_shard) -> SizeType& {
+                return ctxs[merge_shard].read_offsets[level][read_shard];
             };
 
-            const auto h = glob_hist[shard][level];
+            const auto h = glob_hist[read_shard][level];
 
             auto block_size = h[rho(level, bit_i)];
 
             write_offset += block_size;
-            read_offset(merge_shard + 1, shard) += block_size;
+            read_offset(merge_shard + 1, read_shard) += block_size;
 
             // If we passed the current right border, split up the block
             if (write_offset > ctxs[merge_shard].offset) {
                 // Take back the last step
                 write_offset -= block_size;
-                read_offset(merge_shard + 1, shard) -= block_size;
+                read_offset(merge_shard + 1, read_shard) -= block_size;
 
                 SizeType offset_in_word = 0;
                 do {
@@ -195,7 +195,7 @@ inline auto merge_bvs(SizeType size,
                     auto const left_block_size = ctxs[merge_shard].offset - write_offset;
 
                     write_offset += left_block_size;
-                    read_offset(merge_shard + 1, shard) += left_block_size;
+                    read_offset(merge_shard + 1, read_shard) += left_block_size;
 
                     offset_in_word += left_block_size;
                     offsets_in_word[level][merge_shard + 1] = offset_in_word;
@@ -222,7 +222,7 @@ inline auto merge_bvs(SizeType size,
 
                 // Process remainder of block
                 write_offset += block_size;
-                read_offset(merge_shard + 1, shard) += block_size;
+                read_offset(merge_shard + 1, read_shard) += block_size;
 
                 assert(write_offset <= ctxs[merge_shard].offset);
             }
