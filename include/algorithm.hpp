@@ -52,6 +52,7 @@ public:
 
   virtual void run() = 0;
   virtual bool is_tree() = 0;
+  virtual bool is_parallel() = 0;
 
   void print_info() {
     std::cout << name_ << ": " << description_ << std::endl;
@@ -81,15 +82,46 @@ public:
     return WaveletStructure<SizeType>::is_tree;
   }
 
+  bool is_parallel() {
+    return false;
+  }
+
 private:
   construct_function cstr_fnct_;
-};
+}; // class concrete_construction_algorithm
+
+template <typename WaveletStructure>
+class concrete_algorithm : construction_algorithm {
+
+public:
+  concrete_algorithm(std::string name, std::string description)
+  : construction_algorithm(name, description) { }
+
+  inline void run() { }
+
+  bool is_tree() {
+    return false;
+  }
+
+  bool is_parallel() {
+    return false;
+  }
+
+private:
+  WaveletStructure ws_;
+
+}; // class concrete_algorithm
 
 #define CONSTRUCTION_ALGORITHM_REGISTER(algo_name, algo_description, \
   a_t, s_t, w_t, cstr_fct)                                           \
   static const auto* _cstr_algo_ ## cstr_fct ## _register            \
     = new concrete_construction_algorithm<a_t, s_t, w_t>(            \
       algo_name, algo_description, cstr_fct);
+
+
+#define CONSTRUCTION_REGISTER(algo_name, algo_description, wavelet_structure) \
+  static const auto* _cstr_algo_ ## wavelet_structure ## _register            \
+    = new concrete_algorithm<wavelet_structure>(algo_name, algo_description);
 
 #endif // ALGORITHM_HEADER
 

@@ -20,6 +20,8 @@ template <typename AlphabetType, typename SizeType>
 class wm_pc {
 
 public:
+    wm_pc() = default;
+
     wm_pc(const std::vector<AlphabetType>& text,
           const SizeType size,
           const SizeType levels) : _bv(levels), _zeros(levels, 0) {
