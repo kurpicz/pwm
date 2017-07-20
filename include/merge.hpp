@@ -204,8 +204,10 @@ inline auto merge_bvs(SizeType size,
                     offsets_in_word[level][oi + 1] = offset_in_word;
                     block_seq_offsets[level][oi + 1] = i;
 
-                    for(size_t s = 0; s < shards; s++) {
-                        local_offsets[level][s][oi + 2] = local_offsets[level][s][oi + 1];
+                    if (oi + 2 < shards) {
+                        for(size_t s = 0; s < shards; s++) {
+                            local_offsets[level][s][oi + 2] = local_offsets[level][s][oi + 1];
+                        }
                     }
 
                     oi++;
