@@ -171,18 +171,22 @@ inline auto merge_bvs(SizeType size,
             const auto bit_i = i / shards;
             const auto shard = i % shards;
 
+            auto read_offset = [&](auto merge_shard) -> SizeType& {
+                return local_offsets[level][shard][merge_shard];
+            };
+
             const auto h = glob_hist[shard][level];
 
             auto block_size = h[rho(level, bit_i)];
 
             j += block_size;
-            local_offsets[level][shard][oi + 1] += block_size;
+            read_offset(oi + 1) += block_size;
 
             // If we passed the current right border, split up the block
             if (j > ctxs[oi].offset) {
                 // Take back the last step
                 j -= block_size;
-                local_offsets[level][shard][oi + 1] -= block_size;
+                read_offset(oi + 1) -= block_size;
 
                 SizeType offset_in_word = 0;
                 do {
@@ -194,7 +198,7 @@ inline auto merge_bvs(SizeType size,
                     auto const left_block_size = ctxs[oi].offset - j;
 
                     j += left_block_size;
-                    local_offsets[level][shard][oi + 1] += left_block_size;
+                    read_offset(oi + 1) += left_block_size;
 
                     offset_in_word += left_block_size;
                     offsets_in_word[level][oi + 1] = offset_in_word;
@@ -211,13 +215,14 @@ inline auto merge_bvs(SizeType size,
                         goto triple_loop_exit;
                     }
 
-                    // Iterate on remaining block
+                    // Iterate on remaining block, because one block might
+                    // span multiple threads
                     block_size -= left_block_size;
                 } while ((j + block_size) > ctxs[oi].offset);
 
                 // Process remainder of block
                 j += block_size;
-                local_offsets[level][shard][oi + 1] += block_size;
+                read_offset(oi + 1) += block_size;
 
                 assert(j <= ctxs[oi].offset);
             }
