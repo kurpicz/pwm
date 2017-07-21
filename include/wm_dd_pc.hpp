@@ -64,8 +64,7 @@ public:
 
         // TODO: Move and drop unneeded ctx stuff better than this
 
-        auto glob_bv = std::vector<Bvs<SizeType>>(
-            shards);
+        auto glob_bv = std::vector<Bvs<SizeType>>(shards);
 
         auto glob_zeros = std::vector<std::vector<SizeType>>(
             shards, std::vector<SizeType>(levels));
@@ -85,6 +84,8 @@ public:
                 }
             }
         }
+
+        drop_me(std::move(ctxs));
 
         _bv = merge_bvs<SizeType>(size, levels, shards, glob_hist, glob_bv, rho);
 
