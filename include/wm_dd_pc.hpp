@@ -36,31 +36,24 @@ public:
         // Do all bulk allocations in the same thread:
         // TODO: flatten vectors where possible, to reduce indirection
 
-        auto glob_zeros = std::vector<std::vector<SizeType>>(
-            shards, std::vector<SizeType>(levels));
-        auto glob_bv = std::vector<Bvs<SizeType>>(
-            shards);
-        auto glob_hist = std::vector<std::vector<std::vector<SizeType>>>(
-            shards, std::vector<std::vector<SizeType>>(
-                levels + 1, std::vector<SizeType>((1 << levels), 0)));
         const auto rho = rho_bit_reverse(levels);
-
-        auto glob_borders = std::vector<std::vector<SizeType>>(
-            shards, std::vector<SizeType>((1 << levels), 0));
+        auto ctxs = std::vector<KeepLevel<SizeType, true, decltype(rho)>>(shards);
 
         for (size_t shard = 0; shard < shards; shard++) {
             const SizeType local_size = (size / shards) +
                 ((shard < size % shards) ? 1 : 0);
 
-            glob_bv[shard] = Bvs<SizeType>(local_size, levels);
+            // TODO: store size in ctx so that later can reload it
+            ctxs[shard] = KeepLevel<SizeType, true, decltype(rho)>(local_size, levels, rho);
         }
 
         #pragma omp parallel
         {
             const SizeType omp_rank = omp_get_thread_num();
             const SizeType omp_size = omp_get_num_threads();
-
             assert(omp_size == shards);
+
+            auto& ctx = ctxs[omp_rank];
 
             const SizeType local_size = (size / omp_size) +
                 ((omp_rank < size % omp_size) ? 1 : 0);
@@ -71,17 +64,16 @@ public:
 
             SizeType cur_max_char = (1 << levels);
 
-            auto& zeros = glob_zeros[omp_rank];
-            auto& borders = glob_borders[omp_rank];
-            auto& hist = glob_hist[omp_rank];
-            auto& bv = glob_bv[omp_rank];
+            auto& zeros = ctx.zeros();
+            auto& borders = ctx.borders();
+            auto& bv = ctx.bv();
 
             // While initializing the histogram, we also compute the fist level
             SizeType cur_pos = 0;
             for (; cur_pos + 64 <= local_size; cur_pos += 64) {
                 uint64_t word = 0ULL;
                 for (SizeType i = 0; i < 64; ++i) {
-                    ++hist[levels][text[cur_pos + i]];
+                    ++ctx.hist(levels, text[cur_pos + i]);
                     word <<= 1;
                     word |= ((text[cur_pos + i] >> (levels - 1)) & 1ULL);
                 }
@@ -90,7 +82,7 @@ public:
             if (local_size & 63ULL) {
                 uint64_t word = 0ULL;
                 for (SizeType i = 0; i < local_size - cur_pos; ++i) {
-                    ++hist[levels][text[cur_pos + i]];
+                    ++ctx.hist(levels, text[cur_pos + i]);
                     word <<= 1;
                     word |= ((text[cur_pos + i] >> (levels - 1)) & 1ULL);
                 }
@@ -99,8 +91,10 @@ public:
             }
 
             // The number of 0s at the last level is the number of "even" characters
-            for (SizeType i = 0; i < cur_max_char; i += 2) {
-                zeros[levels - 1] += hist[levels][i];
+            if (ctx.calc_zeros()) {
+                for (SizeType i = 0; i < cur_max_char; i += 2) {
+                    zeros[levels - 1] += ctx.hist(levels, i);
+                }
             }
 
             // Now we compute the WM bottom-up, i.e., the last level first
@@ -112,21 +106,25 @@ public:
                 // histogram of the bit prefixes
                 cur_max_char >>= 1;
 
-                hist[level].resize(1ull << level);
                 for (SizeType i = 0; i < cur_max_char; ++i) {
-                    hist[level][i] = hist[level + 1][i << 1] + hist[level + 1][(i << 1) + 1];
+                    ctx.hist(level, i)
+                        = ctx.hist(level + 1, i << 1)
+                        + ctx.hist(level + 1, (i << 1) + 1);
                 }
 
                 // Compute the starting positions of characters with respect to their
                 // bit prefixes and the bit-reversal permutation
                 borders[0] = 0;
                 for (SizeType i = 1; i < cur_max_char; ++i) {
-                    borders[rho(level, i)] = borders[rho(level, i - 1)] +
-                        hist[level][rho(level, i - 1)];
+                    borders[ctx.rho(level, i)]
+                        = borders[ctx.rho(level, i - 1)]
+                        + ctx.hist(level, ctx.rho(level, i - 1));
                 }
 
                 // The number of 0s is the position of the first 1 in the previous level
-                zeros[level - 1] = borders[1];
+                if (ctx.calc_zeros()) {
+                    zeros[level - 1] = borders[1];
+                }
 
                 // Now we insert the bits with respect to their bit prefixes
                 for (SizeType i = 0; i < local_size; ++i) {
@@ -136,13 +134,32 @@ public:
                 }
             }
 
-            hist[0].resize(1ull << 0);
-            if (hist.size() > 1) {
-                hist[0][0] = hist[1][0] + hist[1][1];
+            if (levels > 1) { // TODO check condition
+                ctx.hist(0, 0) = ctx.hist(1, 0) + ctx.hist(1, 1);
             }
         }
 
-        drop_me(std::move(glob_borders));
+        auto glob_bv = std::vector<Bvs<SizeType>>(
+            shards);
+
+        auto glob_zeros = std::vector<std::vector<SizeType>>(
+            shards, std::vector<SizeType>(levels));
+
+        auto glob_hist = std::vector<std::vector<std::vector<SizeType>>>(
+            shards, std::vector<std::vector<SizeType>>(
+                levels + 1, std::vector<SizeType>((1 << levels), 0)));
+
+        for(size_t shard = 0; shard < shards; shard++) {
+            glob_bv[shard] = std::move(ctxs[shard].bv());
+            glob_zeros[shard] = std::move(ctxs[shard].zeros());
+            for(size_t level = 0; level < (levels + 1); level++) {
+                auto hist_size = ctxs[shard].hist_size(level);
+                glob_hist[shard][level] = std::vector<SizeType>(hist_size, 0);
+                for(size_t i = 0; i < hist_size; i++) {
+                    glob_hist[shard][level][i] = ctxs[shard].hist(level, i);
+                }
+            }
+        }
 
         // TODO: Add abstraction for allocating the bitvector (no more bare vector of pointers)
 
