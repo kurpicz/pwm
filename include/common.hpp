@@ -98,6 +98,23 @@ inline auto rho_bit_reverse(SizeType levels) {
     };
 }
 
+template<bool is_matrix>
+struct rho_dispatch {};
+
+template<>
+struct rho_dispatch<true> {
+    static auto create(size_t levels) {
+        return rho_bit_reverse(levels);
+    }
+};
+
+template<>
+struct rho_dispatch<false> {
+    static auto create(size_t levels) {
+        return rho_identity(levels);
+    }
+};
+
 constexpr size_t word_size(uint64_t size) {
     return (size + 63ULL) >> 6;
 }
