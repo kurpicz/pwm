@@ -28,7 +28,6 @@ public:
              const SizeType levels):
         _zeros(levels, 0)
     {
-
         if(global_text.size() == 0) { return; }
 
         const SizeType shards = omp_get_max_threads();
@@ -63,6 +62,8 @@ public:
             pc(text, local_size, levels, ctxs[omp_rank]);
         }
 
+        // TODO: Move and drop unneeded ctx stuff better than this
+
         auto glob_bv = std::vector<Bvs<SizeType>>(
             shards);
 
@@ -85,10 +86,7 @@ public:
             }
         }
 
-        // TODO: Add abstraction for allocating the bitvector (no more bare vector of pointers)
-
-        auto bv = merge_bvs<SizeType>(size, levels, shards, glob_hist, glob_bv, rho);
-        _bv = std::move(bv.vec());
+        _bv = merge_bvs<SizeType>(size, levels, shards, glob_hist, glob_bv, rho);
 
         #pragma omp parallel for
         for(size_t level = 0; level < levels; level++) {
@@ -96,15 +94,14 @@ public:
                 _zeros[level] += glob_zeros[shard][level];
             }
         }
-
     }
 
     auto get_bv_and_zeros() const {
-        return std::make_pair(_bv, _zeros);
+        return std::make_pair(_bv.vec(), _zeros);
     }
 
 private:
-    std::vector<uint64_t*> _bv;
+    Bvs<SizeType> _bv;
     std::vector<SizeType> _zeros;
 }; // class wm_dd_pc
 
