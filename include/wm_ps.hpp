@@ -1,5 +1,5 @@
 /*******************************************************************************
- * include/wm_dd_ps.hpp
+ * include/wm_ps.hpp
  *
  * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
  *
@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "wx_dd_ps.hpp"
+#include "wx_ps.hpp"
 
 template <typename AlphabetType, typename SizeType = uint64_t>
-using wm_dd_ps = wx_dd_ps<AlphabetType, true, SizeType>;
+using wm_ps = wx_ps<AlphabetType, true, SizeType>;

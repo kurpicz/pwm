@@ -6,12 +6,14 @@
 template<
     typename Text,
     typename SizeType,
-    typename ctx_t
+    typename ctx_t,
+    typename SortedText
 >
-void pc(Text const& text,
+void ps(Text const& text,
         SizeType const size,
         SizeType const levels,
-        ctx_t& ctx)
+        ctx_t& ctx,
+        SortedText& sorted_text)
 {
     SizeType cur_max_char = (1 << levels);
 
@@ -50,9 +52,6 @@ void pc(Text const& text,
 
     // Now we compute the WM bottom-up, i.e., the last level first
     for (SizeType level = levels - 1; level > 0; --level) {
-        const SizeType prefix_shift = (levels - level);
-        const SizeType cur_bit_shift = prefix_shift - 1;
-
         // Update the maximum value of a feasible a bit prefix and update the
         // histogram of the bit prefixes
         cur_max_char >>= 1;
@@ -80,11 +79,32 @@ void pc(Text const& text,
             zeros[level - 1] = borders[1];
         }
 
-        // Now we insert the bits with respect to their bit prefixes
+        // Now we sort the text utilizing counting sort and the starting positions
+        // that we have computed before
         for (SizeType i = 0; i < size; ++i) {
-            const SizeType pos = borders[text[i] >> prefix_shift]++;
-            bv[level][pos >> 6] |= (((text[i] >> cur_bit_shift) & 1ULL)
-            << (63ULL - (pos & 63ULL)));
+            const auto cur_char = text[i];
+            sorted_text[borders[cur_char >> (levels - level)]++] = cur_char;
+        }
+
+        // Since we have sorted the text, we can simply scan it from left to right
+        // and for the character at position $i$ we set the $i$-th bit in the
+        // bit vector accordingly
+        for (cur_pos = 0; cur_pos + 63 < size; cur_pos += 64) {
+            uint64_t word = 0ULL;
+            for (SizeType i = 0; i < 64; ++i) {
+                word <<= 1;
+                word |= ((sorted_text[cur_pos + i] >> ((levels - 1) - level)) & 1ULL);
+            }
+            bv[level][cur_pos >> 6] = word;
+        }
+        if (size & 63ULL) {
+            uint64_t word = 0ULL;
+            for (SizeType i = 0; i < size - cur_pos; ++i) {
+                word <<= 1;
+                word |= ((sorted_text[cur_pos + i] >> ((levels - 1) - level)) & 1ULL);
+            }
+            word <<= (64 - (size & 63ULL));
+            bv[level][size >> 6] = word;
         }
     }
 
