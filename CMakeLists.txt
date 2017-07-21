@@ -60,6 +60,6 @@ find_or_download_package(GTest GTEST gtest)
 include_directories(include)
 
 add_subdirectory(src)
-add_subdirectory(test)
+# add_subdirectory(test)
 
 MESSAGE( STATUS "Built Type: " ${CMAKE_BUILD_TYPE} )

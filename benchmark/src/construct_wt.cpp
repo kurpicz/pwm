@@ -14,13 +14,13 @@
 #include <unordered_map>
 #include <vector>
 
-#include "wt_dd_pc.hpp"
-#include "wt_dd_ps.hpp"
+// #include "wt_dd_pc.hpp"
+// #include "wt_dd_ps.hpp"
 #include "wt_naive.hpp"
-#include "wt_pc.hpp"
-#include "wt_ppc.hpp"
-#include "wt_ps.hpp"
-#include "wt_pps.hpp"
+// #include "wt_pc.hpp"
+// #include "wt_ppc.hpp"
+// #include "wt_ps.hpp"
+// #include "wt_pps.hpp"
 
 template <typename AlphabetType>
 void ConstructWT(std::vector<AlphabetType>& text, const bool already_reduced) {
