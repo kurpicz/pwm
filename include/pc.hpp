@@ -2,10 +2,12 @@
 
 #include "common.hpp"
 
+// TODO: WM/WT abstract that selects zeros and rho
+
 template<typename SizeType>
 struct LevelSinglePass {
     std::vector<SizeType> m_hist;
-    std::vector<SizeType> m_bit_reverse;
+    std::vector<SizeType> m_bit_reverse; // TODO: factor out
     std::vector<SizeType> m_borders;
     std::vector<SizeType> m_zeros;
     Bvs<SizeType> m_bv;
@@ -35,17 +37,24 @@ struct LevelSinglePass {
         return m_hist[i];
     }
 
-    SizeType& rho(size_t level, size_t i) {
+    SizeType rho(size_t level, size_t i) {
         return m_bit_reverse[i];
+    }
+
+    void set_rho(size_t level, size_t i, SizeType val) {
+        m_bit_reverse[i] = val;
     }
 
     std::vector<SizeType>& borders() {
         return m_borders;
     }
 
-    template<typename F>
-    void if_zeros(F f) {
-        f();
+    bool calc_zeros() {
+        return true;
+    }
+
+    bool calc_rho() {
+        return true;
     }
 
     std::vector<SizeType>& zeros() {
@@ -59,7 +68,32 @@ struct LevelSinglePass {
 
 template<typename SizeType>
 struct KeepLevel {
-    KeepLevel(SizeType const levels) {
+    std::vector<std::vector<SizeType>> m_hist;
+    decltype(rho_bit_reverse(0)) const* m_rho;
+    std::vector<SizeType> m_borders;
+    std::vector<SizeType> m_zeros;
+    Bvs<SizeType> m_bv;
+
+    KeepLevel(SizeType const size, SizeType const levels, decltype(rho_bit_reverse(0)) const& rho) {
+        auto cur_max_char = (1ull << levels);
+
+        m_hist.reserve(levels + 1);
+        m_hist.resize(levels + 1);
+
+        for(size_t level = 0; level < (levels + 1); level++) {
+            m_hist[level].reserve(hist_size(level));
+            m_hist[level].resize(hist_size(level));
+        }
+
+        m_rho = &rho;
+
+        m_borders.reserve(cur_max_char);
+        m_borders.resize(cur_max_char, 0);
+
+        m_zeros.reserve(levels);
+        m_zeros.resize(levels, 0);
+
+        m_bv = Bvs<SizeType>(size, levels);
     }
 
     SizeType const hist_size(SizeType const level) {
@@ -67,20 +101,35 @@ struct KeepLevel {
     }
 
     SizeType& hist(SizeType const level, SizeType const i) {
-
+        return m_hist[level][i];
     }
 
     SizeType& rho(size_t level, size_t i) {
+        return (*m_rho)(level, i);
+    }
 
+    void set_rho(size_t level, size_t i, SizeType val) {
+        // m_rho is already calculated
     }
 
     std::vector<SizeType>& borders() {
-
+        return m_borders;
     }
 
-    template<typename F>
-    void if_zeros(F f) {
+    bool calc_zeros() {
+        return true;
+    }
 
+    bool calc_rho() {
+        return false;
+    }
+
+    std::vector<SizeType>& zeros() {
+        return m_zeros;
+    }
+
+    Bvs<SizeType>& bv() {
+        return m_bv;
     }
 };
 
@@ -120,11 +169,11 @@ void pc(Text const& text,
     }
 
     // The number of 0s at the last level is the number of "even" characters
-    ctx.if_zeros([&]() {
+    if (ctx.calc_zeros()) {
         for (SizeType i = 0; i < cur_max_char; i += 2) {
             ctx.zeros()[levels - 1] += ctx.hist(levels, i);
         }
-    });
+    }
 
     // Now we compute the WM bottom-up, i.e., the last level first
     for (SizeType level = levels - 1; level > 0; --level) {
@@ -145,16 +194,19 @@ void pc(Text const& text,
         // bit prefixes and the bit-reversal permutation
         borders[0] = 0;
         for (SizeType i = 1; i < cur_max_char; ++i) {
-            borders[ctx.rho(level, i)] = borders[ctx.rho(level, i - 1)] +
-            ctx.hist(level, ctx.rho(level, i - 1));
+            auto const prev_rho = ctx.rho(level, i - 1);
 
-            ctx.rho(level - 1, i - 1) = (ctx.rho(level, i - 1) >> 1);
+            borders[ctx.rho(level, i)] = borders[prev_rho] + ctx.hist(level, prev_rho);
+
+            if (ctx.calc_rho())  {
+                ctx.set_rho(level - 1, i - 1, prev_rho >> 1);
+            }
         }
 
         // The number of 0s is the position of the first 1 in the previous level
-        ctx.if_zeros([&]() {
+        if (ctx.calc_zeros()) {
             ctx.zeros()[level - 1] = borders[1];
-        });
+        }
 
         // Now we insert the bits with respect to their bit prefixes
         for (SizeType i = 0; i < size; ++i) {
