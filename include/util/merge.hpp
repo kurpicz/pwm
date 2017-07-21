@@ -6,12 +6,12 @@
 #include <climits>
 #include <omp.h>
 
-template<typename SizeType, typename WordType>
+template<typename WordType>
 void copy_bits(WordType* const dst,
                WordType const* const src,
-               SizeType& dst_off_ref,
-               SizeType& src_off_ref,
-               SizeType const block_size)
+               uint64_t& dst_off_ref,
+               uint64_t& src_off_ref,
+               uint64_t const block_size)
 {
     if (block_size == 0) return;
 
@@ -19,8 +19,8 @@ void copy_bits(WordType* const dst,
     WordType constexpr MOD_MASK = BITS - 1;
     WordType constexpr SHIFT = log2(MOD_MASK);
 
-    SizeType dst_off = dst_off_ref;
-    SizeType src_off = src_off_ref;
+    uint64_t dst_off = dst_off_ref;
+    uint64_t src_off = src_off_ref;
     auto const dst_off_end = dst_off + block_size;
 
     // NB: Check if source and target block are aligned the same way
@@ -113,13 +113,13 @@ void copy_bits(WordType* const dst,
     src_off_ref += block_size;
 }
 
-template<typename SizeType, typename Rho>
-inline auto merge_bvs(SizeType size,
-                      SizeType levels,
-                      SizeType shards,
-                      const std::vector<std::vector<std::vector<SizeType>>>& glob_hist,
-                      const std::vector<Bvs<SizeType>>& glob_bv,
-                      const Rho& rho) -> Bvs<SizeType>
+template<typename Rho>
+inline auto merge_bvs(uint64_t size,
+                      uint64_t levels,
+                      uint64_t shards,
+                      const std::vector<std::vector<std::vector<uint64_t>>>& glob_hist,
+                      const std::vector<Bvs>& glob_bv,
+                      const Rho& rho) -> Bvs
 {
     assert(shards == glob_bv.size());
     assert(shards == glob_hist.size());
@@ -127,13 +127,13 @@ inline auto merge_bvs(SizeType size,
     // Allocate data structures centrally
 
     struct MergeLevelCtx {
-        std::vector<SizeType> read_offsets;
-        SizeType offset_in_first_word;
-        SizeType first_read_block;
+        std::vector<uint64_t> read_offsets;
+        uint64_t offset_in_first_word;
+        uint64_t first_read_block;
     };
 
     struct MergeCtx {
-        SizeType offset;
+        uint64_t offset;
         std::vector<MergeLevelCtx> levels;
     };
 
@@ -141,7 +141,7 @@ inline auto merge_bvs(SizeType size,
         0,
         std::vector<MergeLevelCtx> {
             levels, {
-                std::vector<SizeType>(shards),
+                std::vector<uint64_t>(shards),
                 0,
                 0,
             }
@@ -153,8 +153,8 @@ inline auto merge_bvs(SizeType size,
         const size_t omp_rank = rank;
         const size_t omp_size = shards;
 
-        const SizeType offset = (omp_rank * (word_size(size) / omp_size)) +
-            std::min<SizeType>(omp_rank, word_size(size) % omp_size);
+        const uint64_t offset = (omp_rank * (word_size(size) / omp_size)) +
+            std::min<uint64_t>(omp_rank, word_size(size) % omp_size);
 
         ctxs[rank - 1].offset = offset * 64ull;
     }
@@ -170,7 +170,7 @@ inline auto merge_bvs(SizeType size,
             const auto bit_i = i / shards;
             const auto read_shard = i % shards;
 
-            auto read_offset = [&level, &ctxs](auto merge_shard, auto read_shard) -> SizeType& {
+            auto read_offset = [&level, &ctxs](auto merge_shard, auto read_shard) -> uint64_t& {
                 return ctxs[merge_shard].levels[level].read_offsets[read_shard];
             };
 
@@ -187,7 +187,7 @@ inline auto merge_bvs(SizeType size,
                 write_offset -= block_size;
                 read_offset(merge_shard + 1, read_shard) -= block_size;
 
-                SizeType offset_in_first_word = 0;
+                uint64_t offset_in_first_word = 0;
                 do {
                     // Split up the block like this:
                     //       [    left_block_size    |        right_block_size        ]
@@ -232,7 +232,7 @@ inline auto merge_bvs(SizeType size,
         triple_loop_exit:; // we are done
     }
 
-    auto r = Bvs<SizeType>(size, levels);
+    auto r = Bvs(size, levels);
     auto& _bv = r.vec();
 
     #pragma omp parallel
@@ -250,7 +250,7 @@ inline auto merge_bvs(SizeType size,
         for (size_t level = 0; level < levels; level++) {
             auto seq_i = ctx.levels[level].first_read_block;
 
-            SizeType write_offset = target_left;
+            uint64_t write_offset = target_left;
             size_t init_offset = ctx.levels[level].offset_in_first_word;
 
             while (write_offset < target_right) {
@@ -261,7 +261,7 @@ inline auto merge_bvs(SizeType size,
                 const auto& h = glob_hist[read_shard][level];
                 const auto& local_bv = glob_bv[read_shard].vec()[level];
 
-                auto const block_size = std::min<SizeType>(
+                auto const block_size = std::min<uint64_t>(
                     target_right - write_offset,
                     h[rho(level, i)] - init_offset
                 );
@@ -269,7 +269,7 @@ inline auto merge_bvs(SizeType size,
 
                 auto& local_cursor = ctx.levels[level].read_offsets[read_shard];
 
-                copy_bits<SizeType, uint64_t>(
+                copy_bits<uint64_t, uint64_t>(
                     _bv[level],
                     local_bv,
                     write_offset,

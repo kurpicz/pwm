@@ -17,83 +17,53 @@
 #include <climits>
 #include <cstring>
 
-template <typename SizeType = uint64_t>
-using permutation_type = std::vector<SizeType> (*)(const SizeType levels);
+using permutation_type = std::vector<uint64_t> (*)(const uint64_t levels);
 
-template <typename SizeType = uint64_t>
-std::vector<SizeType> bit_reverse_permutation(const SizeType levels) {
-  std::vector<SizeType> result(1 << levels);
+static inline std::vector<uint64_t> BitReverse(const uint64_t levels) {
+  std::vector<uint64_t> result(1 << levels);
   result[0] = 0;
   result[1] = 1;
-  for (SizeType i = 1; i < levels; ++i) {
-    for (SizeType j = 0; j < (1u << i); ++j) {
+  for (uint64_t i = 1; i < levels; ++i) {
+    for (uint64_t j = 0; j < (1u << i); ++j) {
       result[j] <<= 1;
     }
-    for (SizeType j = 0; j < (1u << i); ++j) {
+    for (uint64_t j = 0; j < (1u << i); ++j) {
       result[j + (1 << i)] = result[j] + 1;
     }
   }
   return result;
 }
 
-template <typename SizeType = uint64_t>
-std::vector<SizeType> identity_function(const SizeType levels) {
-  std::vector<SizeType> result(1 << levels);
-  for (SizeType i = 0; i < result.size(); ++i) {
-    result[i] = i;
-  }
-  return result;
-}
-
-template <typename SizeType>
-static inline std::vector<SizeType> BitReverse(const SizeType levels) {
-  std::vector<SizeType> result(1 << levels);
-  result[0] = 0;
-  result[1] = 1;
-  for (SizeType i = 1; i < levels; ++i) {
-    for (SizeType j = 0; j < (1u << i); ++j) {
-      result[j] <<= 1;
-    }
-    for (SizeType j = 0; j < (1u << i); ++j) {
-      result[j + (1 << i)] = result[j] + 1;
-    }
-  }
-  return result;
-}
-
-template <typename SizeType>
-static inline void BitReverse(const SizeType levels, SizeType* out) {
+static inline void BitReverse(const uint64_t levels, uint64_t* out) {
   out[0] = 0;
   out[1] = 1;
-  for (SizeType i = 1; i < levels; ++i) {
-    for (SizeType j = 0; j < (1 << i); ++j) {
+  for (uint64_t i = 1; i < levels; ++i) {
+    for (uint64_t j = 0; j < (1ULL << i); ++j) {
       out[j] <<= 1;
     }
-    for (SizeType j = 0; j < (1 << i); ++j) {
+    for (uint64_t j = 0; j < (1ULL << i); ++j) {
       out[j + (1 << i)] = out[j] + 1;
     }
   }
 }
 
-template <typename SizeType>
-inline auto rho_identity(SizeType levels) {
-    return [](auto level, auto i) -> SizeType {
+inline auto rho_identity(uint64_t levels) {
+    return [](auto level, auto i) -> uint64_t {
         return i;
     };
 }
 
-template <typename SizeType>
-inline auto rho_bit_reverse(SizeType levels) {
-    auto bit_reverse = std::vector<std::vector<SizeType>>(levels);
-    bit_reverse[levels - 1] = BitReverse<SizeType>(levels - 1);
+inline auto rho_bit_reverse(uint64_t levels) {
+    auto bit_reverse = std::vector<std::vector<uint64_t>>(levels);
+    bit_reverse[levels - 1] = BitReverse(levels - 1);
     for(size_t level = levels - 1; level > 0; level--) {
-        bit_reverse[level - 1] = std::vector<SizeType>(bit_reverse[level].size() / 2);
+        bit_reverse[level - 1] = std::vector<uint64_t>(bit_reverse[level].size() / 2);
         for(size_t i = 0; i < bit_reverse[level - 1].size(); i++) {
             bit_reverse[level - 1][i] = bit_reverse[level][i] >> 1;
         }
     }
 
-    return [bit_reverse = std::move(bit_reverse)](auto level, auto i) -> SizeType {
+    return [bit_reverse = std::move(bit_reverse)](auto level, auto i) -> uint64_t {
         return bit_reverse[level][i];
     };
 }
@@ -119,13 +89,12 @@ constexpr size_t word_size(uint64_t size) {
     return (size + 63ULL) >> 6;
 }
 
-template<typename SizeType>
 class Bvs {
     std::vector<uint64_t*> m_data;
-    SizeType m_size;
+    uint64_t m_size;
 public:
     inline Bvs(): m_size(0) {}
-    inline Bvs(SizeType size, SizeType levels):
+    inline Bvs(uint64_t size, uint64_t levels):
         m_data(levels), m_size(size)
     {
         assert(levels != 0);
@@ -133,16 +102,16 @@ public:
         m_data[0] = new uint64_t[word_size(size) * levels];
         memset(m_data[0], 0, (word_size(size) * sizeof(uint64_t)) * levels);
 
-        for (SizeType level = 1; level < levels; ++level) {
+        for (uint64_t level = 1; level < levels; ++level) {
             m_data[level] = m_data[level - 1] + word_size(size);
         }
     }
 
-    inline SizeType levels() const {
+    inline uint64_t levels() const {
         return m_data.size();
     }
 
-    inline SizeType size() const {
+    inline uint64_t size() const {
         return m_size;
     }
 

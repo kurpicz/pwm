@@ -13,13 +13,13 @@
 #include <omp.h>
 #include <vector>
 
-#include "common.hpp"
-#include "merge.hpp"
-#include "ps.hpp"
+#include "util/common.hpp"
+#include "util/merge.hpp"
+#include "util/ps.hpp"
 
-template <typename AlphabetType, bool is_matrix, typename SizeType = uint64_t>
+template <typename AlphabetType, bool is_matrix>
 class wx_dd_ps {
-    using ctx_t = KeepLevel<SizeType, is_matrix, decltype(rho_dispatch<is_matrix>::create(0))>;
+    using ctx_t = KeepLevel<is_matrix, decltype(rho_dispatch<is_matrix>::create(0))>;
 
 public:
     static constexpr bool    is_parallel = true;
@@ -28,13 +28,11 @@ public:
 
     wx_dd_ps() = default;
 
-    wx_dd_ps(const std::vector<AlphabetType>& global_text,
-             const SizeType size,
-             const SizeType levels)
-    {
+    wx_dd_ps(const std::vector<AlphabetType>& global_text, const uint64_t size,
+        const uint64_t levels) {
         if(global_text.size() == 0) { return; }
 
-        const SizeType shards = omp_get_max_threads();
+        const uint64_t shards = omp_get_max_threads();
 
         // Do all bulk allocations in the same thread:
         // TODO: flatten vectors where possible, to reduce indirection
@@ -43,7 +41,7 @@ public:
         auto ctxs = std::vector<ctx_t>(shards);
 
         for (size_t shard = 0; shard < shards; shard++) {
-            const SizeType local_size = (size / shards) +
+            const uint64_t local_size = (size / shards) +
                 ((shard < size % shards) ? 1 : 0);
 
             // TODO: store size in ctx so that later can reload it
@@ -54,14 +52,14 @@ public:
 
         #pragma omp parallel
         {
-            const SizeType omp_rank = omp_get_thread_num();
-            const SizeType omp_size = omp_get_num_threads();
+            const uint64_t omp_rank = omp_get_thread_num();
+            const uint64_t omp_size = omp_get_num_threads();
             assert(omp_size == shards);
 
-            const SizeType local_size = (size / omp_size) +
+            const uint64_t local_size = (size / omp_size) +
                 ((omp_rank < size % omp_size) ? 1 : 0);
-            const SizeType offset = (omp_rank * (size / omp_size)) +
-                std::min<SizeType>(omp_rank, size % omp_size);
+            const uint64_t offset = (omp_rank * (size / omp_size)) +
+                std::min<uint64_t>(omp_rank, size % omp_size);
 
             AlphabetType const* text = global_text.data() + offset;
             AlphabetType* sorted_text = global_sorted_text.data() + offset;
@@ -71,21 +69,21 @@ public:
 
         // TODO: Move and drop unneeded ctx stuff better than this
 
-        auto glob_bv = std::vector<Bvs<SizeType>>(shards);
+        auto glob_bv = std::vector<Bvs>(shards);
 
-        auto glob_zeros = std::vector<std::vector<SizeType>>(
-            shards, std::vector<SizeType>(levels));
+        auto glob_zeros = std::vector<std::vector<uint64_t>>(
+            shards, std::vector<uint64_t>(levels));
 
-        auto glob_hist = std::vector<std::vector<std::vector<SizeType>>>(
-            shards, std::vector<std::vector<SizeType>>(
-                levels + 1, std::vector<SizeType>((1 << levels), 0)));
+        auto glob_hist = std::vector<std::vector<std::vector<uint64_t>>>(
+            shards, std::vector<std::vector<uint64_t>>(
+                levels + 1, std::vector<uint64_t>((1 << levels), 0)));
 
         for(size_t shard = 0; shard < shards; shard++) {
             glob_bv[shard] = std::move(ctxs[shard].bv());
             glob_zeros[shard] = std::move(ctxs[shard].zeros());
             for(size_t level = 0; level < (levels + 1); level++) {
                 auto hist_size = ctxs[shard].hist_size(level);
-                glob_hist[shard][level] = std::vector<SizeType>(hist_size, 0);
+                glob_hist[shard][level] = std::vector<uint64_t>(hist_size, 0);
                 for(size_t i = 0; i < hist_size; i++) {
                     glob_hist[shard][level][i] = ctxs[shard].hist(level, i);
                 }
@@ -94,10 +92,10 @@ public:
 
         drop_me(std::move(ctxs));
 
-        _bv = merge_bvs<SizeType>(size, levels, shards, glob_hist, glob_bv, rho);
+        _bv = merge_bvs(size, levels, shards, glob_hist, glob_bv, rho);
 
         if (ctx_t::compute_zeros) {
-            _zeros = std::vector<SizeType>(levels, 0);
+            _zeros = std::vector<uint64_t>(levels, 0);
 
             #pragma omp parallel for
             for(size_t level = 0; level < levels; level++) {
@@ -117,6 +115,6 @@ public:
     }
 
 private:
-    Bvs<SizeType> _bv;
-    std::vector<SizeType> _zeros;
+    Bvs _bv;
+    std::vector<uint64_t> _zeros;
 }; // class wx_dd_ps

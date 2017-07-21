@@ -10,12 +10,12 @@
 
 #include <vector>
 
-#include "common.hpp"
-#include "ps.hpp"
+#include "util/common.hpp"
+#include "util/ps.hpp"
 
-template <typename AlphabetType, bool is_matrix, typename SizeType = uint64_t>
+template <typename AlphabetType, bool is_matrix>
 class wx_ps {
-    using ctx_t = LevelSinglePass<SizeType, is_matrix>;
+    using ctx_t = LevelSinglePass<is_matrix>;
 
 public:
     static constexpr bool    is_parallel = false;
@@ -24,10 +24,8 @@ public:
 
     wx_ps() = default;
 
-    wx_ps(const std::vector<AlphabetType>& text,
-         const SizeType size,
-         const SizeType levels)
-    {
+    wx_ps(const std::vector<AlphabetType>& text, const uint64_t size,
+        const uint64_t levels) {
         if(text.size() == 0) { return; }
 
         auto ctx = ctx_t(size, levels);
@@ -50,6 +48,6 @@ public:
     }
 
 private:
-    Bvs<SizeType> _bv;
-    std::vector<SizeType> _zeros;
+    Bvs _bv;
+    std::vector<uint64_t> _zeros;
 }; // class wx_ps
