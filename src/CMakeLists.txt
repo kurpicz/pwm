@@ -41,7 +41,6 @@ include_directories(.)
 
 set(INTERNAL_SRCS
   benchmark_wm.cpp
-  prefix_counting.cpp
   wm_pc.cpp)
 
 set(INTERNAL_LIBS dl)

@@ -17,10 +17,10 @@
 #include <climits>
 #include <cstring>
 
-template <typename SizeType>
+template <typename SizeType = uint64_t>
 using permutation_type = std::vector<SizeType> (*)(const SizeType levels);
 
-template <typename SizeType>
+template <typename SizeType = uint64_t>
 std::vector<SizeType> bit_reverse_permutation(const SizeType levels) {
   std::vector<SizeType> result(1 << levels);
   result[0] = 0;
@@ -36,7 +36,7 @@ std::vector<SizeType> bit_reverse_permutation(const SizeType levels) {
   return result;
 }
 
-template <typename SizeType>
+template <typename SizeType = uint64_t>
 std::vector<SizeType> identity_function(const SizeType levels) {
   std::vector<SizeType> result(1 << levels);
   for (SizeType i = 0; i < result.size(); ++i) {
