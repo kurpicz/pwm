@@ -26,6 +26,8 @@ public:
     static constexpr bool    is_tree     = !is_matrix;
     static constexpr uint8_t word_width  = sizeof(AlphabetType);
 
+    wx_dd_pc() = default;
+
     wx_dd_pc(const std::vector<AlphabetType>& global_text,
              const SizeType size,
              const SizeType levels)
