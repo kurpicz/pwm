@@ -27,7 +27,7 @@ public:
 
         if(text.size() == 0) { return; }
 
-        auto ctx = LevelSinglePass<SizeType>(size, levels);
+        auto ctx = LevelSinglePass<SizeType, true>(size, levels);
 
         pc(text, size, levels, ctx);
 

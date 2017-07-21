@@ -4,13 +4,14 @@
 
 // TODO: WM/WT abstract that selects zeros and rho
 
-template<typename SizeType>
+// Overwrite information for each level
+template<typename SizeType, bool is_matrix>
 struct LevelSinglePass {
     std::vector<SizeType> m_hist;
-    std::vector<SizeType> m_bit_reverse; // TODO: factor out
     std::vector<SizeType> m_borders;
     std::vector<SizeType> m_zeros;
     Bvs<SizeType> m_bv;
+    std::vector<SizeType> m_bit_reverse;
 
     LevelSinglePass(SizeType const size, SizeType const levels) {
         auto cur_max_char = (1ull << levels);
@@ -18,7 +19,9 @@ struct LevelSinglePass {
         m_hist.reserve(cur_max_char);
         m_hist.resize(cur_max_char, 0);
 
-        m_bit_reverse = BitReverse<SizeType>(levels - 1);
+        if (is_matrix) {
+            m_bit_reverse = BitReverse<SizeType>(levels - 1);
+        }
 
         m_borders.reserve(cur_max_char);
         m_borders.resize(cur_max_char, 0);
@@ -38,11 +41,17 @@ struct LevelSinglePass {
     }
 
     SizeType rho(size_t level, size_t i) {
-        return m_bit_reverse[i];
+        if (is_matrix) {
+            return m_bit_reverse[i];
+        }else {
+            return i;
+        }
     }
 
     void set_rho(size_t level, size_t i, SizeType val) {
-        m_bit_reverse[i] = val;
+        if (is_matrix) {
+            m_bit_reverse[i] = val;
+        }
     }
 
     std::vector<SizeType>& borders() {
@@ -50,11 +59,11 @@ struct LevelSinglePass {
     }
 
     bool calc_zeros() {
-        return true;
+        return is_matrix;
     }
 
     bool calc_rho() {
-        return true;
+        return is_matrix;
     }
 
     std::vector<SizeType>& zeros() {
@@ -66,7 +75,8 @@ struct LevelSinglePass {
     }
 };
 
-template<typename SizeType>
+/// Keep calculated information for individual levels around
+template<typename SizeType, bool is_matrix>
 struct KeepLevel {
     std::vector<std::vector<SizeType>> m_hist;
     decltype(rho_bit_reverse(0)) const* m_rho;
@@ -117,7 +127,7 @@ struct KeepLevel {
     }
 
     bool calc_zeros() {
-        return true;
+        return is_matrix;
     }
 
     bool calc_rho() {
