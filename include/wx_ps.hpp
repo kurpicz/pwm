@@ -31,7 +31,7 @@ public:
         auto ctx = ctx_t(size, levels);
 
         auto sorted_text = std::vector<AlphabetType>(size);
-        ps(text, size, levels, ctx, sorted_text);
+        ps(text.data(), size, levels, ctx, sorted_text.data());
 
         if (ctx_t::compute_zeros)  {
             _zeros = std::move(ctx.zeros());

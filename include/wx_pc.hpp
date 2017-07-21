@@ -30,7 +30,7 @@ public:
 
         auto ctx = ctx_t(size, levels);
 
-        pc(text, size, levels, ctx);
+        pc(text.data(), size, levels, ctx);
 
         if (ctx_t::compute_zeros)  {
             _zeros = std::move(ctx.zeros());

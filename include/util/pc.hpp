@@ -5,14 +5,13 @@
  *
  * All rights reserved. Published under the BSD-2 license in the LICENSE file.
  ******************************************************************************/
-
 #pragma once
 
 #include "common.hpp"
 #include "context.hpp"
 
-template <typename Text, typename ctx_t>
-void pc(Text const& text,
+template <typename AlphabetType, typename ctx_t>
+void pc(AlphabetType const* text,
         uint64_t const size,
         uint64_t const levels,
         ctx_t& ctx)
@@ -96,5 +95,4 @@ void pc(Text const& text,
         ctx.hist(0, 0) = ctx.hist(1, 0) + ctx.hist(1, 1);
     }
 }
-
 /******************************************************************************/
