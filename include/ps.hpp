@@ -6,13 +6,14 @@
 template<
     typename Text,
     typename SizeType,
-    typename ctx_t
+    typename ctx_t,
+    typename SortedText
 >
 void ps(Text const& text,
         SizeType const size,
         SizeType const levels,
         ctx_t& ctx,
-        Text& sorted_text)
+        SortedText& sorted_text)
 {
     SizeType cur_max_char = (1 << levels);
 

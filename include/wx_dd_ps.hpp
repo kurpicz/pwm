@@ -1,5 +1,5 @@
 /*******************************************************************************
- * include/wx_dd_pc.hpp
+ * include/wx_dd_ps.hpp
  *
  * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
  *
@@ -18,7 +18,7 @@
 #include "ps.hpp"
 
 template <typename AlphabetType, bool is_matrix, typename SizeType = uint64_t>
-class wx_dd_pc {
+class wx_dd_ps {
     using ctx_t = KeepLevel<SizeType, is_matrix, decltype(rho_dispatch<is_matrix>::create(0))>;
 
 public:
@@ -26,9 +26,9 @@ public:
     static constexpr bool    is_tree     = !is_matrix;
     static constexpr uint8_t word_width  = sizeof(AlphabetType);
 
-    wx_dd_pc() = default;
+    wx_dd_ps() = default;
 
-    wx_dd_pc(const std::vector<AlphabetType>& global_text,
+    wx_dd_ps(const std::vector<AlphabetType>& global_text,
              const SizeType size,
              const SizeType levels)
     {
@@ -50,6 +50,8 @@ public:
             ctxs[shard] = ctx_t(local_size, levels, rho);
         }
 
+        auto global_sorted_text = std::vector<AlphabetType>(size);
+
         #pragma omp parallel
         {
             const SizeType omp_rank = omp_get_thread_num();
@@ -61,9 +63,10 @@ public:
             const SizeType offset = (omp_rank * (size / omp_size)) +
                 std::min<SizeType>(omp_rank, size % omp_size);
 
-            const AlphabetType* text = global_text.data() + offset;
+            AlphabetType const* text = global_text.data() + offset;
+            AlphabetType* sorted_text = global_sorted_text.data() + offset;
 
-            ps(text, local_size, levels, ctxs[omp_rank]);
+            ps(text, local_size, levels, ctxs[omp_rank], sorted_text);
         }
 
         // TODO: Move and drop unneeded ctx stuff better than this
@@ -116,4 +119,4 @@ public:
 private:
     Bvs<SizeType> _bv;
     std::vector<SizeType> _zeros;
-}; // class wx_dd_pc
+}; // class wx_dd_ps
