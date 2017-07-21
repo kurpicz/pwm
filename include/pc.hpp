@@ -58,13 +58,8 @@ struct LevelSinglePass {
         return m_borders;
     }
 
-    static bool constexpr calc_zeros() {
-        return is_matrix;
-    }
-
-    static bool constexpr calc_rho() {
-        return is_matrix;
-    }
+    static bool constexpr compute_zeros = is_matrix;
+    static bool constexpr compute_rho = is_matrix;
 
     std::vector<SizeType>& zeros() {
         return m_zeros;
@@ -128,13 +123,8 @@ struct KeepLevel {
         return m_borders;
     }
 
-    static bool constexpr calc_zeros() {
-        return is_matrix;
-    }
-
-    static bool constexpr calc_rho() {
-        return false;
-    }
+    static bool constexpr compute_zeros = is_matrix;
+    static bool constexpr compute_rho = false;
 
     std::vector<SizeType>& zeros() {
         return m_zeros;
@@ -149,12 +139,12 @@ struct KeepLevel {
 template<
     typename Text,
     typename SizeType,
-    typename Context
+    typename ctx_t
 >
 void pc(Text const& text,
         SizeType const size,
         SizeType const levels,
-        Context& ctx)
+        ctx_t& ctx)
 {
     SizeType cur_max_char = (1 << levels);
 
@@ -185,7 +175,7 @@ void pc(Text const& text,
     }
 
     // The number of 0s at the last level is the number of "even" characters
-    if (ctx.calc_zeros()) {
+    if (ctx_t::compute_zeros) {
         for (SizeType i = 0; i < cur_max_char; i += 2) {
             zeros[levels - 1] += ctx.hist(levels, i);
         }
@@ -213,13 +203,13 @@ void pc(Text const& text,
 
             borders[ctx.rho(level, i)] = borders[prev_rho] + ctx.hist(level, prev_rho);
 
-            if (ctx.calc_rho())  {
+            if (ctx_t::compute_rho)  {
                 ctx.set_rho(level - 1, i - 1, prev_rho >> 1);
             }
         }
 
         // The number of 0s is the position of the first 1 in the previous level
-        if (ctx.calc_zeros()) {
+        if (ctx_t::compute_zeros) {
             zeros[level - 1] = borders[1];
         }
 

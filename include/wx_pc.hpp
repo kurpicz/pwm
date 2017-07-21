@@ -15,6 +15,7 @@
 
 template <typename AlphabetType, bool is_matrix, typename SizeType = uint64_t>
 class wx_pc {
+    using ctx_t = LevelSinglePass<SizeType, is_matrix>;
 
 public:
     static constexpr bool    is_parallel = false;
@@ -29,11 +30,13 @@ public:
     {
         if(text.size() == 0) { return; }
 
-        auto ctx = LevelSinglePass<SizeType, is_matrix>(size, levels);
+        auto ctx = ctx_t(size, levels);
 
         pc(text, size, levels, ctx);
 
-        _zeros = std::move(ctx.zeros());
+        if (ctx_t::compute_zeros)  {
+            _zeros = std::move(ctx.zeros());
+        }
         _bv = std::move(ctx.bv());
     }
 

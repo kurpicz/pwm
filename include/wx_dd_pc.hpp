@@ -93,7 +93,7 @@ public:
 
         _bv = merge_bvs<SizeType>(size, levels, shards, glob_hist, glob_bv, rho);
 
-        if (ctx_t::calc_zeros()) {
+        if (ctx_t::compute_zeros) {
             _zeros = std::vector<SizeType>(levels, 0);
 
             #pragma omp parallel for
