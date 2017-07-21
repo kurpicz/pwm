@@ -90,8 +90,8 @@ private:
 }; // class concrete_algorithm
 
 #define CONSTRUCTION_REGISTER(algo_name, algo_description, wavelet_structure) \
-  static const auto* _cstr_algo_ ## wavelet_structure ## _register            \
-    = new concrete_algorithm<wavelet_structure>(algo_name, algo_description);
+  static const auto _cstr_algo_ ## wavelet_structure ## _register            \
+    = concrete_algorithm<wavelet_structure>(algo_name, algo_description);
 
 #endif // ALGORITHM_HEADER
 
