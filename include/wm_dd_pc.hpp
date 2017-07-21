@@ -66,7 +66,7 @@ public:
 
             auto& zeros = ctx.zeros();
             auto& borders = ctx.borders();
-            auto& bv = ctx.bv();
+            auto& bv = ctx.bv().vec();
 
             // While initializing the histogram, we also compute the fist level
             SizeType cur_pos = 0;
@@ -77,7 +77,7 @@ public:
                     word <<= 1;
                     word |= ((text[cur_pos + i] >> (levels - 1)) & 1ULL);
                 }
-                bv.vec()[0][cur_pos >> 6] = word;
+                bv[0][cur_pos >> 6] = word;
             }
             if (local_size & 63ULL) {
                 uint64_t word = 0ULL;
@@ -87,7 +87,7 @@ public:
                     word |= ((text[cur_pos + i] >> (levels - 1)) & 1ULL);
                 }
                 word <<= (64 - (local_size & 63ULL));
-                bv.vec()[0][local_size >> 6] = word;
+                bv[0][local_size >> 6] = word;
             }
 
             // The number of 0s at the last level is the number of "even" characters
@@ -116,9 +116,13 @@ public:
                 // bit prefixes and the bit-reversal permutation
                 borders[0] = 0;
                 for (SizeType i = 1; i < cur_max_char; ++i) {
-                    borders[ctx.rho(level, i)]
-                        = borders[ctx.rho(level, i - 1)]
-                        + ctx.hist(level, ctx.rho(level, i - 1));
+                    auto const prev_rho = ctx.rho(level, i - 1);
+
+                    borders[ctx.rho(level, i)] = borders[prev_rho] + ctx.hist(level, prev_rho);
+
+                    if (ctx.calc_rho())  {
+                        ctx.set_rho(level - 1, i - 1, prev_rho >> 1);
+                    }
                 }
 
                 // The number of 0s is the position of the first 1 in the previous level
@@ -129,7 +133,7 @@ public:
                 // Now we insert the bits with respect to their bit prefixes
                 for (SizeType i = 0; i < local_size; ++i) {
                     const SizeType pos = borders[text[i] >> prefix_shift]++;
-                    bv.vec()[level][pos >> 6] |= (((text[i] >> cur_bit_shift) & 1ULL)
+                    bv[level][pos >> 6] |= (((text[i] >> cur_bit_shift) & 1ULL)
                         << (63ULL - (pos & 63ULL)));
                 }
             }
