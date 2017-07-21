@@ -19,6 +19,7 @@
 
 template <typename AlphabetType, bool is_matrix, typename SizeType = uint64_t>
 class wx_dd_pc {
+    using ctx_t = KeepLevel<SizeType, is_matrix, decltype(rho_dispatch<is_matrix>::create(0))>;
 
 public:
     static constexpr bool    is_parallel = true;
@@ -27,8 +28,7 @@ public:
 
     wx_dd_pc(const std::vector<AlphabetType>& global_text,
              const SizeType size,
-             const SizeType levels):
-        _zeros(levels, 0)
+             const SizeType levels)
     {
         if(global_text.size() == 0) { return; }
 
@@ -38,14 +38,14 @@ public:
         // TODO: flatten vectors where possible, to reduce indirection
 
         const auto rho = rho_dispatch<is_matrix>::create(levels);
-        auto ctxs = std::vector<KeepLevel<SizeType, is_matrix, decltype(rho)>>(shards);
+        auto ctxs = std::vector<ctx_t>(shards);
 
         for (size_t shard = 0; shard < shards; shard++) {
             const SizeType local_size = (size / shards) +
                 ((shard < size % shards) ? 1 : 0);
 
             // TODO: store size in ctx so that later can reload it
-            ctxs[shard] = KeepLevel<SizeType, is_matrix, decltype(rho)>(local_size, levels, rho);
+            ctxs[shard] = ctx_t(local_size, levels, rho);
         }
 
         #pragma omp parallel
@@ -91,10 +91,14 @@ public:
 
         _bv = merge_bvs<SizeType>(size, levels, shards, glob_hist, glob_bv, rho);
 
-        #pragma omp parallel for
-        for(size_t level = 0; level < levels; level++) {
-            for(size_t shard = 0; shard < glob_bv.size(); shard++) {
-                _zeros[level] += glob_zeros[shard][level];
+        if (ctx_t::calc_zeros()) {
+            _zeros = std::vector<SizeType>(levels, 0);
+
+            #pragma omp parallel for
+            for(size_t level = 0; level < levels; level++) {
+                for(size_t shard = 0; shard < glob_bv.size(); shard++) {
+                    _zeros[level] += glob_zeros[shard][level];
+                }
             }
         }
     }

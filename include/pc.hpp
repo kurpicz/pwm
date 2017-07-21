@@ -58,11 +58,11 @@ struct LevelSinglePass {
         return m_borders;
     }
 
-    bool calc_zeros() {
+    static bool constexpr calc_zeros() {
         return is_matrix;
     }
 
-    bool calc_rho() {
+    static bool constexpr calc_rho() {
         return is_matrix;
     }
 
@@ -128,11 +128,11 @@ struct KeepLevel {
         return m_borders;
     }
 
-    bool calc_zeros() {
+    static bool constexpr calc_zeros() {
         return is_matrix;
     }
 
-    bool calc_rho() {
+    static bool constexpr calc_rho() {
         return false;
     }
 
