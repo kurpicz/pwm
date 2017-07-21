@@ -41,8 +41,9 @@ include_directories(.)
 
 set(INTERNAL_SRCS
   benchmark.cpp
-  prefix_sorting.cpp
-  wm_pc.cpp)
+  dd_prefix_counting.cpp
+  sequential_prefix_counting.cpp
+  sequential_prefix_sorting.cpp)
 
 set(INTERNAL_LIBS dl)
 

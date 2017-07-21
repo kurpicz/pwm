@@ -1,5 +1,8 @@
 #pragma once
 
+#include <iostream>
+#include <string>
+
 template<typename WordType = uint64_t, typename bv_t>
 inline auto bit_at(const bv_t& bv, size_t i) -> bool {
     constexpr WordType BITS = (sizeof(WordType) * CHAR_BIT);
