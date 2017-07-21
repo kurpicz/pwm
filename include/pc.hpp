@@ -76,15 +76,17 @@ struct LevelSinglePass {
 };
 
 /// Keep calculated information for individual levels around
-template<typename SizeType, bool is_matrix>
+template<typename SizeType, bool is_matrix, typename rho_t>
 struct KeepLevel {
     std::vector<std::vector<SizeType>> m_hist;
-    decltype(rho_bit_reverse(0)) const* m_rho;
+    rho_t const* m_rho = nullptr;
     std::vector<SizeType> m_borders;
     std::vector<SizeType> m_zeros;
     Bvs<SizeType> m_bv;
 
-    KeepLevel(SizeType const size, SizeType const levels, decltype(rho_bit_reverse(0)) const& rho) {
+    KeepLevel() = default;
+
+    KeepLevel(SizeType const size, SizeType const levels, rho_t const& rho) {
         auto cur_max_char = (1ull << levels);
 
         m_hist.reserve(levels + 1);
@@ -114,7 +116,7 @@ struct KeepLevel {
         return m_hist[level][i];
     }
 
-    SizeType& rho(size_t level, size_t i) {
+    SizeType rho(size_t level, size_t i) {
         return (*m_rho)(level, i);
     }
 
