@@ -42,6 +42,7 @@
 set(INTERNAL_SRCS
   benchmark.cpp
   dd_prefix_counting.cpp
+  dd_prefix_sorting.cpp
   sequential_prefix_counting.cpp
   sequential_prefix_sorting.cpp)
 

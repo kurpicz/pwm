@@ -1,7 +1,6 @@
 #include "wx_dd_pc.hpp"
 #include "benchmark/algorithm.hpp"
 
-
 using wm_dd_pc_8 = wx_dd_pc<uint8_t, true>;
 using wm_dd_pc_16 = wx_dd_pc<uint16_t, true>;
 using wm_dd_pc_32 = wx_dd_pc<uint32_t, true>;

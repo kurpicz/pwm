@@ -25,7 +25,7 @@ std::string bit_string(bv_t const& bv, size_t const size) {
     return s;
 }
 
-std::vector<std::vector<size_t>> level_sizes(
+static std::vector<std::vector<size_t>> level_sizes(
     const std::vector<uint64_t*> bv,
     uint64_t bit_offset,
     uint64_t bit_length,
@@ -72,7 +72,7 @@ std::vector<std::vector<size_t>> level_sizes(
     return r;
 }
 
-std::string decode_wt(const std::vector<uint64_t*> bv, size_t length) {
+static std::string decode_wt(const std::vector<uint64_t*> bv, size_t length) {
     auto ls = level_sizes(bv, 0, length, 0);
 
     for (auto& v : ls) {
@@ -109,7 +109,7 @@ std::string decode_wt(const std::vector<uint64_t*> bv, size_t length) {
     return std::string(r.begin(), r.end());
 }
 
-std::string decode_wm(const std::vector<uint64_t*> bv,
+static std::string decode_wm(const std::vector<uint64_t*> bv,
                        const std::vector<uint32_t>& zeros,
                        size_t length) {
     if (bv.size() == 0) {
@@ -164,7 +164,7 @@ std::string decode_wm(const std::vector<uint64_t*> bv,
     return std::string(r.begin(), r.end());
 }
 
-void print_bv(const std::vector<uint64_t*> bv, size_t length) {
+static void print_bv(const std::vector<uint64_t*> bv, size_t length) {
     for (size_t i = 0; i < bv.size(); i++) {
         std::cout << "   bv["<<i<<"]";
 
