@@ -40,11 +40,11 @@ define_wx(wt WT_TYPE)
 include_directories(.)
 
 set(INTERNAL_SRCS
-  benchmark_wm.cpp
+  benchmark.cpp
   prefix_sorting.cpp
   wm_pc.cpp)
 
 set(INTERNAL_LIBS dl)
 
-add_executable(benchmark_wm ${INTERNAL_SRCS})
-target_link_libraries(benchmark_wm ${INTERNAL_LIBS})
+add_executable(benchmark ${INTERNAL_SRCS})
+target_link_libraries(benchmark ${INTERNAL_LIBS})

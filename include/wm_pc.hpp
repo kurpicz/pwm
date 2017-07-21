@@ -19,29 +19,33 @@ template <typename AlphabetType, typename SizeType = uint64_t>
 class wm_pc {
 
 public:
-    wm_pc() = default;
+  static constexpr bool    is_parallel = false;
+  static constexpr bool    is_tree     = true;
+  static constexpr uint8_t word_width  = sizeof(AlphabetType);
 
-    wm_pc(const std::vector<AlphabetType>& text,
-          const SizeType size,
-          const SizeType levels) {
+  wm_pc() = default;
 
-        if(text.size() == 0) { return; }
+  wm_pc(const std::vector<AlphabetType>& text,
+      const SizeType size,
+      const SizeType levels) {
 
-        auto ctx = LevelSinglePass<SizeType, true>(size, levels);
+    if(text.size() == 0) { return; }
 
-        pc(text, size, levels, ctx);
+    auto ctx = LevelSinglePass<SizeType, true>(size, levels);
 
-        _zeros = std::move(ctx.zeros());
-        _bv = std::move(ctx.bv());
-    }
+    pc(text, size, levels, ctx);
 
-    auto get_bv_and_zeros() const {
-        return std::make_pair(_bv.vec(), _zeros);
-    }
+    _zeros = std::move(ctx.zeros());
+    _bv = std::move(ctx.bv());
+  }
+
+  auto get_bv_and_zeros() const {
+    return std::make_pair(_bv.vec(), _zeros);
+  }
 
 private:
-    Bvs<SizeType> _bv;
-    std::vector<SizeType> _zeros;
+  Bvs<SizeType> _bv;
+  std::vector<SizeType> _zeros;
 }; // class wm_pc
 
 #endif // WM_PREFIX_COUNTING

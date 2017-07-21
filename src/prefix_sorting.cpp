@@ -1,4 +1,4 @@
-#include "algorithm.hpp"
+#include "benchmark/algorithm.hpp"
 #include "prefix_sorting.hpp"
 
 using wm_ps_8 = wm_ps<uint8_t>;
