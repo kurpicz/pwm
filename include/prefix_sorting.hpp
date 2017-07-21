@@ -1,5 +1,5 @@
 /*******************************************************************************
- * include/wm_ps.hpp
+ * include/prefix_sorting.hpp
  *
  * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
  *
@@ -14,18 +14,22 @@
 #include <vector>
 
 #include "common.hpp"
+#include "wavelet_structures.hpp"
 
-template <typename AlphabetType, typename SizeType>
-class wm_ps {
+template <typename AlphabetType, typename SizeType = uint64_t,
+  typename WaveletStructure = wavelet_matrix>
+class prefix_sorting {
 
 public:
-  wm_ps(const std::vector<AlphabetType>& text, const SizeType size,
+  prefix_sorting() = default;
+
+  prefix_sorting(const std::vector<AlphabetType>& text, const SizeType size,
     const SizeType levels) : _bv(levels), _zeros(levels, 0) {
 
     if(text.size() == 0) { return; }
 
     SizeType cur_max_char = (1 << levels);
-    std::vector<SizeType> bit_reverse = BitReverse<SizeType>(levels - 1);
+    std::vector<SizeType> permutation = WaveletStructure::permutation(levels - 1);
     std::vector<SizeType> s_pos(cur_max_char, 0);
     std::vector<SizeType> hist(cur_max_char, 0);
     std::vector<SizeType> borders(cur_max_char, 0);
@@ -78,9 +82,9 @@ public:
       // bit prefixes and the bit-reversal permutation
       borders[0] = 0;
       for (SizeType i = 1; i < cur_max_char; ++i) {
-        borders[bit_reverse[i]] = borders[bit_reverse[i - 1]] +
-          hist[bit_reverse[i - 1]];
-        bit_reverse[i - 1] >>= 1;
+        borders[permutation[i]] = borders[permutation[i - 1]] +
+          hist[permutation[i - 1]];
+        permutation[i - 1] >>= 1;
       }
       // The number of 0s is the position of the first 1 in the previous level
       _zeros[level - 1] = borders[1];
@@ -116,6 +120,10 @@ public:
     }
   }
 
+  static constexpr bool    is_parallel = false;
+  static constexpr bool    is_tree     = WaveletStructure::is_tree;
+  static constexpr uint8_t word_width  = sizeof(AlphabetType);
+
   auto get_bv_and_zeros() const {
     return std::make_pair(_bv, _zeros);
   }
@@ -123,7 +131,10 @@ public:
 private:
   std::vector<uint64_t*> _bv;
   std::vector<SizeType> _zeros;
-}; // class wm_ps
+}; // class prefix_sorting
+
+template <typename AlphabetType, typename SizeType = uint64_t>
+using wm_ps = prefix_sorting<AlphabetType, SizeType, wavelet_matrix>;
 
 #endif // WM_PREFIX_SORTING
 

@@ -14,8 +14,6 @@
 #include <memory>
 #include <vector>
 
-#include "wavelet_structures.hpp"
-
 class construction_algorithm;
 
 class algorithm_list {
@@ -51,8 +49,10 @@ public:
   }
 
   virtual void run() = 0;
-  virtual bool is_tree() = 0;
   virtual bool is_parallel() = 0;
+  virtual bool is_tree() = 0;
+  virtual uint8_t word_width() = 0;
+
 
   void print_info() {
     std::cout << name_ << ": " << description_ << std::endl;
@@ -63,33 +63,6 @@ private:
   std::string description_;
 }; // class construction_algorithm
 
-template <typename AlphabetType,
-          typename SizeType,
-          template <typename> class WaveletStructure>
-class concrete_construction_algorithm : construction_algorithm {
-
-public:
-  using construct_function = void (*)(const AlphabetType* text,
-    const SizeType size, const SizeType levels);
-
-  concrete_construction_algorithm(std::string name, std::string description,
-    construct_function cstr_fnct) : construction_algorithm(name, description),
-    cstr_fnct_(cstr_fnct) { }
-
-  inline void run() { }
-
-  bool is_tree() {
-    return WaveletStructure<SizeType>::is_tree;
-  }
-
-  bool is_parallel() {
-    return false;
-  }
-
-private:
-  construct_function cstr_fnct_;
-}; // class concrete_construction_algorithm
-
 template <typename WaveletStructure>
 class concrete_algorithm : construction_algorithm {
 
@@ -99,25 +72,22 @@ public:
 
   inline void run() { }
 
-  bool is_tree() {
-    return false;
+  bool is_parallel() {
+    return WaveletStructure::is_parallel;
   }
 
-  bool is_parallel() {
-    return false;
+  bool is_tree() {
+    return WaveletStructure::is_tree;
+  }
+
+  uint8_t word_width() {
+    return WaveletStructure::word_width;
   }
 
 private:
   WaveletStructure ws_;
 
 }; // class concrete_algorithm
-
-#define CONSTRUCTION_ALGORITHM_REGISTER(algo_name, algo_description, \
-  a_t, s_t, w_t, cstr_fct)                                           \
-  static const auto* _cstr_algo_ ## cstr_fct ## _register            \
-    = new concrete_construction_algorithm<a_t, s_t, w_t>(            \
-      algo_name, algo_description, cstr_fct);
-
 
 #define CONSTRUCTION_REGISTER(algo_name, algo_description, wavelet_structure) \
   static const auto* _cstr_algo_ ## wavelet_structure ## _register            \

@@ -19,7 +19,7 @@
 #include "wm_naive.hpp"
 #include "wm_pc.hpp"
 #include "wm_ppc.hpp"
-#include "wm_ps.hpp"
+// #include "wm_ps.hpp"
 #include "wm_pps.hpp"
 
 
@@ -60,7 +60,7 @@ void ConstructWM(std::vector<AlphabetType>& text, const bool already_reduced) {
   std::vector<float> times;
   for (size_t run = 0; run < RUNS; ++run) {
     auto t1 = std::chrono::high_resolution_clock::now();
-    WM_TYPE<AlphabetType, uint32_t> wm(text, text.size(), levels);
+    WM_TYPE<AlphabetType, uint64_t> wm(text, text.size(), levels);
     auto t2 = std::chrono::high_resolution_clock::now();
     times.emplace_back(static_cast<float>(
       std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count()));
@@ -71,15 +71,15 @@ void ConstructWM(std::vector<AlphabetType>& text, const bool already_reduced) {
             << std::endl;
 #elif CHECK // Check the correctness of the construction algorithm.
   std::vector<uint64_t*> wm_bv;
-  std::vector<uint32_t> wm_zeros;
+  std::vector<uint64_t> wm_zeros;
   std::vector<uint64_t*> wm_naive_bv;
-  std::vector<uint32_t> wm_naive_zeros;
+  std::vector<uint64_t> wm_naive_zeros;
 
-  WM_TYPE<AlphabetType, uint32_t> wm(text, text.size(), levels);
+  WM_TYPE<AlphabetType, uint64_t> wm(text, text.size(), levels);
   std::tie(wm_bv, wm_zeros) = wm.get_bv_and_zeros();
 
 
-  wm_naive<AlphabetType, uint32_t> wm_naive(text, text.size(), levels);
+  wm_naive<AlphabetType, uint64_t> wm_naive(text, text.size(), levels);
   std::tie(wm_naive_bv, wm_naive_zeros) = wm_naive.get_bv_and_zeros();
 
 
@@ -100,7 +100,7 @@ void ConstructWM(std::vector<AlphabetType>& text, const bool already_reduced) {
   }
   std::cout << "Algorithm working corretly." << std::endl;
 #elif MEMORY // Measure the memory consumption of the construction algorithm.
-  WM_TYPE<AlphabetType, uint32_t> wm(text, text.size(), levels);
+  WM_TYPE<AlphabetType, uint64_t> wm(text, text.size(), levels);
 #endif
 }
 
