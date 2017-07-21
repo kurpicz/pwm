@@ -2,6 +2,7 @@
 #ifndef WAVELET_STRUCTURES_HEADER
 #define WAVELET_STRUCTURES_HEADER
 
+
 #include "common.hpp"
 
 template <permutation_type<> Permutation, bool IsTree>
