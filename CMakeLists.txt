@@ -38,16 +38,15 @@ include(ExternalProject)
 # More warnings and debug info
 # TODO: Add these, they break building glog -Wextra -Wpedantic
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ansi")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -fopenmp -fcilkplus -ffast-math -Wall")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -funroll-loops -march=native")
+set(CMAKE_CXX_FLAGS
+    "${CMAKE_CXX_FLAGS} -std=c++14 -fopenmp -fcilkplus -ffast-math -Wall")
+set(CMAKE_CXX_FLAGS_RELEASE
+    "${CMAKE_CXX_FLAGS_RELEASE} -O3 -funroll-loops -march=native")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -ggdb ")
 
-# Find Python3
-#set(Python_ADDITIONAL_VERSIONS 3)
-#find_package(PythonInterp REQUIRED)
-
 # Global dependencies
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmakemodules")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmakemodules")
 
 # Finders
 include(find_or_download_package)
