@@ -36,10 +36,9 @@ endif()
 include(ExternalProject)
 
 # More warnings and debug info
-# TODO: Add these, they break building glog -Wextra -Wpedantic
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ansi")
 set(CMAKE_CXX_FLAGS
-    "${CMAKE_CXX_FLAGS} -std=c++14 -fopenmp -fcilkplus -ffast-math -Wall")
+    "${CMAKE_CXX_FLAGS} -std=c++14 -fopenmp -fcilkplus -ffast-math -Wall -Wextra -Wpedantic")
 set(CMAKE_CXX_FLAGS_RELEASE
     "${CMAKE_CXX_FLAGS_RELEASE} -O3 -funroll-loops -march=native")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -ggdb ")
@@ -52,13 +51,12 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
 include(find_or_download_package)
 
 # Usage: find_or_download_package(PACKAGE_NAME, FOUND_FLAG_PREFIX, TARGET_PREFIX)
-find_or_download_package(Glog GLOG glog)
 find_or_download_package(GTest GTEST gtest)
 
 # Add include directory to include searches
 include_directories(include)
 
 add_subdirectory(src)
-# add_subdirectory(test)
+add_subdirectory(test)
 
 MESSAGE( STATUS "Built Type: " ${CMAKE_BUILD_TYPE} )

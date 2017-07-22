@@ -14,22 +14,6 @@ add_custom_command(
     COMMENT "All test builds were successful!" VERBATIM
 )
 
-# Custom test target to run the benchpress benchmarks
-add_custom_target(bench)
-add_custom_command(
-    TARGET bench
-    POST_BUILD
-    COMMENT "All bench were successful!" VERBATIM
-)
-
-# Custom test target to just build the benchpress benchmarks
-add_custom_target(build_bench)
-add_custom_command(
-    TARGET build_bench
-    POST_BUILD
-    COMMENT "All bench builds were successful!" VERBATIM
-)
-
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/stamps)
 
 # will compile and run ${test_target}.cpp
@@ -48,7 +32,6 @@ macro(generic_run_test test_target test_file
         ${test_file}
     )
     target_link_libraries(${test_target}_testrunner
-        glog
         ${driver_dep}
         ${TEST_TARGET_DEPS}
     )

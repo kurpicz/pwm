@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
-#include "test/util.hpp"
 
-#include "merge.hpp"
+#include "test/util.hpp"
+#include "util/merge.hpp"
 
 void bit_compare(
     std::vector<uint8_t> const& left,
@@ -41,7 +41,7 @@ TEST(BitCopy, test0) {
         0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,
     };
     auto test = [&](size_t dst_off, size_t src_off, size_t block_size) {
-        copy_bits<size_t, uint8_t>(dst.data(), src.data(), dst_off, src_off, block_size);
+        copy_bits<uint8_t>(dst.data(), src.data(), dst_off, src_off, block_size);
     };
 
     /////////////////////////////////////////
@@ -74,7 +74,7 @@ TEST(BitCopy, test1) {
         0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,
     };
     auto test = [&](size_t dst_off, size_t src_off, size_t block_size) {
-        copy_bits<size_t, uint8_t>(dst.data(), src.data(), dst_off, src_off, block_size);
+        copy_bits<uint8_t>(dst.data(), src.data(), dst_off, src_off, block_size);
     };
 
     /////////////////////////////////////////
@@ -101,7 +101,7 @@ TEST(BitCopy, test2) {
         0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,
     };
     auto test = [&](size_t dst_off, size_t src_off, size_t block_size) {
-        copy_bits<size_t, uint8_t>(dst.data(), src.data(), dst_off, src_off, block_size);
+        copy_bits<uint8_t>(dst.data(), src.data(), dst_off, src_off, block_size);
     };
 
     /////////////////////////////////////////

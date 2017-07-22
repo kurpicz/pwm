@@ -1,14 +1,6 @@
 #include <gtest/gtest.h>
 #include "test/util.hpp"
 
-#include <unordered_map>
-
-// WX_NAME is defined by the cmake file to be one of the algorithms
-#include "@WX_NAME@.hpp"
-#define WX_NAME @WX_NAME@
-#cmakedefine WT_TYPE
-#cmakedefine WM_TYPE
-
 #include "common.hpp"
 #include "debug.hpp"
 

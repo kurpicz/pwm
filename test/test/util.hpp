@@ -6,7 +6,6 @@
 #include <string>
 #include <memory>
 
-#include <glog/logging.h>
 #include <gtest/gtest.h>
 
 #include <sys/stat.h>
@@ -340,7 +339,6 @@ inline void remove_test_file(const std::string& filename) {
 }
 
 inline std::vector<uint8_t> pack_integers(std::vector<uint64_t> ints) {
-    CHECK(ints.size() % 2 == 0);
     std::vector<uint8_t> bits;
 
     uint bit_pos = 8;
