@@ -14,21 +14,27 @@
 #include <omp.h>
 #include <vector>
 
-template <typename AlphabetType, typename SizeType>
+template <typename AlphabetType>
 class wt_pps {
 
 public:
-  wt_pps(const std::vector<AlphabetType>& text, const SizeType size,
-    const SizeType levels) : _bv(levels) {
+  static constexpr bool    is_parallel = true;
+  static constexpr bool    is_tree     = true;
+  static constexpr uint8_t word_width  = sizeof(AlphabetType);
+
+  wt_pps() = default;
+
+  wt_pps(const std::vector<AlphabetType>& text, const uint64_t size,
+    const uint64_t levels) : _bv(levels) {
 
     if(text.size() == 0) { return; }
 
-    std::vector<SizeType*> borders;
-    std::vector<SizeType*> hist;
+    std::vector<uint64_t*> borders;
+    std::vector<uint64_t*> hist;
     std::vector<AlphabetType> sorted_text(size);
-    std::vector<SizeType> offsets(1 << levels, 0);
+    std::vector<uint64_t> offsets(1 << levels, 0);
 
-    for (SizeType level = 0; level < levels; ++level) {
+    for (uint64_t level = 0; level < levels; ++level) {
       _bv[level] = new uint64_t[(size + 63ULL) >> 6];
       memset(_bv[level], 0, ((size + 63ULL) >> 6) * sizeof(uint64_t));
     }
@@ -44,23 +50,23 @@ public:
       hist.reserve(num_threads);
       borders.reserve(num_threads);
       for (int32_t rank = 0; rank < num_threads; ++rank) {
-        hist[rank] = new SizeType[1 << levels];
-        memset(hist[rank], 0, (1 << levels) * sizeof(SizeType));
-        borders[rank] = new SizeType[1 << levels];
-        memset(borders[rank], 0, (1 << levels) * sizeof(SizeType));
+        hist[rank] = new uint64_t[1 << levels];
+        memset(hist[rank], 0, (1 << levels) * sizeof(uint64_t));
+        borders[rank] = new uint64_t[1 << levels];
+        memset(borders[rank], 0, (1 << levels) * sizeof(uint64_t));
       }
     }
 
     #pragma omp parallel
     {
-      const SizeType omp_rank = SizeType(omp_get_thread_num());
-      const SizeType omp_size = SizeType(omp_get_num_threads());
-      const SizeType global_max_char = (1 << levels);
+      const uint64_t omp_rank = uint64_t(omp_get_thread_num());
+      const uint64_t omp_size = uint64_t(omp_get_num_threads());
+      const uint64_t global_max_char = (1 << levels);
 
       #pragma omp for
-      for (SizeType cur_pos = 0; cur_pos <= size - 64; cur_pos += 64) {
+      for (uint64_t cur_pos = 0; cur_pos <= size - 64; cur_pos += 64) {
         uint64_t word = 0ULL;
-        for (SizeType i = 0; i < 64; ++i) {
+        for (uint64_t i = 0; i < 64; ++i) {
           ++hist[omp_rank][text[cur_pos + i]];
           word <<= 1;
           word |= ((text[cur_pos + i] >> (levels - 1)) & 1ULL);
@@ -69,7 +75,7 @@ public:
       }
       if ((size & 63ULL) && ((omp_rank + 1) == omp_size)) {
         uint64_t word = 0ULL;
-        for (SizeType i = 0; i < (size & 63ULL); ++i) {
+        for (uint64_t i = 0; i < (size & 63ULL); ++i) {
           ++hist[omp_rank][text[size - (size & 63ULL) + i]];
           word <<= 1;
           word |= ((text[size - (size & 63ULL) + i] >> (levels - 1)) & 1ULL);
@@ -78,15 +84,15 @@ public:
         _bv[0][size >> 6] = word;
       }
 
-      for (SizeType level = levels - 1; level > 0; --level) {
-        const SizeType prefix_shift = (levels - level);
-        const SizeType cur_bit_shift = prefix_shift - 1;
+      for (uint64_t level = levels - 1; level > 0; --level) {
+        const uint64_t prefix_shift = (levels - level);
+        const uint64_t cur_bit_shift = prefix_shift - 1;
 
         #pragma omp for
-        for (SizeType i = 0; i < global_max_char; i += (1ULL << prefix_shift)) {
+        for (uint64_t i = 0; i < global_max_char; i += (1ULL << prefix_shift)) {
           borders[0][i] = 0;
           hist[0][i] += hist[0][i + (1ULL << cur_bit_shift)];
-          for (SizeType rank = 1; rank < omp_size; ++rank) {
+          for (uint64_t rank = 1; rank < omp_size; ++rank) {
             hist[rank][i] += hist[rank][i + (1ULL << cur_bit_shift)];
             borders[rank][i] = borders[rank - 1][i] + hist[rank - 1][i];
           }
@@ -94,7 +100,7 @@ public:
 
         #pragma omp single
         {
-          for (SizeType i = 1; i < (1ULL << level); ++i) {
+          for (uint64_t i = 1; i < (1ULL << level); ++i) {
             offsets[i << prefix_shift] =
               offsets[(i - 1) << prefix_shift] +
               borders[omp_size - 1][(i - 1) << prefix_shift] +
@@ -103,36 +109,36 @@ public:
         }
 
         #pragma omp for
-        for (SizeType rank = 0; rank < omp_size; ++rank) {
-          for (SizeType i = 0; i < global_max_char; i += (1ULL << prefix_shift)) {
+        for (uint64_t rank = 0; rank < omp_size; ++rank) {
+          for (uint64_t i = 0; i < global_max_char; i += (1ULL << prefix_shift)) {
             borders[rank][i] += offsets[i];
           }
         }
 
-        std::vector<SizeType> borders_aligned(1ULL << level, 0);
+        std::vector<uint64_t> borders_aligned(1ULL << level, 0);
         #pragma omp simd
-        for (SizeType i = 0; i < global_max_char; i += (1ULL << prefix_shift)) {
+        for (uint64_t i = 0; i < global_max_char; i += (1ULL << prefix_shift)) {
           borders_aligned[i >> prefix_shift] = borders[omp_rank][i];
         }
 
         #pragma omp for
-        for (SizeType i = 0; i <= size - 64; i += 64) {
-          for (SizeType j = 0; j < 64; ++j) {
+        for (uint64_t i = 0; i <= size - 64; i += 64) {
+          for (uint64_t j = 0; j < 64; ++j) {
             const AlphabetType considerd_char = (text[i + j] >> cur_bit_shift);
             sorted_text[borders_aligned[considerd_char >> 1]++] = considerd_char;
           }
         }
         if ((size & 63ULL) && ((omp_rank + 1) == omp_size)) {
-          for (SizeType i = size - (size & 63ULL); i < size; ++i) {
+          for (uint64_t i = size - (size & 63ULL); i < size; ++i) {
             const AlphabetType considerd_char = (text[i] >> cur_bit_shift);
             sorted_text[borders_aligned[considerd_char >> 1]++] = considerd_char;
           }
         }
 
         #pragma omp for
-        for (SizeType cur_pos = 0; cur_pos <= size - 64; cur_pos += 64) {
+        for (uint64_t cur_pos = 0; cur_pos <= size - 64; cur_pos += 64) {
           uint64_t word = 0ULL;
-          for (SizeType i = 0; i < 64; ++i) {
+          for (uint64_t i = 0; i < 64; ++i) {
             word <<= 1;
             word |= (sorted_text[cur_pos + i] & 1ULL);
           }
@@ -140,7 +146,7 @@ public:
         }
         if ((size & 63ULL) && ((omp_rank + 1) == omp_size)) {
           uint64_t word = 0ULL;
-          for (SizeType i = 0; i < (size & 63ULL); ++i) {
+          for (uint64_t i = 0; i < (size & 63ULL); ++i) {
             word <<= 1;
             word |= (sorted_text[size - (size & 63ULL) + i] & 1ULL);
           }

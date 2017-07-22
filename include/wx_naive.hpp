@@ -17,6 +17,12 @@ template <typename AlphabetType>
 class wx_naive<AlphabetType, false> {
 
 public:
+  static constexpr bool    is_parallel = false;
+  static constexpr bool    is_tree     = true;
+  static constexpr uint8_t word_width  = sizeof(AlphabetType);
+
+  wx_naive() = default;
+
   wx_naive(const std::vector<AlphabetType>& text, const uint64_t size,
     const uint64_t levels) : _bv(levels) {
 
@@ -71,6 +77,12 @@ template <typename AlphabetType>
 class wx_naive<AlphabetType, true> {
 
 public:
+  static constexpr bool    is_parallel = false;
+  static constexpr bool    is_tree     = false;
+  static constexpr uint8_t word_width  = sizeof(AlphabetType);
+
+  wx_naive() = default;
+
   wx_naive(const std::vector<AlphabetType>& text, const uint64_t size,
     const uint64_t levels) : _bv(levels), _zeros(levels, 0) {
 
