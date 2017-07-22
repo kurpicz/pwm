@@ -1,3 +1,11 @@
+/*******************************************************************************
+ * include/util/debug.hpp
+ *
+ * Copyright (C) 2017 Marvin Löbel <loebel.marvin@gmail.com>
+ *
+ * All rights reserved. Published under the BSD-2 license in the LICENSE file.
+ ******************************************************************************/
+
 #pragma once
 
 #include <iostream>
@@ -178,3 +186,5 @@ static void print_bv(const std::vector<uint64_t*> bv, size_t length) {
     }
     std::cout << "\n";
 }
+
+/******************************************************************************/

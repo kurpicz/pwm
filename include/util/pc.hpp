@@ -1,3 +1,11 @@
+/*******************************************************************************
+ * include/util/pc.hpp
+ *
+ * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
+ *
+ * All rights reserved. Published under the BSD-2 license in the LICENSE file.
+ ******************************************************************************/
+
 #pragma once
 
 #include "common.hpp"
@@ -88,3 +96,5 @@ void pc(Text const& text,
         ctx.hist(0, 0) = ctx.hist(1, 0) + ctx.hist(1, 1);
     }
 }
+
+/******************************************************************************/

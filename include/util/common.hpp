@@ -1,7 +1,8 @@
 /*******************************************************************************
- * include/common.hpp
+ * include/util/common.hpp
  *
  * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
+ * Copyright (C) 2017 Marvin Löbel <loebel.marvin@gmail.com>
  *
  * All rights reserved. Published under the BSD-2 license in the LICENSE file.
  ******************************************************************************/

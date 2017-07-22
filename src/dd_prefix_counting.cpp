@@ -1,3 +1,11 @@
+/*******************************************************************************
+ * src/dd_prefix_counting.cpp
+ *
+ * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
+ *
+ * All rights reserved. Published under the BSD-2 license in the LICENSE file.
+ ******************************************************************************/
+
 #include "wx_dd_pc.hpp"
 #include "benchmark/algorithm.hpp"
 
@@ -28,3 +36,5 @@ CONSTRUCTION_REGISTER("wt_dd_pc_<uint16_t>",
 CONSTRUCTION_REGISTER("wt_dd_pc<uint32_t>",
   "Parallel wavelet tree construction with 32-bit alphabet "
   "(using domain decomposition and prefix counting).", wt_dd_pc_32)
+
+/******************************************************************************/

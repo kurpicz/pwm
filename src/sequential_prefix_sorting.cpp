@@ -1,3 +1,11 @@
+/*******************************************************************************
+ * src/sequential_prefix_sorting.cpp
+ *
+ * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
+ *
+ * All rights reserved. Published under the BSD-2 license in the LICENSE file.
+ ******************************************************************************/
+
 #include "wx_ps.hpp"
 #include "benchmark/algorithm.hpp"
 
@@ -28,3 +36,5 @@ CONSTRUCTION_REGISTER("wm_ps<uint16_t>",
 CONSTRUCTION_REGISTER("wm_ps<uint32_t>",
   "Sqeuential wavelet tree construction with 32-bit alphabet (using sorting).",
   wt_ps_32)
+
+/******************************************************************************/
