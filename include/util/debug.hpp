@@ -118,7 +118,7 @@ static std::string decode_wt(const std::vector<uint64_t*> bv, size_t length) {
 }
 
 static std::string decode_wm(const std::vector<uint64_t*> bv,
-                       const std::vector<uint32_t>& zeros,
+                       const std::vector<uint64_t>& zeros,
                        size_t length) {
     if (bv.size() == 0) {
         return {};

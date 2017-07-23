@@ -14,6 +14,9 @@
 #include <memory>
 #include <vector>
 
+#include "util/common.hpp"
+#include "util/type_for_bytes.hpp"
+
 class construction_algorithm;
 
 class algorithm_list {
@@ -48,7 +51,8 @@ public:
       std::move(std::unique_ptr<construction_algorithm>(this)));
   }
 
-  virtual void run() = 0;
+  virtual std::pair<Bvs, std::vector<uint64_t>> compute_bitvector(
+    const void* global_text, const uint64_t size, const uint64_t levels) = 0;
   virtual bool is_parallel() = 0;
   virtual bool is_tree() = 0;
   virtual uint8_t word_width() = 0;
@@ -70,7 +74,14 @@ public:
   concrete_algorithm(std::string name, std::string description)
   : construction_algorithm(name, description) { }
 
-  inline void run() { }
+  inline auto compute_bitvector(const void* global_text, const uint64_t size,
+    const uint64_t levels) {
+    using text_type =
+      typename type_for_bytes<WaveletStructure::word_width>::type;
+    std::vector<text_type> text = *(static_cast<text_type*>(global_text));
+    ws_ = WaveletStructure(text, size, levels);
+    return ws_.get_bv_and_zeros();
+  }
 
   bool is_parallel() {
     return WaveletStructure::is_parallel;
