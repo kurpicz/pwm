@@ -74,6 +74,8 @@ struct rho_dispatch {};
 
 template<>
 struct rho_dispatch<true> {
+    using type = decltype(rho_bit_reverse(0));
+
     static auto create(size_t levels) {
         return rho_bit_reverse(levels);
     }
@@ -81,6 +83,8 @@ struct rho_dispatch<true> {
 
 template<>
 struct rho_dispatch<false> {
+    using type = decltype(rho_identity(0));
+
     static auto create(size_t levels) {
         return rho_identity(levels);
     }

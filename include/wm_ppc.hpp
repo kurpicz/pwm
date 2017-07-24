@@ -38,7 +38,7 @@ public:
     std::vector<uint64_t> hist;
     #pragma omp single
     {
-      hist = std::vector<uint64_t>((1 << levels) * levels, 0);
+      hist = std::vector<uint64_t>((1ULL << levels) * levels, 0);
     }
 
     #pragma omp barrier
@@ -50,7 +50,7 @@ public:
       const uint64_t omp_rank = uint64_t(omp_get_thread_num());
       const uint64_t omp_size = uint64_t(omp_get_num_threads());
 
-      const uint64_t global_max_char = (1 << levels);
+      const uint64_t global_max_char = (1ULL << levels);
 
       const AlphabetType* const text_ptr = text;
 
@@ -116,7 +116,7 @@ public:
         const uint64_t cur_bit_shift = prefix_shift - 1;
 
         uint64_t* const hist_ttt = hist.data() + (level * global_max_char);
-        std::vector<uint64_t> borders(local_max_char);
+        std::vector<uint64_t> borders(local_max_char, 0);
         std::vector<uint64_t> bit_reverse = BitReverse(level);
 
         // Compute the starting positions of characters with respect to their
