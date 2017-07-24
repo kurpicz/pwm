@@ -34,9 +34,6 @@ public:
 
         const uint64_t shards = omp_get_max_threads();
 
-        // Do all bulk allocations in the same thread:
-        // TODO: flatten vectors where possible, to reduce indirection
-
         const auto rho = rho_dispatch<is_matrix>::create(levels);
         auto ctxs = std::vector<ctx_t>(shards);
 
