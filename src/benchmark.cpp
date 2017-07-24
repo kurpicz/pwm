@@ -24,8 +24,11 @@ int32_t main(int32_t argc, char const* argv[]) {
   TCLAP::CmdLine cmd("Benchmark for wavelet tree (and matrix) construction",
     ' ', "0.2");
 
+  TCLAP::SwitchArg list_all_algorithms("l", "list",
+    "Print the name and description of all registered algorithms", false);
+  cmd.add(list_all_algorithms);
   TCLAP::MultiArg<std::string> file_path_arg("f", "file",
-    "Path to the text file.", true, "string");
+    "Path to the text file.", false, "string");
   cmd.add(file_path_arg);
   TCLAP::ValueArg<std::string> filter_arg("n", "name",
     "Runs all algorithms that contain the <name> in their name", false, "",
@@ -47,6 +50,14 @@ int32_t main(int32_t argc, char const* argv[]) {
   cmd.add(no_matrices_arg);
   cmd.parse( argc, argv );
 
+  auto& algo_list = algorithm_list::get_algorithm_list();
+  if (list_all_algorithms.getValue()) {
+    for (const auto& a : algo_list) {
+      a->print_info();
+    }
+    return 0;
+  }
+
   const std::vector<std::string> file_paths = file_path_arg.getValue();
   std::string filter = filter_arg.getValue();
   const int32_t word_width = word_width_arg.getValue();
@@ -55,7 +66,6 @@ int32_t main(int32_t argc, char const* argv[]) {
   const bool no_trees = no_trees_arg.getValue();
   const bool no_matrices = no_matrices_arg.getValue();
 
-  auto& algo_list = algorithm_list::get_algorithm_list();
   for (const auto& path : file_paths) {
     auto text = file_to_vector<1>(path);
     uint64_t levels = reduce_alphabet(text);
