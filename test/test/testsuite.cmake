@@ -19,18 +19,24 @@ file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/stamps)
 # will compile and run ${test_target}.cpp
 # and add all further arguments as dependencies
 macro(generic_run_test test_target test_file
-      driver driver_dep register_target register_build_target kind_name)
+      driver driver_dep register_target register_build_target kind_name construction_test)
     set(options)
     set(oneValueArgs)
     set(multiValueArgs DEPS BIN_DEPS)
     cmake_parse_arguments(TEST_TARGET "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
 
-    # The test executable itself
+    if (${construction_test})
+        set(CONSTRUCTION_ALGORITHMS
+            ${PROJECT_SOURCE_DIR}/src/naive.cpp)
+    endif()
+
     add_executable(${test_target}_testrunner
         EXCLUDE_FROM_ALL
         ${driver}
         ${test_file}
+        ${CONSTRUCTION_ALGORITHMS}
     )
+
     target_link_libraries(${test_target}_testrunner
         ${driver_dep}
         ${TEST_TARGET_DEPS}
@@ -90,7 +96,7 @@ macro(generic_run_test test_target test_file
     endforeach(bin_dep)
 endmacro()
 
-macro(run_test test_target)
+macro(run_test test_target construction_test)
 generic_run_test(
     ${test_target}
     "${test_target}.cpp"
@@ -99,6 +105,7 @@ generic_run_test(
     check
     build_check
     "Test"
+    "${construction_test}"
     ${ARGN}
 )
 endmacro()
