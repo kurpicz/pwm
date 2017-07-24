@@ -25,10 +25,10 @@ TEST(wavelet_construction, smoketest) {
         auto bvz = a->compute_bitvector(&vec, vec.size() , levels);
         if (a->is_tree()) {
           auto decoded_s = decode_wt(bvz.raw_bvs(), vec.size());
-          ASSERT_EQ(s, decoded_s);
+          ASSERT_EQ(s, decoded_s) << "Failure at " << a->name();
         } else {
           auto decoded_s = decode_wm(bvz.raw_bvs(), bvz.raw_zeros(), vec.size());
-          ASSERT_EQ(s, decoded_s);
+          ASSERT_EQ(s, decoded_s) << "Failure at " << a->name();
         }
       });
     }

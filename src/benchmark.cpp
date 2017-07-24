@@ -27,6 +27,10 @@ int32_t main(int32_t argc, char const* argv[]) {
   TCLAP::MultiArg<std::string> file_path_arg("f", "file",
     "Path to the text file.", true, "string");
   cmd.add(file_path_arg);
+  TCLAP::ValueArg<std::string> filter_arg("n", "name",
+    "Runs all algorithms that contain the <name> in their name", false, "",
+    "string");
+  cmd.add(filter_arg);
   TCLAP::ValueArg<int32_t> word_width_arg("b", "byte",
     "Bytes per char in the input text.", false, 1, "uint8_t");
   cmd.add(word_width_arg);
@@ -44,6 +48,7 @@ int32_t main(int32_t argc, char const* argv[]) {
   cmd.parse( argc, argv );
 
   const std::vector<std::string> file_paths = file_path_arg.getValue();
+  std::string filter = filter_arg.getValue();
   const int32_t word_width = word_width_arg.getValue();
   const int32_t nr_runs = nr_runs_arg.getValue();
   const bool run_only_parallel = run_only_parallel_arg.getValue();
@@ -55,12 +60,14 @@ int32_t main(int32_t argc, char const* argv[]) {
     auto text = file_to_vector<1>(path);
     uint64_t levels = reduce_alphabet(text);
     for (const auto& a : algo_list) {
-      if (a->word_width() == word_width) {
-        if (filter_parallel(run_only_parallel, a->is_parallel())) {
-          if (filter_wavelet_type(a->is_tree(), no_trees, no_matrices)) {
-            a->print_info();
-            std::cout << a->median_time(&text, text.size(), levels, nr_runs)
-                      << std::endl;
+      if (filter == "" || (a->name().find(filter) != std::string::npos)) {
+        if (a->word_width() == word_width) {
+          if (filter_parallel(run_only_parallel, a->is_parallel())) {
+            if (filter_wavelet_type(a->is_tree(), no_trees, no_matrices)) {
+              a->print_info();
+              std::cout << a->median_time(&text, text.size(), levels, nr_runs)
+                        << std::endl;
+            }
           }
         }
       }

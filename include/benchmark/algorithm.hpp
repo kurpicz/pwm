@@ -63,6 +63,14 @@ public:
   virtual bool is_tree() const = 0;
   virtual uint8_t word_width() const = 0;
 
+  std::string name() const {
+    return name_;
+  }
+
+  std::string description() const {
+    return description_;
+  }
+
   inline void print_info() const {
     std::cout << name_ << ": " << description_ << std::endl;
   }
