@@ -16,6 +16,10 @@ auto filter_parallel(bool only_parallel, bool is_parallel) {
   return (!only_parallel || is_parallel);
 }
 
+auto filter_sequential(bool sequential, bool is_parallel) {
+  return (!sequential || !is_parallel);
+}
+
 auto filter_wavelet_type(bool is_tree, bool no_trees, bool no_matrices) {
   return (is_tree ? !no_trees : !no_matrices);
 }
@@ -39,9 +43,13 @@ int32_t main(int32_t argc, char const* argv[]) {
   cmd.add(word_width_arg);
   TCLAP::ValueArg<int32_t> nr_runs_arg("r", "runs",
     "Number of repetitions of the construction algorithm.", false, 5, "int32_t");
+  cmd.add(nr_runs_arg);
   TCLAP::SwitchArg run_only_parallel_arg("p", "parallel",
     "Run only parallel construction algorithms.", false);
   cmd.add(run_only_parallel_arg);
+  TCLAP::SwitchArg run_only_sequential_arg("s", "sequential",
+    "Run only sequential construction algorithms.", false);
+  cmd.add(run_only_sequential_arg);
   TCLAP::SwitchArg no_trees_arg("m", "no_trees",
     "Skip all wavelet trees construction algorithms.", false);
   cmd.add(no_trees_arg);
@@ -63,6 +71,7 @@ int32_t main(int32_t argc, char const* argv[]) {
   const int32_t word_width = word_width_arg.getValue();
   const int32_t nr_runs = nr_runs_arg.getValue();
   const bool run_only_parallel = run_only_parallel_arg.getValue();
+  const bool run_only_sequential = run_only_sequential_arg.getValue();
   const bool no_trees = no_trees_arg.getValue();
   const bool no_matrices = no_matrices_arg.getValue();
 
@@ -73,10 +82,12 @@ int32_t main(int32_t argc, char const* argv[]) {
       if (filter == "" || (a->name().find(filter) != std::string::npos)) {
         if (a->word_width() == word_width) {
           if (filter_parallel(run_only_parallel, a->is_parallel())) {
-            if (filter_wavelet_type(a->is_tree(), no_trees, no_matrices)) {
-              a->print_info();
-              std::cout << a->median_time(&text, text.size(), levels, nr_runs)
-                        << std::endl;
+            if (filter_sequential(run_only_sequential, a->is_parallel())) {
+              if (filter_wavelet_type(a->is_tree(), no_trees, no_matrices)) {
+                a->print_info();
+                std::cout << a->median_time(&text, text.size(), levels, nr_runs)
+                          << std::endl;
+              }
             }
           }
         }
