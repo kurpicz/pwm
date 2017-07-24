@@ -24,10 +24,10 @@ TEST(wavelet_construction, smoketest) {
         uint64_t levels = no_reduction_alphabet(vec);
         auto bvz = a->compute_bitvector(&vec, vec.size() , levels);
         if (a->is_tree()) {
-          auto decoded_s = decode_wt(bvz.first, vec.size());
+          auto decoded_s = decode_wt(bvz.raw_bvs(), vec.size());
           ASSERT_EQ(s, decoded_s);
         } else {
-          auto decoded_s = decode_wm(bvz.first, bvz.second, vec.size());
+          auto decoded_s = decode_wm(bvz.raw_bvs(), bvz.raw_zeros(), vec.size());
           ASSERT_EQ(s, decoded_s);
         }
       });

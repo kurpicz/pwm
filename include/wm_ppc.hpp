@@ -27,14 +27,12 @@ public:
   wm_ppc() = default;
 
   wm_ppc(const std::vector<AlphabetType>& text, const uint64_t size,
-    const uint64_t levels) : _bv(levels), _zeros(levels, 0) {
+    const uint64_t levels) : _zeros(levels, 0) {
 
     if(text.size() == 0) { return; }
 
-    for (uint64_t level = 0; level < levels; ++level) {
-      _bv[level] = new uint64_t[(size + 63ULL) >> 6];
-        memset(_bv[level], 0, ((size + 63ULL) >> 6) * sizeof(uint64_t));
-    }
+    _bv = Bvs(size, levels);
+    auto& bv = _bv.vec();
 
     std::vector<uint64_t> hist;
     #pragma omp single
@@ -66,7 +64,7 @@ public:
           word <<= 1;
           word |= ((text_ptr[cur_pos + i] >> (levels - 1)) & 1ULL);
         }
-        _bv[0][cur_pos >> 6] = word;
+        bv[0][cur_pos >> 6] = word;
       }
 
       if ((size & 63ULL) && omp_rank == 0) {
@@ -77,7 +75,7 @@ public:
           word |= ((text[size - (size & 63ULL) + i] >> (levels - 1)) & 1ULL);
         }
         word <<= (64 - (size & 63ULL));
-        _bv[0][size >> 6] = word;
+        bv[0][size >> 6] = word;
       }
 
       // Compute the historam with respect to the local slices of the text
@@ -133,7 +131,7 @@ public:
         // Now we insert the bits with respect to their bit prefixes
         for (uint64_t i = 0; i < size; ++i) {
           const uint64_t pos = borders[text_ptr[i] >> prefix_shift]++;
-          _bv[level][pos >> 6] |= (((text[i] >> cur_bit_shift) & 1ULL)
+          bv[level][pos >> 6] |= (((text[i] >> cur_bit_shift) & 1ULL)
             << (63ULL - (pos & 63ULL)));
         }
       }
@@ -141,11 +139,14 @@ public:
   }
 
   auto get_bv_and_zeros() const {
-    return std::make_pair(_bv, _zeros);
+    return std::make_pair(_bv.vec(), _zeros);
   }
 
+    wavelet_structure get() && {
+        return wavelet_structure(std::move(_bv), std::move(_zeros));
+    }
 private:
-  std::vector<uint64_t*> _bv;
+  Bvs _bv;
   std::vector<uint64_t> _zeros;
 }; // class wm_ppc
 

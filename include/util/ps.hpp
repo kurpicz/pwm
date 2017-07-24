@@ -12,16 +12,15 @@
 #include "context.hpp"
 
 template<
-    typename Text,
+    typename AlphabetType,
     typename SizeType,
-    typename ctx_t,
-    typename SortedText
+    typename ctx_t
 >
-void ps(Text const& text,
+void ps(AlphabetType const* text,
         SizeType const size,
         SizeType const levels,
         ctx_t& ctx,
-        SortedText& sorted_text)
+        AlphabetType* sorted_text)
 {
     SizeType cur_max_char = (1 << levels);
 

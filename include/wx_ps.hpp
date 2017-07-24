@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "util/common.hpp"
+#include "util/wavelet_structure.hpp"
 #include "util/ps.hpp"
 
 template <typename AlphabetType, bool is_matrix>
@@ -31,7 +32,7 @@ public:
         auto ctx = ctx_t(size, levels);
 
         auto sorted_text = std::vector<AlphabetType>(size);
-        ps(text, size, levels, ctx, sorted_text);
+        ps(text.data(), size, levels, ctx, sorted_text.data());
 
         if (ctx_t::compute_zeros)  {
             _zeros = std::move(ctx.zeros());
@@ -45,6 +46,10 @@ public:
 
     auto get_bv() const {
         return _bv.vec();
+    }
+
+    wavelet_structure get() && {
+        return wavelet_structure(std::move(_bv), std::move(_zeros));
     }
 
 private:

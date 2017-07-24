@@ -16,6 +16,7 @@
 #include "util/common.hpp"
 #include "util/merge.hpp"
 #include "util/ps.hpp"
+#include "util/wavelet_structure.hpp"
 
 template <typename AlphabetType, bool is_matrix>
 class wx_dd_ps {
@@ -33,9 +34,6 @@ public:
         if(global_text.size() == 0) { return; }
 
         const uint64_t shards = omp_get_max_threads();
-
-        // Do all bulk allocations in the same thread:
-        // TODO: flatten vectors where possible, to reduce indirection
 
         const auto rho = rho_dispatch<is_matrix>::create(levels);
         auto ctxs = std::vector<ctx_t>(shards);
@@ -112,6 +110,10 @@ public:
 
     auto get_bv() const {
         return _bv.vec();
+    }
+
+    wavelet_structure get() && {
+        return wavelet_structure(std::move(_bv), std::move(_zeros));
     }
 
 private:

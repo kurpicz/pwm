@@ -10,7 +10,6 @@
 #pragma once
 
 #include "common.hpp"
-#include "debug.hpp"
 #include <cassert>
 #include <climits>
 #include <omp.h>
