@@ -65,40 +65,18 @@ public:
             ps(text, local_size, levels, ctxs[omp_rank], sorted_text);
         }
 
-        // TODO: Move and drop unneeded ctx stuff better than this
-
-        auto glob_bv = std::vector<Bvs>(shards);
-
-        auto glob_zeros = std::vector<std::vector<uint64_t>>(
-            shards, std::vector<uint64_t>(levels));
-
-        auto glob_hist = std::vector<std::vector<std::vector<uint64_t>>>(
-            shards, std::vector<std::vector<uint64_t>>(
-                levels + 1, std::vector<uint64_t>((1 << levels), 0)));
-
-        for(size_t shard = 0; shard < shards; shard++) {
-            glob_bv[shard] = std::move(ctxs[shard].bv());
-            glob_zeros[shard] = std::move(ctxs[shard].zeros());
-            for(size_t level = 0; level < (levels + 1); level++) {
-                auto hist_size = ctxs[shard].hist_size(level);
-                glob_hist[shard][level] = std::vector<uint64_t>(hist_size, 0);
-                for(size_t i = 0; i < hist_size; i++) {
-                    glob_hist[shard][level][i] = ctxs[shard].hist(level, i);
-                }
-            }
+        for(auto& ctx : ctxs) {
+            ctx.discard_non_merge_data();
         }
-
-        drop_me(std::move(ctxs));
-
-        auto _bv = merge_bvs(size, levels, shards, glob_hist, glob_bv, rho);
+        auto _bv = merge_bvs(size, levels, shards, ctxs, rho);
 
         if (ctx_t::compute_zeros) {
             auto _zeros = std::vector<uint64_t>(levels, 0);
 
             #pragma omp parallel for
             for(size_t level = 0; level < levels; level++) {
-                for(size_t shard = 0; shard < glob_bv.size(); shard++) {
-                    _zeros[level] += glob_zeros[shard][level];
+                for(size_t shard = 0; shard < ctxs.size(); shard++) {
+                    _zeros[level] += ctxs[shard].zeros()[level];
                 }
             }
 

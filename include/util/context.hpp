@@ -49,6 +49,10 @@ struct LevelSinglePass {
         return m_hist[i];
     }
 
+    uint64_t hist(uint64_t const /*level*/, uint64_t const i) const {
+        return m_hist[i];
+    }
+
     uint64_t rho(size_t /*level*/, size_t i) {
         if (is_matrix) {
             return m_bit_reverse[i];
@@ -76,6 +80,14 @@ struct LevelSinglePass {
 
     Bvs& bv() {
         return m_bv;
+    }
+
+    Bvs const& bv() const {
+        return m_bv;
+    }
+
+    void discard_non_merge_data() {
+        // Not used in merge algorithm
     }
 };
 
@@ -120,6 +132,10 @@ struct KeepLevel {
         return m_hist[level][i];
     }
 
+    uint64_t hist(uint64_t const level, uint64_t const i) const {
+        return m_hist[level][i];
+    }
+
     uint64_t rho(size_t level, size_t i) {
         return (*m_rho)(level, i);
     }
@@ -141,6 +157,14 @@ struct KeepLevel {
 
     Bvs& bv() {
         return m_bv;
+    }
+
+    Bvs const& bv() const {
+        return m_bv;
+    }
+
+    void discard_non_merge_data() {
+        drop_me(std::move(m_borders));
     }
 };
 

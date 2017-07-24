@@ -121,16 +121,14 @@ void copy_bits(WordType* const dst,
     src_off_ref += block_size;
 }
 
-template<typename Rho>
+template<typename ctx_t, typename Rho>
 inline auto merge_bvs(uint64_t size,
                       uint64_t levels,
                       uint64_t shards,
-                      const std::vector<std::vector<std::vector<uint64_t>>>& glob_hist,
-                      const std::vector<Bvs>& glob_bv,
+                      const std::vector<ctx_t>& src_ctxs,
                       const Rho& rho) -> Bvs
 {
-    assert(shards == glob_bv.size());
-    assert(shards == glob_hist.size());
+    assert(shards == src_ctxs.size());
 
     // Allocate data structures centrally
 
@@ -182,9 +180,7 @@ inline auto merge_bvs(uint64_t size,
                 return ctxs[merge_shard].levels[level].read_offsets[read_shard];
             };
 
-            const auto h = glob_hist[read_shard][level];
-
-            auto block_size = h[rho(level, bit_i)];
+            auto block_size = src_ctxs[read_shard].hist(level, rho(level, bit_i));
 
             write_offset += block_size;
             read_offset(merge_shard + 1, read_shard) += block_size;
@@ -266,12 +262,12 @@ inline auto merge_bvs(uint64_t size,
                 const auto read_shard = seq_i % shards;
                 seq_i++;
 
-                const auto& h = glob_hist[read_shard][level];
-                const auto& local_bv = glob_bv[read_shard].vec()[level];
+                const auto& h = src_ctxs[read_shard];
+                const auto& local_bv = src_ctxs[read_shard].bv().vec()[level];
 
                 auto const block_size = std::min<uint64_t>(
                     target_right - write_offset,
-                    h[rho(level, i)] - init_offset
+                    h.hist(level, rho(level, i)) - init_offset
                 );
                 init_offset = 0; // TODO: remove this by doing a initial pass
 
