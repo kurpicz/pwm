@@ -23,15 +23,15 @@ public:
     static constexpr bool    is_tree     = !is_matrix;
     static constexpr uint8_t word_width  = sizeof(AlphabetType);
 
-    static wavelet_structure compute(const std::vector<AlphabetType>& text,
+    static wavelet_structure compute(AlphabetType const* const text,
                                      const uint64_t size,
                                      const uint64_t levels)
     {
-        if(text.size() == 0) { return wavelet_structure(); }
+        if(size == 0) { return wavelet_structure(); }
 
         auto ctx = ctx_t(size, levels);
 
-        pc(text.data(), size, levels, ctx);
+        pc(text, size, levels, ctx);
 
         if (ctx_t::compute_zeros)  {
             return wavelet_structure(std::move(ctx.bv()), std::move(ctx.zeros()));

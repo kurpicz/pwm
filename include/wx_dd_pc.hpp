@@ -27,11 +27,11 @@ public:
     static constexpr bool    is_tree     = !is_matrix;
     static constexpr uint8_t word_width  = sizeof(AlphabetType);
 
-    static wavelet_structure compute(const std::vector<AlphabetType>& global_text,
+    static wavelet_structure compute(AlphabetType const* const global_text,
                                      const uint64_t size,
                                      const uint64_t levels)
     {
-        if(global_text.size() == 0) { return wavelet_structure(); }
+        if(size == 0) { return wavelet_structure(); }
 
         const uint64_t shards = omp_get_max_threads();
 
@@ -57,7 +57,7 @@ public:
             const uint64_t offset = (omp_rank * (size / omp_size)) +
                 std::min<uint64_t>(omp_rank, size % omp_size);
 
-            const AlphabetType* text = global_text.data() + offset;
+            const AlphabetType* text = global_text + offset;
 
             pc(text, local_size, levels, ctxs[omp_rank]);
         }

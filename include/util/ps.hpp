@@ -16,11 +16,11 @@ template<
     typename SizeType,
     typename ctx_t
 >
-void ps(AlphabetType const* text,
+void ps(AlphabetType const* const text,
         SizeType const size,
         SizeType const levels,
         ctx_t& ctx,
-        AlphabetType* sorted_text)
+        AlphabetType* const sorted_text)
 {
     SizeType cur_max_char = (1 << levels);
 

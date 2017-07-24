@@ -22,12 +22,12 @@ public:
   static constexpr bool    is_tree     = true;
   static constexpr uint8_t word_width  = sizeof(AlphabetType);
 
-    static wavelet_structure compute(const std::vector<AlphabetType>& text,
+    static wavelet_structure compute(AlphabetType const* const text,
                                      const uint64_t size,
                                      const uint64_t levels)
     {
 
-    if(text.size() == 0) { return wavelet_structure(); }
+    if(size == 0) { return wavelet_structure(); }
 
     auto _bv = Bvs(size, levels);
     auto& bv = _bv.vec();
@@ -49,7 +49,7 @@ public:
 
       const uint64_t global_max_char = (1 << levels);
 
-      const AlphabetType* const text_ptr = text.data();
+      const AlphabetType* const text_ptr = text;
 
       uint64_t* const hist_ptr = hist_data_ptr + (global_max_char * omp_rank);
 

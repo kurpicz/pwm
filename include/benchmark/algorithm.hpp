@@ -92,7 +92,7 @@ public:
     using text_vec_type =
       std::vector<typename type_for_bytes<Algorithm::word_width>::type>;
     auto const* text = static_cast<text_vec_type const*>(global_text);
-    return Algorithm::compute(*text, size, levels);
+    return Algorithm::compute(text->data(), size, levels);
   }
 
   virtual float median_time(const void* global_text, const uint64_t size,
@@ -103,7 +103,7 @@ public:
     const auto* text = static_cast<const text_vec_type*>(global_text);
     for (size_t run = 0; run < runs; ++run) {
       auto t1 = std::chrono::high_resolution_clock::now();
-      Algorithm::compute(*text, size, levels);
+      Algorithm::compute(text->data(), size, levels);
       auto t2 = std::chrono::high_resolution_clock::now();
       times.emplace_back(static_cast<float>(
         std::chrono::duration_cast<std::chrono::milliseconds>(

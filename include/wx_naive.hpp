@@ -24,16 +24,19 @@ public:
 
   wx_naive() = default;
 
-    static wavelet_structure compute(const std::vector<AlphabetType>& text,
+    static wavelet_structure compute(AlphabetType const* const text,
                                      const uint64_t size,
                                      const uint64_t levels)
     {
-    if(text.size() == 0) { return wavelet_structure(); }
+    if(size == 0) { return wavelet_structure(); }
 
     auto _bv = Bvs(size, levels);
     auto& bv = _bv.vec();
 
-    std::vector<AlphabetType> local_text = text;
+    std::vector<AlphabetType> local_text(size);
+    for(size_t i = 0; i < size; i++) {
+        local_text[i] = text[i];
+    }
 
     for (uint64_t level = 0; level < levels; ++level) {
       uint32_t cur_pos = 0;
@@ -79,18 +82,21 @@ public:
   static constexpr bool    is_tree     = false;
   static constexpr uint8_t word_width  = sizeof(AlphabetType);
 
-    static wavelet_structure compute(const std::vector<AlphabetType>& text,
+    static wavelet_structure compute(AlphabetType const* const text,
                                      const uint64_t size,
                                      const uint64_t levels)
     {
 
-    if(text.size() == 0) { return wavelet_structure(); }
+    if(size == 0) { return wavelet_structure(); }
 
     auto _bv = Bvs(size, levels);
     auto _zeros = std::vector<size_t>(levels, 0);
     auto& bv = _bv.vec();
 
-    std::vector<AlphabetType> local_text = text;
+    std::vector<AlphabetType> local_text(size);
+    for(size_t i = 0; i < size; i++) {
+        local_text[i] = text[i];
+    }
 
     // Construct each level top-down
     for (uint64_t level = 0; level < levels; ++level) {
