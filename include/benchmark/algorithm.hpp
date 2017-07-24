@@ -10,6 +10,8 @@
 #ifndef ALGORITHM_HEADER
 #define ALGORITHM_HEADER
 
+#include <algorithm>
+#include <chrono>
 #include <iostream>
 #include <memory>
 #include <vector>
@@ -51,8 +53,11 @@ public:
       std::move(std::unique_ptr<construction_algorithm>(this)));
   }
 
-  virtual std::pair<std::vector<uint64_t*>, std::vector<uint64_t>> compute_bitvector(
-    const void* global_text, const uint64_t size, const uint64_t levels) = 0;
+  virtual std::pair<std::vector<uint64_t*>, std::vector<uint64_t>> 
+    compute_bitvector(const void* global_text, const uint64_t size,
+      const uint64_t levels) = 0;
+  virtual float median_time(const void* global_text, const uint64_t size,
+      const uint64_t levels, size_t runs) = 0;
   virtual bool is_parallel() = 0;
   virtual bool is_tree() = 0;
   virtual uint8_t word_width() = 0;
@@ -74,13 +79,32 @@ public:
   concrete_algorithm(std::string name, std::string description)
   : construction_algorithm(name, description) { }
 
-  inline std::pair<std::vector<uint64_t*>, std::vector<uint64_t>> compute_bitvector(
-    const void* global_text, const uint64_t size, const uint64_t levels) {
+  inline std::pair<std::vector<uint64_t*>, std::vector<uint64_t>>
+    compute_bitvector(const void* global_text, const uint64_t size,
+      const uint64_t levels) {
     using text_vec_type =
       std::vector<typename type_for_bytes<WaveletStructure::word_width>::type>;
     const auto* text = static_cast<const text_vec_type*>(global_text);
     ws_ = WaveletStructure(*text, size, levels);
     return ws_.get_bv_and_zeros();
+  }
+
+  virtual float median_time(const void* global_text, const uint64_t size,
+      const uint64_t levels, size_t runs) {
+    std::vector<float> times;
+    using text_vec_type =
+      std::vector<typename type_for_bytes<WaveletStructure::word_width>::type>;
+    const auto* text = static_cast<const text_vec_type*>(global_text);
+    for (size_t run = 0; run < runs; ++run) {
+      auto t1 = std::chrono::high_resolution_clock::now();
+      ws_ = WaveletStructure(*text, size, levels);
+      auto t2 = std::chrono::high_resolution_clock::now();
+      times.emplace_back(static_cast<float>(
+        std::chrono::duration_cast<std::chrono::milliseconds>(
+          t2 - t1).count()));
+    }
+    std::sort(times.begin(), times.end());
+    return times[runs >> 1];
   }
 
   bool is_parallel() {

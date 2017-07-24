@@ -15,13 +15,13 @@ using wm_pps_16 = wm_pps<uint16_t>;
 using wm_pps_32 = wm_pps<uint32_t>;
 
 CONSTRUCTION_REGISTER("wm_pps<uint8_t>",
-  "Sqeuential wavelet matrix construction with 8-bit alphabet "
+  "Parallel wavelet matrix construction with 8-bit alphabet "
   "(using counting).", wm_pps_8)
 CONSTRUCTION_REGISTER("wm_pps<uint16_t>",
-  "Sqeuential wavelet matrix construction with 16-bit alphabet "
+  "Parallel wavelet matrix construction with 16-bit alphabet "
   "(using counting).", wm_pps_16)
 CONSTRUCTION_REGISTER("wm_pps<uint32_t>",
-  "Sqeuential wavelet matrix construction with 32-bit alphabet "
+  "Parallel wavelet matrix construction with 32-bit alphabet "
   "(using counting).", wm_pps_32)
 
 using wt_pps_8 = wt_pps<uint8_t>;
@@ -29,13 +29,13 @@ using wt_pps_16 = wt_pps<uint16_t>;
 using wt_pps_32 = wt_pps<uint32_t>;
 
 CONSTRUCTION_REGISTER("wt_pps<uint8_t>",
-  "Sqeuential wavelet matrix construction with 8-bit alphabet "
+  "Parallel wavelet tree construction with 8-bit alphabet "
   "(using counting).", wt_pps_8)
 CONSTRUCTION_REGISTER("wt_pps<uint16_t>",
-  "Sqeuential wavelet matrix construction with 16-bit alphabet "
+  "Parallel wavelet tree construction with 16-bit alphabet "
   "(using counting).", wt_pps_16)
 CONSTRUCTION_REGISTER("wt_pps<uint32_t>",
-  "Sqeuential wavelet matrix construction with 32-bit alphabet "
+  "Parallel wavelet tree construction with 32-bit alphabet "
   "(using counting).", wt_pps_32)
 
 /******************************************************************************/

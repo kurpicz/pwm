@@ -28,13 +28,13 @@ using wt_naive_16 = wx_naive<uint16_t, false>;
 using wt_naive_32 = wx_naive<uint32_t, false>;
 
 CONSTRUCTION_REGISTER("wt_naive<uint8_t>",
-  "Sqeuential wavelet matrix construction with 8-bit alphabet "
+  "Sqeuential wavelet tree construction with 8-bit alphabet "
   "(using counting).", wt_naive_8)
 CONSTRUCTION_REGISTER("wt_naive<uint16_t>",
-  "Sqeuential wavelet matrix construction with 16-bit alphabet "
+  "Sqeuential wavelet tree construction with 16-bit alphabet "
   "(using counting).", wt_naive_16)
 CONSTRUCTION_REGISTER("wt_naive<uint32_t>",
-  "Sqeuential wavelet matrix construction with 32-bit alphabet "
+  "Sqeuential wavelet tree construction with 32-bit alphabet "
   "(using counting).", wt_naive_32)
 
 /******************************************************************************/
