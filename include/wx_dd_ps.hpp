@@ -27,11 +27,11 @@ public:
     static constexpr bool    is_tree     = !is_matrix;
     static constexpr uint8_t word_width  = sizeof(AlphabetType);
 
-    wx_dd_ps() = default;
-
-    wx_dd_ps(const std::vector<AlphabetType>& global_text, const uint64_t size,
-        const uint64_t levels) {
-        if(global_text.size() == 0) { return; }
+    static wavelet_structure compute(const std::vector<AlphabetType>& global_text,
+                                     const uint64_t size,
+                                     const uint64_t levels)
+    {
+        if(global_text.size() == 0) { return wavelet_structure(); }
 
         const uint64_t shards = omp_get_max_threads();
 
@@ -90,10 +90,10 @@ public:
 
         drop_me(std::move(ctxs));
 
-        _bv = merge_bvs(size, levels, shards, glob_hist, glob_bv, rho);
+        auto _bv = merge_bvs(size, levels, shards, glob_hist, glob_bv, rho);
 
         if (ctx_t::compute_zeros) {
-            _zeros = std::vector<uint64_t>(levels, 0);
+            auto _zeros = std::vector<uint64_t>(levels, 0);
 
             #pragma omp parallel for
             for(size_t level = 0; level < levels; level++) {
@@ -101,22 +101,10 @@ public:
                     _zeros[level] += glob_zeros[shard][level];
                 }
             }
+
+            return wavelet_structure(std::move(_bv), std::move(_zeros));
+        } else {
+            return wavelet_structure(std::move(_bv));
         }
     }
-
-    auto get_bv_and_zeros() const {
-        return std::make_pair(_bv.vec(), _zeros);
-    }
-
-    auto get_bv() const {
-        return _bv.vec();
-    }
-
-    wavelet_structure get() && {
-        return wavelet_structure(std::move(_bv), std::move(_zeros));
-    }
-
-private:
-    Bvs _bv;
-    std::vector<uint64_t> _zeros;
 }; // class wx_dd_ps

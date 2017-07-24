@@ -24,12 +24,13 @@ public:
 
   wx_naive() = default;
 
-  wx_naive(const std::vector<AlphabetType>& text, const uint64_t size,
-    const uint64_t levels) {
+    static wavelet_structure compute(const std::vector<AlphabetType>& text,
+                                     const uint64_t size,
+                                     const uint64_t levels)
+    {
+    if(text.size() == 0) { return wavelet_structure(); }
 
-    if(text.size() == 0) { return; }
-
-    _bv = Bvs(size, levels);
+    auto _bv = Bvs(size, levels);
     auto& bv = _bv.vec();
 
     std::vector<AlphabetType> local_text = text;
@@ -66,21 +67,8 @@ public:
         }
       }
     }
+    return wavelet_structure(std::move(_bv));
   }
-
-  auto get_bv_and_zeros() const {
-    return std::make_pair(_bv.vec(), std::vector<uint64_t>());
-  }
-
-  auto get_bv() const {
-    return _bv.vec();
-  }
-
-    wavelet_structure get() && {
-        return wavelet_structure(std::move(_bv), std::vector<uint64_t>());
-    }
-private:
-  Bvs _bv;
 }; // class wt_naive
 
 template <typename AlphabetType>
@@ -91,14 +79,15 @@ public:
   static constexpr bool    is_tree     = false;
   static constexpr uint8_t word_width  = sizeof(AlphabetType);
 
-  wx_naive() = default;
+    static wavelet_structure compute(const std::vector<AlphabetType>& text,
+                                     const uint64_t size,
+                                     const uint64_t levels)
+    {
 
-  wx_naive(const std::vector<AlphabetType>& text, const uint64_t size,
-    const uint64_t levels) : _zeros(levels, 0) {
+    if(text.size() == 0) { return wavelet_structure(); }
 
-    if(text.size() == 0) { return; }
-
-    _bv = Bvs(size, levels);
+    auto _bv = Bvs(size, levels);
+    auto _zeros = std::vector<size_t>(levels, 0);
     auto& bv = _bv.vec();
 
     std::vector<AlphabetType> local_text = text;
@@ -146,19 +135,8 @@ public:
       }
       _zeros[level] = text0.size();
     }
+    return wavelet_structure(std::move(_bv), std::move(_zeros));
   }
-
-  auto get_bv_and_zeros() const {
-    return std::make_pair(_bv.vec(), _zeros);
-  }
-
-    wavelet_structure get() && {
-        return wavelet_structure(std::move(_bv), std::move(_zeros));
-    }
-
-private:
-  Bvs _bv;
-  std::vector<uint64_t> _zeros;
 }; // class wx_naive<MATRIX>
 
 /******************************************************************************/

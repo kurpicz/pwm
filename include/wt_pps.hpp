@@ -22,14 +22,14 @@ public:
   static constexpr bool    is_tree     = true;
   static constexpr uint8_t word_width  = sizeof(AlphabetType);
 
-  wt_pps() = default;
+    static wavelet_structure compute(const std::vector<AlphabetType>& text,
+                                     const uint64_t size,
+                                     const uint64_t levels)
+    {
 
-  wt_pps(const std::vector<AlphabetType>& text, const uint64_t size,
-    const uint64_t levels) {
+    if(text.size() == 0) { return wavelet_structure(); }
 
-    if(text.size() == 0) { return; }
-
-    _bv = Bvs(size, levels);
+    auto _bv = Bvs(size, levels);
     auto& bv = _bv.vec();
 
     std::vector<uint64_t*> borders;
@@ -153,20 +153,8 @@ public:
         }
       }
     }
+    return wavelet_structure(std::move(_bv));
   }
-
-  auto get_bv_and_zeros() const {
-    return std::make_pair(_bv.vec(), std::vector<uint64_t>());
-  }
-
-  auto get_bv() const {
-    return _bv.vec();
-  }
-    wavelet_structure get() && {
-        return wavelet_structure(std::move(_bv), std::vector<uint64_t>());
-    }
-private:
-  Bvs _bv;
 }; // class wt_pps
 
 #endif // WT_PREFIX_SORTING_PARALLEL

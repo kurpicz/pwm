@@ -21,6 +21,9 @@ public:
     inline wavelet_structure(Bvs&& bvs, std::vector<uint64_t>&& zeros):
         m_bvs(std::move(bvs)), m_zeros(std::move(zeros)) {}
 
+    inline wavelet_structure(Bvs&& bvs):
+        m_bvs(std::move(bvs)) {}
+
     // Prevent accidental copies
     inline wavelet_structure(wavelet_structure const& other) = delete;
     inline wavelet_structure& operator=(wavelet_structure const& other) = delete;
