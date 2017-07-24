@@ -51,7 +51,7 @@ public:
       std::move(std::unique_ptr<construction_algorithm>(this)));
   }
 
-  virtual std::pair<Bvs, std::vector<uint64_t>> compute_bitvector(
+  virtual std::pair<std::vector<uint64_t*>, std::vector<uint64_t>> compute_bitvector(
     const void* global_text, const uint64_t size, const uint64_t levels) = 0;
   virtual bool is_parallel() = 0;
   virtual bool is_tree() = 0;
@@ -74,12 +74,12 @@ public:
   concrete_algorithm(std::string name, std::string description)
   : construction_algorithm(name, description) { }
 
-  inline auto compute_bitvector(const void* global_text, const uint64_t size,
-    const uint64_t levels) {
-    using text_type =
-      typename type_for_bytes<WaveletStructure::word_width>::type;
-    std::vector<text_type> text = *(static_cast<text_type*>(global_text));
-    ws_ = WaveletStructure(text, size, levels);
+  inline std::pair<std::vector<uint64_t*>, std::vector<uint64_t>> compute_bitvector(
+    const void* global_text, const uint64_t size, const uint64_t levels) {
+    using text_vec_type =
+      std::vector<typename type_for_bytes<WaveletStructure::word_width>::type>;
+    const auto* text = static_cast<const text_vec_type*>(global_text);
+    ws_ = WaveletStructure(*text, size, levels);
     return ws_.get_bv_and_zeros();
   }
 

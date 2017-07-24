@@ -278,7 +278,7 @@ inline auto merge_bvs(uint64_t size,
 
                 auto& local_cursor = ctx.levels[level].read_offsets[read_shard];
 
-                copy_bits<uint64_t, uint64_t>(
+                copy_bits<uint64_t>(
                     _bv[level],
                     local_bv,
                     write_offset,

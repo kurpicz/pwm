@@ -157,6 +157,10 @@ public:
     }
   }
 
+  auto get_bv_and_zeros() const {
+    return std::make_pair(_bv, std::vector<uint64_t>());
+  }
+
   auto get_bv() const {
     return _bv;
   }

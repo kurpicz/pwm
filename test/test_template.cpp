@@ -47,10 +47,10 @@ TEST(wavelet_construction, smoketest) {
       // TODO: Make computation (and reduction of text work)
       auto bvz = a->compute_bitvector(&vec, 2 , 2);
       if (a->is_tree()) {
-        auto decoded_s = decode_wt(bvz.first.vec(), vec.size());
+        auto decoded_s = decode_wt(bvz.first, vec.size());
         ASSERT_EQ(s, decoded_s);
       } else {
-        auto decoded_s = decode_wm(bvz.first.vec(), bvz.second, vec.size());
+        auto decoded_s = decode_wm(bvz.first, bvz.second, vec.size());
         ASSERT_EQ(s, decoded_s);
       }
     });
