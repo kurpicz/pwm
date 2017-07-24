@@ -10,6 +10,7 @@
 
 #include "test/util.hpp"
 #include "util/merge.hpp"
+#include "util/debug.hpp"
 
 void bit_compare(
     std::vector<uint8_t> const& left,

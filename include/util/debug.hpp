@@ -11,16 +11,6 @@
 #include <iostream>
 #include <string>
 
-template<typename WordType = uint64_t, typename bv_t>
-inline auto bit_at(const bv_t& bv, size_t i) -> bool {
-    constexpr WordType BITS = (sizeof(WordType) * CHAR_BIT);
-    constexpr WordType MOD_MASK = BITS - 1;
-
-    size_t offset = i / BITS;
-    size_t word_offset = i & MOD_MASK;
-    return (bv[offset] >> (MOD_MASK - word_offset)) & 1ull;
-}
-
 template<typename WordType, typename bv_t>
 std::string bit_string(bv_t const& bv, size_t const size) {
     constexpr WordType BITS = (sizeof(WordType) * CHAR_BIT);
