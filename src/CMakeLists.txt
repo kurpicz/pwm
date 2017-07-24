@@ -40,14 +40,14 @@
 # include_directories(.)
 
 set(INTERNAL_SRCS
-  benchmark.cpp
-  dd_prefix_counting.cpp
-  dd_prefix_sorting.cpp
-  naive.cpp
-  parallel_prefix_counting.cpp
-  parallel_prefix_sorting.cpp
-  sequential_prefix_counting.cpp
-  sequential_prefix_sorting.cpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/benchmark.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/dd_prefix_counting.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/dd_prefix_sorting.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/naive.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/parallel_prefix_counting.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/parallel_prefix_sorting.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/sequential_prefix_counting.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/sequential_prefix_sorting.cpp)
 
 set(INTERNAL_LIBS dl)
 

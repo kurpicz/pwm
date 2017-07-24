@@ -48,8 +48,8 @@ static inline void BitReverse(const uint64_t levels, uint64_t* out) {
   }
 }
 
-inline auto rho_identity(uint64_t levels) {
-    return [](auto level, auto i) -> uint64_t {
+inline auto rho_identity(uint64_t /*levels*/) {
+    return [](auto /*level*/, auto i) -> uint64_t {
         return i;
     };
 }

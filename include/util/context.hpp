@@ -40,15 +40,15 @@ struct LevelSinglePass {
         m_bv = Bvs(size, levels);
     }
 
-    uint64_t const hist_size(uint64_t const level) {
+    uint64_t hist_size(uint64_t const level) {
         return 1ull << level;
     }
 
-    uint64_t& hist(uint64_t const level, uint64_t const i) {
+    uint64_t& hist(uint64_t const /*level*/, uint64_t const i) {
         return m_hist[i];
     }
 
-    uint64_t rho(size_t level, size_t i) {
+    uint64_t rho(size_t /*level*/, size_t i) {
         if (is_matrix) {
             return m_bit_reverse[i];
         }else {
@@ -56,7 +56,7 @@ struct LevelSinglePass {
         }
     }
 
-    void set_rho(size_t level, size_t i, uint64_t val) {
+    void set_rho(size_t /*level*/, size_t i, uint64_t val) {
         if (is_matrix) {
             m_bit_reverse[i] = val;
         }
@@ -111,7 +111,7 @@ struct KeepLevel {
         m_bv = Bvs(size, levels);
     }
 
-    uint64_t const hist_size(uint64_t const level) {
+    uint64_t hist_size(uint64_t const level) {
         return 1ull << level;
     }
 
@@ -123,7 +123,7 @@ struct KeepLevel {
         return (*m_rho)(level, i);
     }
 
-    void set_rho(size_t level, size_t i, uint64_t val) {
+    void set_rho(size_t /*level*/, size_t /*i*/, uint64_t /*val*/) {
         // m_rho is already calculated
     }
 
