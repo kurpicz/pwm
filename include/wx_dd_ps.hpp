@@ -16,6 +16,7 @@
 #include "util/common.hpp"
 #include "util/merge.hpp"
 #include "util/ps.hpp"
+#include "util/wavelet_structure.hpp"
 
 template <typename AlphabetType, bool is_matrix>
 class wx_dd_ps {
@@ -109,6 +110,10 @@ public:
 
     auto get_bv() const {
         return _bv.vec();
+    }
+
+    wavelet_structure get() && {
+        return wavelet_structure(std::move(_bv), std::move(_zeros));
     }
 
 private:

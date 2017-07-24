@@ -16,6 +16,7 @@
 #include "util/common.hpp"
 #include "util/merge.hpp"
 #include "util/pc.hpp"
+#include "util/wavelet_structure.hpp"
 
 template <typename AlphabetType, bool is_matrix>
 class wx_dd_pc {
@@ -110,6 +111,9 @@ public:
         return _bv.vec();
     }
 
+    wavelet_structure get() && {
+        return wavelet_structure(std::move(_bv), std::move(_zeros));
+    }
 private:
     Bvs _bv;
     std::vector<uint64_t> _zeros;

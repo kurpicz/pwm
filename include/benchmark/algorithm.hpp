@@ -53,8 +53,10 @@ public:
     algorithm_list::get_algorithm_list().register_algorithm(this);
   }
 
-  inline virtual std::pair<std::vector<uint64_t*>, std::vector<uint64_t>> compute_bitvector(
-        const void* global_text, const uint64_t size, const uint64_t levels) const = 0;
+  inline virtual wavelet_structure compute_bitvector(
+    const void* global_text,
+    const uint64_t size,
+    const uint64_t levels) const = 0;
   inline virtual bool is_parallel() const  = 0;
   inline virtual bool is_tree() const  = 0;
   inline virtual uint8_t word_width() const  = 0;
@@ -69,43 +71,40 @@ private:
   std::string description_;
 }; // class construction_algorithm
 
-template <typename WaveletStructure>
+template <typename Algorithm>
 class concrete_algorithm : construction_algorithm {
 
 public:
   concrete_algorithm(std::string name, std::string description)
   : construction_algorithm(name, description) { }
 
-  inline std::pair<std::vector<uint64_t*>, std::vector<uint64_t>> compute_bitvector(
+  inline wavelet_structure compute_bitvector(
     const void* global_text, const uint64_t size, const uint64_t levels) const override
   {
     using text_vec_type =
-      std::vector<typename type_for_bytes<WaveletStructure::word_width>::type>;
+      std::vector<typename type_for_bytes<Algorithm::word_width>::type>;
 
     auto const* text = static_cast<text_vec_type const*>(global_text);
-    ws_ = WaveletStructure(*text, size, levels);
-    return ws_.get_bv_and_zeros();
+    auto ws = Algorithm(*text, size, levels);
+    return std::move(ws).get();
   }
 
   bool is_parallel() const override {
-    return WaveletStructure::is_parallel;
+    return Algorithm::is_parallel;
   }
 
   bool is_tree() const override {
-    return WaveletStructure::is_tree;
+    return Algorithm::is_tree;
   }
 
   uint8_t word_width() const override {
-    return WaveletStructure::word_width;
+    return Algorithm::word_width;
   }
-
-private:
-  WaveletStructure ws_;
 
 }; // class concrete_algorithm
 
 #define CONSTRUCTION_REGISTER(algo_name, algo_description, wavelet_structure) \
-  static const auto _cstr_algo_ ## wavelet_structure ## _register            \
+  static const auto _cstr_algo_ ## wavelet_structure ## _register             \
     = concrete_algorithm<wavelet_structure>(algo_name, algo_description);
 
 #endif // ALGORITHM_HEADER

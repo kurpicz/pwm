@@ -27,20 +27,18 @@ public:
   wm_pps() = default;
 
   wm_pps(const std::vector<AlphabetType>& text, const uint64_t size,
-    const uint64_t levels) : _bv(levels), _zeros(levels, 0) {
+    const uint64_t levels) : _zeros(levels, 0) {
 
     if(text.size() == 0) { return; }
+
+    _bv = Bvs(size, levels);
+    auto& bv = _bv.vec();
 
     std::vector<uint64_t*> borders;
     std::vector<uint64_t*> hist;
     std::vector<AlphabetType> sorted_text(size);
     std::vector<uint64_t> offsets(1 << levels, 0);
     std::vector<uint64_t> bit_reverse = BitReverse(levels - 1);
-
-    for (uint64_t level = 0; level < levels; ++level) {
-      _bv[level] = new uint64_t[(size + 63ULL) >> 6];
-      memset(_bv[level], 0, ((size + 63ULL) >> 6) * sizeof(uint64_t));
-    }
 
     int32_t num_threads;
     #pragma omp parallel
@@ -77,7 +75,7 @@ public:
           word <<= 1;
           word |= ((text[cur_pos + i] >> (levels - 1)) & 1ULL);
         }
-        _bv[0][cur_pos >> 6] = word;
+        bv[0][cur_pos >> 6] = word;
       }
       if ((size & 63ULL) && ((omp_rank + 1) == omp_size)) {
         uint64_t word = 0ULL;
@@ -87,7 +85,7 @@ public:
           word |= ((text[size - (size & 63ULL) + i] >> (levels - 1)) & 1ULL);
         }
         word <<= (64 - (size & 63ULL));
-        _bv[0][size >> 6] = word;
+        bv[0][size >> 6] = word;
       }
 
       // The number of 0s at the last level is the number of "even" characters
@@ -173,7 +171,7 @@ public:
             word <<= 1;
             word |= (sorted_text[cur_pos + i] & 1ULL);
           }
-          _bv[level][cur_pos >> 6] = word;
+          bv[level][cur_pos >> 6] = word;
         }
 
         if ((size & 63ULL) && ((omp_rank + 1) == omp_size)) {
@@ -183,18 +181,22 @@ public:
             word |= (sorted_text[size - (size & 63ULL) + i] & 1ULL);
           }
           word <<= (64 - (size & 63ULL));
-          _bv[level][size >> 6] = word;
+          bv[level][size >> 6] = word;
         }
       }
     }
   }
 
   auto get_bv_and_zeros() const {
-    return std::make_pair(_bv, _zeros);
+    return std::make_pair(_bv.vec(), _zeros);
   }
 
+    wavelet_structure get() && {
+        return wavelet_structure(std::move(_bv), std::move(_zeros));
+    }
+
 private:
-  std::vector<uint64_t*> _bv;
+  Bvs _bv;
   std::vector<uint64_t> _zeros;
 }; // class wm_pps
 

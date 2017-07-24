@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "util/common.hpp"
+#include "util/wavelet_structure.hpp"
 #include "util/ps.hpp"
 
 template <typename AlphabetType, bool is_matrix>
@@ -45,6 +46,10 @@ public:
 
     auto get_bv() const {
         return _bv.vec();
+    }
+
+    wavelet_structure get() && {
+        return wavelet_structure(std::move(_bv), std::move(_zeros));
     }
 
 private:
