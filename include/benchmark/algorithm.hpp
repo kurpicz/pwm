@@ -26,39 +26,40 @@ public:
   void operator = (const algorithm_list& other) = delete;
   void operator = (algorithm_list&& other) = delete;
 
-  static algorithm_list& get_algorithm_list() {
+  inline static algorithm_list& get_algorithm_list() {
     static algorithm_list list;
     return list;
   }
 
-  void register_algorithm(std::unique_ptr<construction_algorithm>&& algo) {
-    algorithms_.emplace_back(std::move(algo));
+  inline void register_algorithm(construction_algorithm const* algo) {
+    algorithms_.push_back(algo);
   }
 
-  auto begin() { return algorithms_.begin(); }
-  auto end() { return algorithms_.end(); }
+  inline auto begin() { return algorithms_.cbegin(); }
+  inline auto end() { return algorithms_.cend(); }
 
 private:
   algorithm_list() { }
-  std::vector<std::unique_ptr<construction_algorithm>> algorithms_;
+
+  // List of static pointers to the different algorithms
+  std::vector<construction_algorithm const*> algorithms_;
 }; // class algorithm_list
 
 class construction_algorithm {
 public:
   construction_algorithm(std::string name, std::string description)
     : name_(name), description_(description) {
-    algorithm_list::get_algorithm_list().register_algorithm(
-      std::move(std::unique_ptr<construction_algorithm>(this)));
+    algorithm_list::get_algorithm_list().register_algorithm(this);
   }
 
-  virtual std::pair<std::vector<uint64_t*>, std::vector<uint64_t>> compute_bitvector(
-    const void* global_text, const uint64_t size, const uint64_t levels) = 0;
-  virtual bool is_parallel() = 0;
-  virtual bool is_tree() = 0;
-  virtual uint8_t word_width() = 0;
+  inline virtual std::pair<std::vector<uint64_t*>, std::vector<uint64_t>> compute_bitvector(
+        const void* global_text, const uint64_t size, const uint64_t levels) const = 0;
+  inline virtual bool is_parallel() const  = 0;
+  inline virtual bool is_tree() const  = 0;
+  inline virtual uint8_t word_width() const  = 0;
 
 
-  void print_info() {
+  inline void print_info() const {
     std::cout << name_ << ": " << description_ << std::endl;
   }
 
@@ -75,23 +76,25 @@ public:
   : construction_algorithm(name, description) { }
 
   inline std::pair<std::vector<uint64_t*>, std::vector<uint64_t>> compute_bitvector(
-    const void* global_text, const uint64_t size, const uint64_t levels) {
+    const void* global_text, const uint64_t size, const uint64_t levels) const override
+  {
     using text_vec_type =
       std::vector<typename type_for_bytes<WaveletStructure::word_width>::type>;
-    const auto* text = static_cast<const text_vec_type*>(global_text);
+
+    auto const* text = static_cast<text_vec_type const*>(global_text);
     ws_ = WaveletStructure(*text, size, levels);
     return ws_.get_bv_and_zeros();
   }
 
-  bool is_parallel() {
+  bool is_parallel() const override {
     return WaveletStructure::is_parallel;
   }
 
-  bool is_tree() {
+  bool is_tree() const override {
     return WaveletStructure::is_tree;
   }
 
-  uint8_t word_width() {
+  uint8_t word_width() const override {
     return WaveletStructure::word_width;
   }
 
@@ -101,8 +104,8 @@ private:
 }; // class concrete_algorithm
 
 #define CONSTRUCTION_REGISTER(algo_name, algo_description, wavelet_structure) \
-  static const auto* _cstr_algo_ ## wavelet_structure ## _register            \
-    = new concrete_algorithm<wavelet_structure>(algo_name, algo_description);
+  static const auto _cstr_algo_ ## wavelet_structure ## _register            \
+    = concrete_algorithm<wavelet_structure>(algo_name, algo_description);
 
 #endif // ALGORITHM_HEADER
 
