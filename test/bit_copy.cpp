@@ -1,3 +1,11 @@
+/*******************************************************************************
+ * test/bit_copy.cpp
+ *
+ * Copyright (C) 2017 Marvin Löbel <loebel.marvin@gmail.com>
+ *
+ * All rights reserved. Published under the BSD-2 license in the LICENSE file.
+ ******************************************************************************/
+
 #include <gtest/gtest.h>
 
 #include "test/util.hpp"
@@ -119,3 +127,5 @@ TEST(BitCopy, env_debug) {
     std::cout << "size_t size: " << sizeof(size_t) * CHAR_BIT << "\n";
     std::cout << "omp size: " << omp_get_max_threads() << "\n";
 }
+
+/******************************************************************************/

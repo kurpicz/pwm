@@ -1,3 +1,11 @@
+/*******************************************************************************
+ * include/util/merge.hpp
+ *
+ * Copyright (C) 2017 Marvin Löbel <loebel.marvin@gmail.com>
+ *
+ * All rights reserved. Published under the BSD-2 license in the LICENSE file.
+ ******************************************************************************/
+
 #pragma once
 
 #include <cstdint>
@@ -396,3 +404,5 @@ std::string format_diff_bin(const std::string& a, const std::string& b) {
 }
 
 }
+
+/******************************************************************************/
