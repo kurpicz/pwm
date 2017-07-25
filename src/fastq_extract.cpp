@@ -26,8 +26,6 @@ int main(int argc, char **argv) {
     {
 
         while(myfile) {
-            check('@');
-
             while(myfile.get(c)) {
                 pos++;
                 if (c == '\n') {
