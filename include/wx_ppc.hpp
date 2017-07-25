@@ -1,9 +1,17 @@
+/*******************************************************************************
+ * include/wx_ppc.hpp
+ *
+ * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
+ *
+ * All rights reserved. Published under the BSD-2 license in the LICENSE file.
+ ******************************************************************************/
+
 #pragma once
 
 #include <omp.h>
 
 #include "util/common.hpp"
-#include "util/pc.hpp"
+#include "util/context.hpp"
 #include "util/wavelet_structure.hpp"
 
 template <typename AlphabetType, bool is_matrix>
@@ -140,3 +148,5 @@ public:
     }
   }
 }; // class wx_ppc
+
+/******************************************************************************/
