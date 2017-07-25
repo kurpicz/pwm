@@ -43,7 +43,9 @@ int main(int argc, char **argv) {
                 if (c == '\n') {
                     break;
                 }
-                std::cout << c;
+                if (c != 'N') {
+                    std::cout << c;
+                }
             }
 
             bool f1 = true;
