@@ -26,7 +26,12 @@ int main(int argc, char **argv) {
     {
 
         while(myfile) {
+            bool f0 = true;
             while(myfile.get(c)) {
+                if(f0) {
+                    f0 = false;
+                    check('@');
+                }
                 pos++;
                 if (c == '\n') {
                     break;
@@ -41,9 +46,12 @@ int main(int argc, char **argv) {
                 std::cout << c;
             }
 
-            check('+');
-
+            bool f1 = true;
             while(myfile.get(c)) {
+                if(f1) {
+                    f1 = false;
+                    check('+');
+                }
                 pos++;
                 if (c == '\n') {
                     break;
