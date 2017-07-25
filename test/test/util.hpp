@@ -94,17 +94,19 @@ void roundtrip_batch(F f) {
     std::vector<uint8_t> test {
         0,1,6,7,1,5,4,2,6,3
     };
-
     f(std::string(test.begin(), test.end()));
+
+    f("abcdefghijklm");
+
 
     f("abcdebcdeabc");
     f("a");
     f("");
 
-    f("aaaaaaaaa"); \
-    f("banana"); \
-    f("ananas"); \
-    f("abcdefgh#defgh_abcde"); \
+    f("aaaaaaaaa");
+    f("banana");
+    f("ananas");
+    f("abcdefgh#defgh_abcde");
 
     f("abcdebcdeabcd");
     f("foobar");
@@ -149,12 +151,8 @@ void roundtrip_batch(F f) {
     f("struct Foo { uint8_t bar }");
 
     f("ABBCBCABA");
-
     f("abcabca");
-
     f("abbbbbbbbbbcbbbbbbbbbb");
-
-    //f("abc\0");
 
     std::vector<uint8_t> all_bytes {
         0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   10,  11,  12,  13,  14,  15,
@@ -174,12 +172,7 @@ void roundtrip_batch(F f) {
         224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239,
         240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255,
     };
-
-    //f(View(all_bytes));
-
-
-
-
+    f(std::string(all_bytes.begin(), all_bytes.end()));
 
     f(
         "報チ申猛あち涙境ワセ周兵いわ郵入せすをだ漏告されて話巡わッき"
@@ -278,7 +271,6 @@ void roundtrip_batch(F f) {
         "まも月10言スひす胆集ヌヱナ賀提63劇とやぽ生牟56詰ひめつそ総愛"
         "ス院攻せいまて報当アラノ日府ラのがし。"
     );
-
 
     f(
         "報チ申猛あち涙境ワセ周兵いわ郵入せすをだ漏告されて話巡わッき"

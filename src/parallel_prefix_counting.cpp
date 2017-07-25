@@ -7,12 +7,11 @@
  ******************************************************************************/
 
 #include "benchmark/algorithm.hpp"
-#include "wm_ppc.hpp"
-#include "wt_ppc.hpp"
+#include "wx_ppc.hpp"
 
-using wm_ppc_8 = wm_ppc<uint8_t>;
-using wm_ppc_16 = wm_ppc<uint16_t>;
-using wm_ppc_32 = wm_ppc<uint32_t>;
+using wm_ppc_8  = wx_ppc<uint8_t, true>;
+using wm_ppc_16 = wx_ppc<uint16_t, true>;
+using wm_ppc_32 = wx_ppc<uint32_t, true>;
 
 CONSTRUCTION_REGISTER("wm_ppc<uint8_t>",
   "Parallel wavelet matrix construction with 8-bit alphabet "
@@ -24,9 +23,9 @@ CONSTRUCTION_REGISTER("wm_ppc<uint32_t>",
   "Parallel wavelet matrix construction with 32-bit alphabet "
   "(using counting).", wm_ppc_32)
 
-using wt_ppc_8 = wt_ppc<uint8_t>;
-using wt_ppc_16 = wt_ppc<uint16_t>;
-using wt_ppc_32 = wt_ppc<uint32_t>;
+using wt_ppc_8  = wx_ppc<uint8_t, false>;
+using wt_ppc_16 = wx_ppc<uint16_t, false>;
+using wt_ppc_32 = wx_ppc<uint32_t, false>;
 
 CONSTRUCTION_REGISTER("wt_ppc<uint8_t>",
   "Parallel wavelet tree construction with 8-bit alphabet "

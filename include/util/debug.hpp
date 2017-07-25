@@ -70,6 +70,37 @@ static std::vector<std::vector<size_t>> level_sizes(
     return r;
 }
 
+static void print_bv(const std::vector<uint64_t*>& bv, size_t length) {
+    for (size_t i = 0; i < bv.size(); i++) {
+        std::cout << "   bv["<<i<<"]";
+
+        std::cout << "[";
+        for (size_t j = 0; j < length; j++) {
+            std::cout << size_t(bit_at(bv[i], j)) << "";
+        }
+        std::cout << "]";
+
+        std::cout << "\n";
+    }
+    std::cout << "\n";
+}
+
+static void print_bv_zeros(const std::vector<uint64_t*>& bv,
+    const std::vector<uint64_t>& zeros, size_t length) {
+    for (size_t i = 0; i < bv.size(); i++) {
+        std::cout << "   bv["<<i<<"]";
+
+        std::cout << "[";
+        for (size_t j = 0; j < length; j++) {
+            std::cout << size_t(bit_at(bv[i], j)) << "";
+        }
+        std::cout << "]";
+        std::cout << " zeros[" << i << "] = " << zeros[i];
+        std::cout << std::endl;;
+    }
+    std::cout << std::endl;;
+}
+
 static std::string decode_wt(const std::vector<uint64_t*> bv, size_t length) {
     auto ls = level_sizes(bv, 0, length, 0);
 
@@ -107,32 +138,16 @@ static std::string decode_wt(const std::vector<uint64_t*> bv, size_t length) {
     return std::string(r.begin(), r.end());
 }
 
-static std::string decode_wm(const std::vector<uint64_t*> bv,
+static std::string decode_wm(const std::vector<uint64_t*>& bv,
                        const std::vector<uint64_t>& zeros,
                        size_t length) {
     if (bv.size() == 0) {
         return {};
     }
 
-
-    /*
-    for (size_t i = 0; i < bv.size(); i++) {
-        std::cout << "   bv["<<i<<"]";
-
-        std::cout << "[";
-        for (size_t j = 0; j < length; j++) {
-            std::cout << size_t(bit_at(bv[i], j)) << "";
-        }
-        std::cout << "], zeros: " << zeros[i];
-
-        std::cout << "\n";
-    }
-    std::cout << "\n";
-    */
-
-
-    auto r = std::vector<uint8_t>(length);
-    auto rtmp = std::vector<uint8_t>(length);
+    auto r = std::vector<uint8_t>(length, uint8_t(0));
+    auto rtmp = std::vector<uint8_t>(length, uint8_t(0));
+    // print_bv_zeros(bv, zeros, length);
 
     for(size_t level = bv.size() - 1; level > 0; level--) {
         size_t offset0 = 0;
@@ -160,21 +175,6 @@ static std::string decode_wm(const std::vector<uint64_t*> bv,
     }
 
     return std::string(r.begin(), r.end());
-}
-
-static void print_bv(const std::vector<uint64_t*> bv, size_t length) {
-    for (size_t i = 0; i < bv.size(); i++) {
-        std::cout << "   bv["<<i<<"]";
-
-        std::cout << "[";
-        for (size_t j = 0; j < length; j++) {
-            std::cout << size_t(bit_at(bv[i], j)) << "";
-        }
-        std::cout << "]";
-
-        std::cout << "\n";
-    }
-    std::cout << "\n";
 }
 
 /******************************************************************************/
