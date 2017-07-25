@@ -51,8 +51,6 @@ public:
       auto* const initial_hist_ptr = 
         initial_hist.data() + (max_char * omp_rank);
 
-      std::cout << "HIER0: " << omp_rank << std::endl;
-
       // While initializing the histogram, we also compute the fist level
       #pragma omp for
       for (uint64_t cur_pos = 0; cur_pos <= size - 64; cur_pos += 64) {
@@ -64,7 +62,7 @@ public:
         }
         bv[0][cur_pos >> 6] = word;
       }
-      std::cout << "HIER1" << std::endl;
+
       if ((size & 63ULL) && ((omp_rank + 1) == omp_size)) {
         uint64_t word = 0ULL;
         for (uint64_t i = 0; i < (size & 63ULL); ++i) {
@@ -75,9 +73,13 @@ public:
         word <<= (64 - (size & 63ULL));
         bv[0][size >> 6] = word;
       }
-      std::cout << "HIER2" << std::endl;
+
     }
-    return wavelet_structure(std::move(ctx.bv()), std::move(zeros));
+    if (ctx_t::compute_zeros) {
+      return wavelet_structure(std::move(ctx.bv()), std::move(zeros));
+    } else {
+      return wavelet_structure(std::move(ctx.bv()));
+    }
   }
 };
 
