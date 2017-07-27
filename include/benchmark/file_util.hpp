@@ -9,7 +9,7 @@
 #pragma once
 #ifndef FILE_UTIL_HEADER
 #define FILE_UTIL_HEADER
- 
+
 #include <fstream>
 #include <limits>
 #include <type_traits>
