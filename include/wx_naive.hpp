@@ -22,8 +22,6 @@ public:
   static constexpr bool    is_tree     = true;
   static constexpr uint8_t word_width  = sizeof(AlphabetType);
 
-  wx_naive() = default;
-
     static wavelet_structure compute(AlphabetType const* const text,
                                      const uint64_t size,
                                      const uint64_t levels)

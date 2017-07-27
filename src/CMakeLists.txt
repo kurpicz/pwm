@@ -12,3 +12,6 @@ set(INTERNAL_LIBS dl)
 
 add_executable(benchmark ${INTERNAL_SRCS})
 target_link_libraries(benchmark ${INTERNAL_LIBS})
+
+add_executable(alphabet_count alphabet_count.cpp)
+add_executable(fastq_extract fastq_extract.cpp)
