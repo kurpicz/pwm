@@ -77,6 +77,7 @@ int32_t main(int32_t argc, char const* argv[]) {
 
   for (const auto& path : file_paths) {
     auto text = file_to_vector<1>(path);
+    std::cout << std::endl << "Text: " << path << std::endl;
     uint64_t levels = reduce_alphabet(text);
     for (const auto& a : algo_list) {
       if (filter == "" || (a->name().find(filter) != std::string::npos)) {

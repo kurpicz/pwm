@@ -12,6 +12,7 @@
  
 #include <fstream>
 #include <limits>
+#include <type_traits>
 #include <unordered_map>
 #include <vector>
 
@@ -32,23 +33,37 @@ static std::vector<typename type_for_bytes<BytesPerWord>::type> file_to_vector(
 
 template <typename AlphabetType>
 static uint64_t reduce_alphabet(std::vector<AlphabetType>& text) {
-  std::unordered_map<AlphabetType, uint64_t> word_list;
-  uint64_t max_char = 0;
-  for (const AlphabetType& character : text) {
-    auto result = word_list.find(character);
-    if (result == word_list.end()) {
-      word_list.emplace(character, max_char++);
+  uint64_t max_char = uint64_t(0);
+  if (std::is_same<AlphabetType, uint8_t>::value) {
+    std::array<uint64_t, std::numeric_limits<uint8_t>::max()> occ;
+    occ.fill(0);
+    for (auto& c : text) {
+      if (occ[c] == 0) {
+        occ[c] = ++max_char;
+      }
+      c = occ[c] - 1;
+    }
+    --max_char;
+  } else {
+    std::unordered_map<AlphabetType, uint64_t> word_list;
+    for (const AlphabetType& character : text) {
+      auto result = word_list.find(character);
+      if (result == word_list.end()) {
+        word_list.emplace(character, max_char++);
+      }
+    }
+    --max_char;
+    for (uint64_t i = 0; i < text.size(); ++i) {
+      text[i] = static_cast<AlphabetType>(word_list.find(text[i])->second);
     }
   }
-  --max_char;
-  for (uint64_t i = 0; i < text.size(); ++i) {
-    text[i] = static_cast<AlphabetType>(word_list.find(text[i])->second);
-  }
+  std::cout << "Max. char: " << max_char << std::endl;
   uint64_t levels = 0;
   while (max_char) {
     max_char >>= 1;
     ++levels;
   }
+  std::cout << "Levels: " << levels << std::endl;
   return levels;
 }
 

@@ -102,12 +102,12 @@ public:
       std::vector<typename type_for_bytes<Algorithm::word_width>::type>;
     const auto* text = static_cast<const text_vec_type*>(global_text);
     for (size_t run = 0; run < runs; ++run) {
-      auto t1 = std::chrono::high_resolution_clock::now();
+      auto begin_time = std::chrono::high_resolution_clock::now();
       Algorithm::compute(text->data(), size, levels);
-      auto t2 = std::chrono::high_resolution_clock::now();
+      auto end_time = std::chrono::high_resolution_clock::now();
       times.emplace_back(static_cast<float>(
         std::chrono::duration_cast<std::chrono::milliseconds>(
-          t2 - t1).count()));
+          end_time - begin_time).count()));
     }
     std::sort(times.begin(), times.end());
     return times[runs >> 1];
