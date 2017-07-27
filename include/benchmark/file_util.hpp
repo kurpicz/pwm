@@ -9,7 +9,7 @@
 #pragma once
 #ifndef FILE_UTIL_HEADER
 #define FILE_UTIL_HEADER
- 
+
 #include <fstream>
 #include <limits>
 #include <unordered_map>
@@ -30,19 +30,43 @@ static std::vector<typename type_for_bytes<BytesPerWord>::type> file_to_vector(
   return result;
 }
 
+template<typename AlphabetType>
+class Histogram  {
+    std::unordered_map<AlphabetType, uint64_t> m_hist;
+public:
+    inline Histogram() = default;
+
+    inline uint64_t& entry(AlphabetType chr) {
+        return m_hist[chr];
+    }
+};
+
+template<>
+class Histogram<uint8_t>  {
+    std::array<uint64_t, 256> m_hist;
+public:
+    inline Histogram() {
+        m_hist.fill(0);
+    }
+
+    inline uint64_t& entry(uint8_t chr) {
+        return m_hist[chr];
+    }
+};
+
 template <typename AlphabetType>
 static uint64_t reduce_alphabet(std::vector<AlphabetType>& text) {
-  std::unordered_map<AlphabetType, uint64_t> word_list;
+  Histogram<AlphabetType> word_list;
   uint64_t max_char = 0;
   for (const AlphabetType& character : text) {
-    auto result = word_list.find(character);
-    if (result == word_list.end()) {
-      word_list.emplace(character, max_char++);
+    auto& entry = word_list.entry(character);
+    if (entry == 0) {
+      entry = 1 + max_char++;
     }
   }
   --max_char;
   for (uint64_t i = 0; i < text.size(); ++i) {
-    text[i] = static_cast<AlphabetType>(word_list.find(text[i])->second);
+    text[i] = static_cast<AlphabetType>(word_list.entry(text[i]) - 1);
   }
   uint64_t levels = 0;
   while (max_char) {

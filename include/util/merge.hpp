@@ -166,6 +166,7 @@ inline auto merge_bvs(uint64_t size,
     }
     ctxs[shards - 1].offset = word_size(size) * 64ull;
 
+    //#pragma omp parallel for
     for(size_t level = 0; level < levels; level++) {
         const size_t br_size = 1ull << level;
 
