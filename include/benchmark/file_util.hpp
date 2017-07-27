@@ -66,7 +66,7 @@ static uint64_t reduce_alphabet(std::vector<AlphabetType>& text) {
   }
   --max_char;
   for (uint64_t i = 0; i < text.size(); ++i) {
-    text[i] = static_cast<AlphabetType>(word_list.entry(text[i]) - 1);
+    text[i] = static_cast<AlphabetType>(word_list.entry(text[i] - 1));
   }
   uint64_t levels = 0;
   while (max_char) {
