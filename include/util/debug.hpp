@@ -147,7 +147,7 @@ static std::string decode_wm(const std::vector<uint64_t*>& bv,
 
     auto r = std::vector<uint8_t>(length, uint8_t(0));
     auto rtmp = std::vector<uint8_t>(length, uint8_t(0));
-    print_bv_zeros(bv, zeros, length);
+    // print_bv_zeros(bv, zeros, length);
 
     for(size_t level = bv.size() - 1; level > 0; level--) {
         size_t offset0 = 0;

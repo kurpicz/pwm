@@ -142,6 +142,8 @@ public:
           }
         }
 
+        #pragma omp barrier
+
         // Since we have sorted the text, we can simply scan it from left to
         // right and for the character at position $i$ we set the $i$-th bit in
         // the bit vector accordingly
