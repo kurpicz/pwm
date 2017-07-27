@@ -116,6 +116,10 @@ void roundtrip_batch(F f) {
 
     f("abaaabbababb");
 
+    f(  "asdfasctjkcbweasbebvtiwetwcnbwbbqnqxernqze"
+        "qcrnzxbneqebwcbqwicbqcbtnqweqxcbwuexcbzqwe"
+        "dassdasdfzdfgfsdfsdgfducezctzqwebctuiqwiiq");
+
     f(
         "asdfasctjkcbweasbebvtiwetwcnbwbbqnqxernqzezwuqwezuet"
         "qcrnzxbneqebwcbqwicbqcbtnqweqxcbwuexcbzqwezcqbwecqbw"

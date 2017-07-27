@@ -23,7 +23,7 @@ struct LevelSinglePass {
     std::vector<uint64_t> m_bit_reverse;
 
     LevelSinglePass(uint64_t const size, uint64_t const levels) {
-        auto cur_max_char = (1ull << levels);
+        const auto cur_max_char = (1ull << levels);
 
         m_hist.reserve(cur_max_char);
         m_hist.resize(cur_max_char, 0);
@@ -90,6 +90,85 @@ struct LevelSinglePass {
         // Not used in merge algorithm
     }
 };
+
+template <bool is_matrix>
+class sliced_single_level_pass {
+public:
+    sliced_single_level_pass() = default;
+
+    sliced_single_level_pass(uint64_t const size, uint64_t const levels,
+        const uint64_t omp_size)
+        : hist_(omp_size, std::vector<uint64_t>(1ULL << levels, 0)),
+          borders_(omp_size, std::vector<uint64_t>(1ULL << levels, 0)),
+          zeros_(levels, 0), bv_(size, levels),
+          bit_reverse_(
+            is_matrix ? BitReverse(levels - 1) : std::vector<uint64_t>(0)) { }
+
+    uint64_t borders_size(uint64_t const level) {
+        return 1ULL << level;
+    }
+
+    uint64_t& borders(uint64_t const rank, uint64_t const index) {
+        return borders_[rank][index];
+    }
+
+    uint64_t borders(uint64_t const rank, uint64_t const index) const {
+        return borders_[rank][index];
+    }
+
+    uint64_t hist_size(uint64_t const level) {
+        return 1ULL << level;
+    }
+
+    uint64_t& hist(uint64_t const rank, uint64_t const index) {
+        return hist_[rank][index];
+    }
+
+    uint64_t hist(uint64_t const rank, uint64_t const index) const {
+        return hist_[rank][index];
+    }
+
+    uint64_t rho (uint64_t /*level*/, uint64_t const index) {
+        if (is_matrix) {
+            return bit_reverse_[index];
+        } else {
+            return index;
+        }
+    }
+
+    void set_rho(uint64_t /*level*/, uint64_t const index, uint64_t const val) {
+        if (is_matrix) {
+            bit_reverse_[index] = val;
+        }
+    }
+
+    static bool constexpr compute_zeros = is_matrix;
+    static bool constexpr compute_rho = is_matrix;
+
+    std::vector<uint64_t>& zeros() {
+        return zeros_;
+    }
+
+    Bvs& bv() {
+        return bv_;
+    }
+
+    Bvs const& bv() const {
+        return bv_;
+    }
+
+    void discard_non_merge_data() {
+        // Not used in merge algorithms.
+    }
+
+private:
+    std::vector<std::vector<uint64_t>> hist_;
+    std::vector<std::vector<uint64_t>> borders_;
+
+    std::vector<uint64_t> zeros_;
+    Bvs bv_;
+    std::vector<uint64_t> bit_reverse_;
+}; // class sliced_single_level_pass 
 
 /// Keep calculated information for individual levels around
 template<bool is_matrix, typename rho_t>
