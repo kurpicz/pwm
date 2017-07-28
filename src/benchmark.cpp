@@ -42,7 +42,8 @@ int32_t main(int32_t argc, char const* argv[]) {
     "Bytes per char in the input text.", false, 1, "uint8_t");
   cmd.add(word_width_arg);
   TCLAP::ValueArg<int32_t> nr_runs_arg("r", "runs",
-    "Number of repetitions of the construction algorithm.", false, 5, "int32_t");
+    "Number of repetitions of the construction algorithm.",
+    false, 5, "int32_t");
   cmd.add(nr_runs_arg);
   TCLAP::SwitchArg run_only_parallel_arg("p", "parallel",
     "Run only parallel construction algorithms.", false);
@@ -76,9 +77,39 @@ int32_t main(int32_t argc, char const* argv[]) {
   const bool no_matrices = no_matrices_arg.getValue();
 
   for (const auto& path : file_paths) {
-    auto text = file_to_vector<1>(path);
     std::cout << std::endl << "Text: " << path << std::endl;
-    uint64_t levels = reduce_alphabet(text);
+    void* txt_prt = nullptr;
+    uint64_t text_size = 0;
+    uint64_t levels = 0;
+    std::vector<uint8_t> text_uint8;
+    std::vector<uint16_t> text_uint16;
+    std::vector<uint32_t> text_uint32;
+    std::vector<uint64_t> text_uint64;
+    if (word_width == 1) {
+      text_uint8 = file_to_vector<1>(path);
+      text_size = text_uint8.size();
+      levels = reduce_alphabet(text_uint8);
+      txt_prt = &text_uint8;
+    } else if (word_width == 2) {
+      text_uint16 = file_to_vector<2>(path);
+      text_size = text_uint16.size();
+      levels = reduce_alphabet(text_uint16);
+      txt_prt = &text_uint16;
+    } else if (word_width == 4) {
+      text_uint32 = file_to_vector<4>(path);
+      text_size = text_uint32.size();
+      levels = reduce_alphabet(text_uint32);
+      txt_prt = &text_uint32;
+    } else if (word_width == 8) {
+      text_uint64 = file_to_vector<8>(path);
+      text_size = text_uint64.size();
+      levels = reduce_alphabet(text_uint64);
+      txt_prt = &text_uint64;
+    } else {
+      std::cerr << "You entered an invalid number of bytes per character "
+                   "(parameter 'b')." << std::endl;
+      return -1;
+    }
     for (const auto& a : algo_list) {
       if (filter == "" || (a->name().find(filter) != std::string::npos)) {
         if (a->word_width() == word_width) {
@@ -86,7 +117,7 @@ int32_t main(int32_t argc, char const* argv[]) {
             if (filter_sequential(run_only_sequential, a->is_parallel())) {
               if (filter_wavelet_type(a->is_tree(), no_trees, no_matrices)) {
                 a->print_info();
-                std::cout << a->median_time(&text, text.size(), levels, nr_runs)
+                std::cout << a->median_time(txt_prt, text_size, levels, nr_runs)
                           << std::endl;
               }
             }
