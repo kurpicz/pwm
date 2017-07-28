@@ -22,24 +22,10 @@ struct LevelSinglePass {
     Bvs m_bv;
     std::vector<uint64_t> m_bit_reverse;
 
-    LevelSinglePass(uint64_t const size, uint64_t const levels) {
-        const auto cur_max_char = (1ull << levels);
-
-        m_hist.reserve(cur_max_char);
-        m_hist.resize(cur_max_char, 0);
-
-        if (is_matrix) {
-            m_bit_reverse = BitReverse(levels - 1);
-        }
-
-        m_borders.reserve(cur_max_char);
-        m_borders.resize(cur_max_char, 0);
-
-        m_zeros.reserve(levels);
-        m_zeros.resize(levels, 0);
-
-        m_bv = Bvs(size, levels);
-    }
+    LevelSinglePass(uint64_t const size, uint64_t const levels)
+    : m_hist(1ULL << levels, 0), m_borders(1ULL << levels, 0),
+      m_zeros(levels, 0), m_bv(size, levels),
+      m_bit_reverse(is_matrix ? BitReverse(levels - 1) : std::vector<uint64_t>(0)) { }
 
     uint64_t hist_size(uint64_t const level) {
         return 1ull << level;
@@ -181,26 +167,15 @@ struct KeepLevel {
 
     KeepLevel() = default;
 
-    KeepLevel(uint64_t const size, uint64_t const levels, rho_t const& rho) {
-        auto cur_max_char = (1ull << levels);
-
-        m_hist.reserve(levels + 1);
-        m_hist.resize(levels + 1);
+    KeepLevel(uint64_t const size, uint64_t const levels, rho_t const& rho)
+    : m_hist(levels + 1, std::vector<uint64_t>(2)),
+      m_rho(&rho), m_borders(1ULL << levels, 0), m_zeros(levels, 0),
+      m_bv(size, levels) {
 
         for(size_t level = 0; level < (levels + 1); level++) {
             m_hist[level].reserve(hist_size(level));
             m_hist[level].resize(hist_size(level));
         }
-
-        m_rho = &rho;
-
-        m_borders.reserve(cur_max_char);
-        m_borders.resize(cur_max_char, 0);
-
-        m_zeros.reserve(levels);
-        m_zeros.resize(levels, 0);
-
-        m_bv = Bvs(size, levels);
     }
 
     uint64_t hist_size(uint64_t const level) {

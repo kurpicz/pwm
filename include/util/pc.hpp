@@ -87,7 +87,7 @@ void pc(AlphabetType const* text,
         for (uint64_t i = 0; i < size; ++i) {
             const uint64_t pos = borders[text[i] >> prefix_shift]++;
             bv[level][pos >> 6] |= (((text[i] >> cur_bit_shift) & 1ULL)
-            << (63ULL - (pos & 63ULL)));
+                << (63ULL - (pos & 63ULL)));
         }
     }
 

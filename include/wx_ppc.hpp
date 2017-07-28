@@ -112,14 +112,6 @@ public:
         // TODO: Add this local borders to the "new" context, too.
         std::vector<uint64_t> borders(local_max_char, 0);
 
-        // Compute the starting positions of characters with respect to their
-        // bit prefixes and the bit-reversal permutation
-        // if (level == 2) {
-        //   for (uint64_t i = 0; i < local_max_char; ++i) {
-        //     std::cout << "hist[" << i << "] = " << ctx.hist(level, i) << std::endl;
-        //   }
-        // }
-
         borders[0] = 0;
         for (uint64_t i = 1; i < local_max_char; ++i) {
           const auto prev_rho = ctx.rho(level, i - 1);
@@ -127,9 +119,6 @@ public:
         }
         // The number of 0s is the position of the first 1 in the previous level
         if (ctx_t::compute_zeros) {
-          // if (level == 1) {
-          //   std::cout << "B: " << borders[1] << ", mc: " << local_max_char << std::endl;
-          // }
           zeros[level - 1] = borders[1];
         }
 
