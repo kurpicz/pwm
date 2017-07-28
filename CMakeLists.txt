@@ -54,6 +54,7 @@ include(find_or_download_package)
 find_or_download_package(GTest GTEST gtest)
 
 # Add include directory to include searches
+include_directories(external/malloc_count)
 include_directories(external/tclap/include)
 include_directories(include)
 

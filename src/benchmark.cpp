@@ -57,6 +57,9 @@ int32_t main(int32_t argc, char const* argv[]) {
   TCLAP::SwitchArg no_matrices_arg("t", "no_matrices",
     "Skip all wavelet matrices construction algorithms.", false);
   cmd.add(no_matrices_arg);
+  TCLAP::SwitchArg memory_arg("", "memory",
+    "Compute peak memory during construction.", false);
+  cmd.add(memory_arg);
   cmd.parse( argc, argv );
 
   auto& algo_list = algorithm_list::get_algorithm_list();
@@ -75,6 +78,7 @@ int32_t main(int32_t argc, char const* argv[]) {
   const bool run_only_sequential = run_only_sequential_arg.getValue();
   const bool no_trees = no_trees_arg.getValue();
   const bool no_matrices = no_matrices_arg.getValue();
+  const bool memory = memory_arg.getValue();
 
   for (const auto& path : file_paths) {
     std::cout << std::endl << "Text: " << path << std::endl;
@@ -117,8 +121,13 @@ int32_t main(int32_t argc, char const* argv[]) {
             if (filter_sequential(run_only_sequential, a->is_parallel())) {
               if (filter_wavelet_type(a->is_tree(), no_trees, no_matrices)) {
                 a->print_info();
-                std::cout << a->median_time(txt_prt, text_size, levels, nr_runs)
-                          << std::endl;
+                if (memory) {
+                  std::cout << a->memory_peak(txt_prt, text_size, levels)
+                            << std::endl;
+                } else {
+                  std::cout << a->median_time(txt_prt, text_size, levels, nr_runs)
+                            << std::endl;
+                }
               }
             }
           }
