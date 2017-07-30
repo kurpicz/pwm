@@ -20,10 +20,6 @@
 #include "util/type_for_bytes.hpp"
 #include "util/wavelet_structure.hpp"
 
-#include <unistd.h>
-#include <sys/resource.h>
-#include <stdio.h>
-
 class construction_algorithm;
 
 class algorithm_list {
@@ -63,7 +59,7 @@ public:
     const uint64_t size, const uint64_t levels) const = 0;
   virtual float median_time(const void* global_text, const uint64_t size,
       const uint64_t levels, size_t runs) const = 0;
-  virtual uint64_t memory_peak(const void* global_text, const uint64_t size,
+  virtual void memory_peak(const void* global_text, const uint64_t size,
       const uint64_t levels ) const = 0;
   virtual bool is_parallel() const = 0;
   virtual bool is_tree() const = 0;
@@ -119,14 +115,12 @@ public:
     return times[runs >> 1];
   }
 
-  uint64_t memory_peak(const void* global_text, const uint64_t size,
-      const uint64_t levels) const override {
-    std::vector<float> times;
+  void memory_peak(const void* global_text, const uint64_t size,
+    const uint64_t levels) const override {
     using text_vec_type =
       std::vector<typename type_for_bytes<Algorithm::word_width>::type>;
     const auto* text = static_cast<const text_vec_type*>(global_text);
     Algorithm::compute(text->data(), size, levels);
-    return 0;
   }
 
   bool is_parallel() const override {

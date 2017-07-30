@@ -12,6 +12,11 @@
 #include "benchmark/algorithm.hpp"
 #include "benchmark/file_util.hpp"
 
+#include "benchmark/malloc_count.h"
+#include "benchmark/memprofile.hpp"
+
+static const char* memprofile_path = "memprofile.txt";
+
 auto filter_parallel(bool only_parallel, bool is_parallel) {
   return (!only_parallel || is_parallel);
 }
@@ -122,8 +127,10 @@ int32_t main(int32_t argc, char const* argv[]) {
               if (filter_wavelet_type(a->is_tree(), no_trees, no_matrices)) {
                 a->print_info();
                 if (memory) {
-                  std::cout << a->memory_peak(txt_prt, text_size, levels)
-                            << std::endl;
+                  malloc_count_reset_peak();
+                  a->memory_peak(txt_prt, text_size, levels);
+                  std::cout << malloc_count_peak() << ", MB: "
+                            << malloc_count_peak() / (1024 * 1024) << std::endl;
                 } else {
                   std::cout << a->median_time(txt_prt, text_size, levels, nr_runs)
                             << std::endl;
