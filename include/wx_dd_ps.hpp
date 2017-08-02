@@ -68,6 +68,8 @@ public:
         for(auto& ctx : ctxs) {
             ctx.discard_non_merge_data();
         }
+        drop_me(std::move(global_sorted_text));
+        
         auto _bv = merge_bvs(size, levels, shards, ctxs, rho);
 
         if (ctx_t::compute_zeros) {
