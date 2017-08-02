@@ -1,6 +1,3 @@
-[submodule "external/malloc_count"]
-	path = external/malloc_count
-	url = https://github.com/bingmann/malloc_count.git
 [submodule "external/tclap"]
 	path = external/tclap
 	url = git://git.code.sf.net/p/tclap/code

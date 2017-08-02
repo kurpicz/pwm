@@ -33,7 +33,7 @@
 #include <locale.h>
 #include <dlfcn.h>
 
-#include "malloc_count.h"
+#include "benchmark/malloc_count.h"
 
 /* user-defined options for output malloc()/free() operations to stderr */
 
