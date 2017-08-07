@@ -6,8 +6,13 @@ set(INTERNAL_SRCS
   ${CMAKE_CURRENT_SOURCE_DIR}/parallel_prefix_counting.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/parallel_prefix_sorting.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/sequential_prefix_counting.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/sequential_prefix_sorting.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/malloc_count.c)
+  ${CMAKE_CURRENT_SOURCE_DIR}/sequential_prefix_sorting.cpp)
+
+if(ENABLE_MALLOC_COUNT)
+  add_definitions(-DMALLOC_COUNT)
+  list(APPEND INTERNAL_SRCS
+    ${CMAKE_CURRENT_SOURCE_DIR}/malloc_count)
+endif(ENABLE_MALLOC_COUNT)
 
 set(INTERNAL_LIBS rt dl)
 

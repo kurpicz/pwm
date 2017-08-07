@@ -53,8 +53,9 @@ include(find_or_download_package)
 # Usage: find_or_download_package(PACKAGE_NAME, FOUND_FLAG_PREFIX, TARGET_PREFIX)
 find_or_download_package(GTest GTEST gtest)
 
+option(ENABLE_MALLOC_COUNT "Enable memory measurement." OFF)
+
 # Add include directory to include searches
-include_directories(external/malloc_count)
 include_directories(external/tclap/include)
 include_directories(include)
 

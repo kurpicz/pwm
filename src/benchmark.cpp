@@ -12,10 +12,9 @@
 #include "benchmark/algorithm.hpp"
 #include "benchmark/file_util.hpp"
 
+#ifdef MALLOC_COUNT
 #include "benchmark/malloc_count.h"
-#include "benchmark/memprofile.hpp"
-
-static const char* memprofile_path = "memprofile.txt";
+#endif // MALLOC_COUNT
 
 auto filter_parallel(bool only_parallel, bool is_parallel) {
   return (!only_parallel || is_parallel);
@@ -119,6 +118,10 @@ int32_t main(int32_t argc, char const* argv[]) {
                    "(parameter 'b')." << std::endl;
       return -1;
     }
+#ifdef MALLOC_COUNT
+    std::cout << "Memory peak text: " << malloc_count_peak() << ", MB: "
+              << malloc_count_peak() / (1024 * 1024) << std::endl;
+#endif // MALLOC_COUNT
     for (const auto& a : algo_list) {
       if (filter == "" || (a->name().find(filter) != std::string::npos)) {
         if (a->word_width() == word_width) {
@@ -127,10 +130,14 @@ int32_t main(int32_t argc, char const* argv[]) {
               if (filter_wavelet_type(a->is_tree(), no_trees, no_matrices)) {
                 a->print_info();
                 if (memory) {
+#ifdef MALLOC_COUNT
                   malloc_count_reset_peak();
                   a->memory_peak(txt_prt, text_size, levels);
                   std::cout << malloc_count_peak() << ", MB: "
                             << malloc_count_peak() / (1024 * 1024) << std::endl;
+#else
+                  std::cout << "Memory measurement is NOT enabled." << std::endl;
+#endif // MALLOC_COUNT
                 } else {
                   std::cout << a->median_time(txt_prt, text_size, levels, nr_runs)
                             << std::endl;
