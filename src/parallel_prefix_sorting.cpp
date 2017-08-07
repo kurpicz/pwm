@@ -13,13 +13,13 @@ using wm_pps_8 = wx_pps<uint8_t, true>;
 using wm_pps_16 = wx_pps<uint16_t, true>;
 using wm_pps_32 = wx_pps<uint32_t, true>;
 
-CONSTRUCTION_REGISTER("wm_pps<uint8_t>",
+CONSTRUCTION_REGISTER("wm_pps",
   "Parallel wavelet matrix construction with 8-bit alphabet "
   "(using sorting).", wm_pps_8)
-CONSTRUCTION_REGISTER("wm_pps<uint16_t>",
+CONSTRUCTION_REGISTER("wm_pps",
   "Parallel wavelet matrix construction with 16-bit alphabet "
   "(using sorting).", wm_pps_16)
-CONSTRUCTION_REGISTER("wm_pps<uint32_t>",
+CONSTRUCTION_REGISTER("wm_pps",
   "Parallel wavelet matrix construction with 32-bit alphabet "
   "(using sorting).", wm_pps_32)
 
@@ -27,13 +27,13 @@ using wt_pps_8 = wx_pps<uint8_t, false>;
 using wt_pps_16 = wx_pps<uint16_t, false>;
 using wt_pps_32 = wx_pps<uint32_t, false>;
 
-CONSTRUCTION_REGISTER("wt_pps<uint8_t>",
+CONSTRUCTION_REGISTER("wt_pps",
   "Parallel wavelet tree construction with 8-bit alphabet "
   "(using sorting).", wt_pps_8)
-CONSTRUCTION_REGISTER("wt_pps<uint16_t>",
+CONSTRUCTION_REGISTER("wt_pps",
   "Parallel wavelet tree construction with 16-bit alphabet "
   "(using sorting).", wt_pps_16)
-CONSTRUCTION_REGISTER("wt_pps<uint32_t>",
+CONSTRUCTION_REGISTER("wt_pps",
   "Parallel wavelet tree construction with 32-bit alphabet "
   "(using sorting).", wt_pps_32)
 

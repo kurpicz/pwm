@@ -13,13 +13,13 @@ using wm_ppc_8  = wx_ppc<uint8_t, true>;
 using wm_ppc_16 = wx_ppc<uint16_t, true>;
 using wm_ppc_32 = wx_ppc<uint32_t, true>;
 
-CONSTRUCTION_REGISTER("wm_ppc<uint8_t>",
+CONSTRUCTION_REGISTER("wm_ppc",
   "Parallel wavelet matrix construction with 8-bit alphabet "
   "(using counting).", wm_ppc_8)
-CONSTRUCTION_REGISTER("wm_ppc<uint16_t>",
+CONSTRUCTION_REGISTER("wm_ppc",
   "Parallel wavelet matrix construction with 16-bit alphabet "
   "(using counting).", wm_ppc_16)
-CONSTRUCTION_REGISTER("wm_ppc<uint32_t>",
+CONSTRUCTION_REGISTER("wm_ppc",
   "Parallel wavelet matrix construction with 32-bit alphabet "
   "(using counting).", wm_ppc_32)
 
@@ -27,13 +27,13 @@ using wt_ppc_8  = wx_ppc<uint8_t, false>;
 using wt_ppc_16 = wx_ppc<uint16_t, false>;
 using wt_ppc_32 = wx_ppc<uint32_t, false>;
 
-CONSTRUCTION_REGISTER("wt_ppc<uint8_t>",
+CONSTRUCTION_REGISTER("wt_ppc",
   "Parallel wavelet tree construction with 8-bit alphabet "
   "(using counting).", wt_ppc_8)
-CONSTRUCTION_REGISTER("wt_ppc<uint16_t>",
+CONSTRUCTION_REGISTER("wt_ppc",
   "Parallel wavelet tree construction with 16-bit alphabet "
   "(using counting).", wt_ppc_16)
-CONSTRUCTION_REGISTER("wt_ppc<uint32_t>",
+CONSTRUCTION_REGISTER("wt_ppc",
   "Parallel wavelet tree construction with 32-bit alphabet "
   "(using counting).", wt_ppc_32)
 
