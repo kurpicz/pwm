@@ -136,11 +136,12 @@ int32_t main(int32_t argc, char const* argv[]) {
                   std::cout << malloc_count_peak() << ", MB: "
                             << malloc_count_peak() / (1024 * 1024) << std::endl;
 #else
-                  std::cout << "Memory measurement is NOT enabled." << std::endl;
+                  std::cout << "Memory measurement is NOT enabled."
+                            << std::endl;
 #endif // MALLOC_COUNT
                 } else {
-                  std::cout << a->median_time(txt_prt, text_size, levels, nr_runs)
-                            << std::endl;
+                  std::cout << a->median_time(
+                    txt_prt, text_size, levels, nr_runs) << std::endl;
                 }
               }
             }

@@ -11,7 +11,7 @@ Using these ideas, we have implemented:
 2. a parallel version of the algorithms (*wx_pps* and *wx_pps*) and
 3. a parallel version of the algorithms using *domain decomposition* (*wx_dd_ps* and *wx_dd_ps*).
 
-Replace _wx_ with either _wt_ or _wm_ for the corresponding WT- or WM-construction algorithm
+Replace _wx_ with either _wt_ or _wm_ for the corresponding WT- or WM-construction algorithm.
 
 A detailed description and benchmarks of the implemented algorithms can be found in this [arXiv preprint](https://arxiv.org/abs/1702.07578).
 
