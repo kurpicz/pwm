@@ -93,6 +93,9 @@ int32_t main(int32_t argc, char const* argv[]) {
     std::vector<uint16_t> text_uint16;
     std::vector<uint32_t> text_uint32;
     std::vector<uint64_t> text_uint64;
+#ifdef MALLOC_COUNT
+    malloc_count_reset_peak();
+#endif
     if (word_width == 1) {
       text_uint8 = file_to_vector<1>(path);
       text_size = text_uint8.size();
@@ -118,6 +121,7 @@ int32_t main(int32_t argc, char const* argv[]) {
                    "(parameter 'b')." << std::endl;
       return -1;
     }
+    std::cout << "Characters: " << text_size << std::endl;
 #ifdef MALLOC_COUNT
     std::cout << "Memory peak text: " << malloc_count_peak() << ", MB: "
               << malloc_count_peak() / (1024 * 1024) << std::endl;
