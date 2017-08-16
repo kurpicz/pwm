@@ -6,7 +6,7 @@
  * All rights reserved. Published under the BSD-2 license in the LICENSE file.
  ******************************************************************************/
 
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 
 int main(int argc, char **argv) {
   testing::InitGoogleTest(&argc, argv);

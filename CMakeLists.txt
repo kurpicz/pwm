@@ -1,3 +1,12 @@
+################################################################################
+# CMakeLists.txt
+#
+# Copyright (C) 2016-2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
+# Copyright (C) 2017 Marvin Löbel <loebel.marvin@gmail.com>
+#
+# All rights reserved. Published under the BSD-2 license in the LICENSE file.
+################################################################################
+
 cmake_minimum_required(VERSION 3.0.2 FATAL_ERROR)
 project (pwm)
 
@@ -47,18 +56,13 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -ggdb ")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
     "${CMAKE_CURRENT_SOURCE_DIR}/cmakemodules")
 
-# Finders
-include(find_or_download_package)
-
-# Usage: find_or_download_package(PACKAGE_NAME, FOUND_FLAG_PREFIX, TARGET_PREFIX)
-find_or_download_package(GTest GTEST gtest)
-
 option(ENABLE_MALLOC_COUNT "Enable memory measurement." OFF)
 
 # Add include directory to include searches
 include_directories(external/tclap/include)
 include_directories(include)
 
+add_subdirectory(external/googletest)
 add_subdirectory(src)
 add_subdirectory(test)
 
