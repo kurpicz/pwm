@@ -103,7 +103,9 @@ public:
               offsets[ctx.rho(level, i - 1) << prefix_shift] +
               ctx.borders(omp_size - 1, prev_rho << prefix_shift) +
               ctx.hist(omp_size - 1, prev_rho << prefix_shift);
-            ctx.set_rho(level, i - 1, prev_rho >> 1);
+            if (ctx_t::compute_rho)  {
+              ctx.set_rho(level, i - 1, prev_rho >> 1);
+            }
           }
           // The number of 0s is the position of the first 1 at the first
           // processor

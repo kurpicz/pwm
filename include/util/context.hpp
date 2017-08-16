@@ -48,9 +48,7 @@ struct LevelSinglePass {
     }
 
     void set_rho(size_t /*level*/, size_t i, uint64_t val) {
-        if (is_matrix) {
-            m_bit_reverse[i] = val;
-        }
+        m_bit_reverse[i] = val;
     }
 
     std::vector<uint64_t>& borders() {
@@ -123,9 +121,7 @@ public:
     }
 
     void set_rho(uint64_t /*level*/, uint64_t const index, uint64_t const val) {
-        if (is_matrix) {
-            bit_reverse_[index] = val;
-        }
+        bit_reverse_[index] = val;
     }
 
     static bool constexpr compute_zeros = is_matrix;
