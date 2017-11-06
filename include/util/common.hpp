@@ -8,8 +8,6 @@
  ******************************************************************************/
 
 #pragma once
-#ifndef COMMON
-#define COMMON
 
 #include <stdint.h>
 #include <vector>
@@ -90,65 +88,9 @@ struct rho_dispatch<false> {
     }
 };
 
-constexpr size_t word_size(uint64_t size) {
-    return (size + 63ULL) >> 6;
+constexpr uint64_t word_size(uint64_t size) {
+  return (size + 63ULL) >> 6;
 }
-
-class Bvs {
-    std::vector<uint64_t*> m_data;
-    uint64_t m_size;
-public:
-    inline Bvs(): m_size(0) {}
-    inline Bvs(uint64_t size, uint64_t levels):
-        m_data(levels), m_size(size)
-    {
-        assert(levels != 0);
-
-        m_data[0] = new uint64_t[word_size(size) * levels];
-        memset(m_data[0], 0, (word_size(size) * sizeof(uint64_t)) * levels);
-
-        for (uint64_t level = 1; level < levels; ++level) {
-            m_data[level] = m_data[level - 1] + word_size(size);
-        }
-    }
-
-    inline uint64_t levels() const {
-        return m_data.size();
-    }
-
-    inline uint64_t size() const {
-        return m_size;
-    }
-
-    inline const std::vector<uint64_t*>& vec() const {
-        return m_data;
-    }
-
-    inline std::vector<uint64_t*>& vec() {
-        return m_data;
-    }
-
-    inline ~Bvs() {
-        if (m_data.size() > 0) {
-            delete[] m_data[0];
-        }
-    }
-
-    inline Bvs(Bvs&& other):
-        m_data(std::move(other.m_data)),
-        m_size(other.m_size) {}
-
-    inline Bvs& operator=(Bvs&& other) {
-        if (m_data.size() > 0) {
-            delete[] m_data[0];
-        }
-        m_data = std::move(other.m_data);
-        m_size = other.m_size;
-
-        return *this;
-    }
-
-};
 
 // A little template helper for dropping a type early
 template <typename T>
@@ -175,7 +117,5 @@ inline auto bit_at(const bv_t& bv, size_t i) -> bool {
     size_t word_offset = i & MOD_MASK;
     return (bv[offset] >> (MOD_MASK - word_offset)) & 1ull;
 }
-
-#endif // COMMON
 
 /******************************************************************************/

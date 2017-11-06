@@ -10,35 +10,37 @@
 
 #include <vector>
 #include <type_traits>
-#include "common.hpp"
+#include "bit_vectors.hpp"
 
 class wavelet_structure {
-    Bvs m_bvs;
-    std::vector<uint64_t> m_zeros;
+
 public:
-    inline wavelet_structure() = default;
+  inline wavelet_structure() = default;
 
-    inline wavelet_structure(Bvs&& bvs, std::vector<uint64_t>&& zeros):
-        m_bvs(std::move(bvs)), m_zeros(std::move(zeros)) {}
+  inline wavelet_structure(bit_vectors&& bvs, std::vector<uint64_t>&& zeros):
+    bvs_(std::move(bvs)), zeros_(std::move(zeros)) {}
 
-    inline wavelet_structure(Bvs&& bvs):
-        m_bvs(std::move(bvs)) {}
+  inline wavelet_structure(bit_vectors&& bvs) :
+    bvs_(std::move(bvs)) {}
 
-    // Prevent accidental copies
-    inline wavelet_structure(wavelet_structure const& other) = delete;
-    inline wavelet_structure& operator=(wavelet_structure const& other) = delete;
+  // Prevent accidental copies
+  inline wavelet_structure(wavelet_structure const& other) = delete;
+  inline wavelet_structure& operator =(wavelet_structure const& other) = delete;
 
-    // Allow moving
-    inline wavelet_structure(wavelet_structure&& other) = default;
-    inline wavelet_structure& operator=(wavelet_structure&& other) = default;
+  // Allow moving
+  inline wavelet_structure(wavelet_structure&& other) = default;
+  inline wavelet_structure& operator =(wavelet_structure&& other) = default;
 
-    inline std::vector<uint64_t*> const& raw_bvs() const {
-        return m_bvs.vec();
-    }
+  inline std::vector<uint64_t*> const& raw_bvs() const {
+    return bvs_.vec();
+  }
 
-    inline std::vector<uint64_t> const& raw_zeros() const {
-        return m_zeros;
-    }
-};
+  inline std::vector<uint64_t> const& raw_zeros() const {
+    return zeros_;
+  }
+private:
+  bit_vectors bvs_;
+  std::vector<uint64_t> zeros_;
+}; // class wavelet_structure
 
 /******************************************************************************/

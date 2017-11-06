@@ -8,7 +8,6 @@
 #pragma once
 
 #include "common.hpp"
-#include "context.hpp"
 
 template <typename AlphabetType, typename ctx_t>
 void pc(AlphabetType const* text,

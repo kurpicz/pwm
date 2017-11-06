@@ -9,10 +9,12 @@
 
 #pragma once
 
-#include "common.hpp"
 #include <cassert>
 #include <climits>
 #include <omp.h>
+
+#include "bit_vectors.hpp"
+#include "common.hpp"
 
 template<typename WordType>
 void copy_bits(WordType* const dst,
@@ -122,11 +124,11 @@ void copy_bits(WordType* const dst,
 }
 
 template<typename ctx_t, typename Rho>
-inline auto merge_bvs(uint64_t size,
+inline auto merge_bit_vectors(uint64_t size,
                       uint64_t levels,
                       uint64_t shards,
                       const std::vector<ctx_t>& src_ctxs,
-                      const Rho& rho) -> Bvs
+                      const Rho& rho)
 {
     assert(shards == src_ctxs.size());
 
@@ -237,7 +239,7 @@ inline auto merge_bvs(uint64_t size,
         triple_loop_exit:; // we are done
     }
 
-    auto r = Bvs(size, levels);
+    auto r = bit_vectors(size, levels);
     auto& _bv = r.vec();
 
     #pragma omp parallel

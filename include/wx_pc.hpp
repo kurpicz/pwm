@@ -25,16 +25,18 @@ public:
 
     static wavelet_structure compute(AlphabetType const* const text,
                                      const uint64_t size,
-                                     const uint64_t levels)
-    {
-        if(size == 0) { return wavelet_structure(); }
+                                     const uint64_t levels) {
+        if(size == 0) {
+            return wavelet_structure();
+        }
 
         auto ctx = ctx_t(size, levels);
 
         pc(text, size, levels, ctx);
 
         if (ctx_t::compute_zeros)  {
-            return wavelet_structure(std::move(ctx.bv()), std::move(ctx.zeros()));
+            return wavelet_structure(
+                std::move(ctx.bv()), std::move(ctx.zeros()));
         } else {
             return wavelet_structure(std::move(ctx.bv()));
         }
