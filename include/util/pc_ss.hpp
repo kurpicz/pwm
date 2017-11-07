@@ -47,6 +47,10 @@ void pc_ss(AlphabetType const* const text, uint64_t const size,
         << (63ULL - (pos & 63ULL)));
     }
   }
+
+  if (levels > 1) { // TODO check condition
+    ctx.hist(0, 0) = ctx.hist(1, 0) + ctx.hist(1, 1);
+  }
 }
 
 /******************************************************************************/

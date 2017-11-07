@@ -10,6 +10,7 @@ Using these ideas, we have implemented:
 1. a sequential version of the algorithms (*wx_ps* and *wx_ps*),
 2. a parallel version of the algorithms (*wx_pps* and *wx_pps*) and
 3. a parallel version of the algorithms using *domain decomposition* (*wx_dd_ps* and *wx_dd_ps*).
+4. a version of *pc* that scans the text just twice and fills all levels but the first level at once (indicated by an *_ss*-suffix).
 
 Replace _wx_ with either _wt_ or _wm_ for the corresponding WT- or WM-construction algorithm.
 
@@ -31,7 +32,7 @@ Constructing WTs and WMs for a text with (all) our algorithms can be done by run
 To get a list of the other available options run `./src/benchmark --help`.
 
 If you want to test the algorithms simply type `make check` in the build directory.
-Then, we create WTs and WMs with all our algorithms, use them to reconstruct the test, and tell you if something went wrong.
+Then, we create WTs and WMs with all our algorithms, use them to reconstruct the text, and tell you if something went wrong.
 
 ## Contributors
 - Florian Kurpicz (author)

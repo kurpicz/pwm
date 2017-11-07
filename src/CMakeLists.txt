@@ -1,6 +1,7 @@
 set(INTERNAL_SRCS
   ${CMAKE_CURRENT_SOURCE_DIR}/benchmark.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/dd_prefix_counting.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/dd_prefix_counting_single_scan.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/dd_prefix_sorting.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/naive.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/parallel_prefix_counting.cpp

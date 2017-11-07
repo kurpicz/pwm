@@ -1,5 +1,5 @@
 /*******************************************************************************
- * include/wx_dd_pc.hpp
+ * include/wx_dd_pc_ss.hpp
  *
  * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
  *
@@ -13,14 +13,14 @@
 #include <omp.h>
 #include <vector>
 
-#include "util/ctx_all_levels.hpp"
+#include "util/ctx_compute_borders.hpp"
 #include "util/merge.hpp"
-#include "util/pc.hpp"
+#include "util/pc_ss.hpp"
 #include "util/wavelet_structure.hpp"
 
 template <typename AlphabetType, bool is_matrix>
-class wx_dd_pc {
-  using ctx_t = ctx_all_levels<is_matrix>;
+class wx_dd_pc_ss {
+  using ctx_t = ctx_compute_borders<is_matrix>;
 
 public:
   static constexpr bool  is_parallel = true;
@@ -58,7 +58,7 @@ public:
 
       const AlphabetType* text = global_text + offset;
 
-      pc(text, local_size, levels, ctxs[omp_rank]);
+      pc_ss(text, local_size, levels, ctxs[omp_rank]);
     }
 
     for(auto& ctx : ctxs) {
@@ -81,6 +81,6 @@ public:
       return wavelet_structure(std::move(_bv));
     }
   }
-}; // class wx_dd_pc
+}; // class wx_dd_pc_ss
 
 /******************************************************************************/

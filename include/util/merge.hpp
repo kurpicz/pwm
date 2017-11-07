@@ -6,7 +6,6 @@
  * All rights reserved. Published under the BSD-2 license in the LICENSE file.
  ******************************************************************************/
 
-
 #pragma once
 
 #include <cassert>
@@ -17,12 +16,8 @@
 #include "common.hpp"
 
 template<typename WordType>
-void copy_bits(WordType* const dst,
-         WordType const* const src,
-         uint64_t& dst_off_ref,
-         uint64_t& src_off_ref,
-         uint64_t const block_size)
-{
+void copy_bits(WordType* const dst, WordType const* const src,
+  uint64_t& dst_off_ref, uint64_t& src_off_ref, uint64_t const block_size) {
   if (block_size == 0) return;
 
   WordType constexpr BITS = (sizeof(WordType) * CHAR_BIT);
@@ -123,13 +118,9 @@ void copy_bits(WordType* const dst,
   src_off_ref += block_size;
 }
 
-template<typename ctx_t, typename Rho>
-inline auto merge_bit_vectors(uint64_t size,
-            uint64_t levels,
-            uint64_t shards,
-            const std::vector<ctx_t>& src_ctxs,
-            const Rho& rho)
-{
+template<typename ContextType, typename Rho>
+inline auto merge_bit_vectors(uint64_t size, uint64_t levels, uint64_t shards,
+  const std::vector<ContextType>& src_ctxs, const Rho& rho) {
   assert(shards == src_ctxs.size());
 
   // Allocate data structures centrally
@@ -197,10 +188,10 @@ inline auto merge_bit_vectors(uint64_t size,
 
         uint64_t offset_in_first_word = 0;
         do {
-          // Split up the block like this:
-          //     [  left_block_size  |    right_block_size    ]
-          //     ^             ^                ^
-          // (write_offset)  (ctxs[merge_shard].offset)    (write_offset + block_size)
+    // Split up the block like this:
+    //     [  left_block_size  |    right_block_size    ]
+    //     ^             ^                ^
+    // (write_offset)  (ctxs[merge_shard].offset)    (write_offset + block_size)
 
           auto const left_block_size = ctxs[merge_shard].offset - write_offset;
 

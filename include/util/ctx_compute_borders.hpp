@@ -26,9 +26,9 @@ public:
     rho_t const& rho)
   : hist_(levels + 1, std::vector<uint64_t>(2)), rho_(&rho),
     borders_(levels + 1, std::vector<uint64_t>(2)),
-    zeros_(levels, 0), bv_(size, levels) {
+    zeros_(levels, 0), bv_(size, levels), levels_(levels) {
 
-    for(int64_t level = levels; level > 0; --level) {
+    for(uint64_t level = 0; level < levels_ + 1; ++level) {
       hist_[level].reserve(hist_size(level));
       hist_[level].resize(hist_size(level));
       borders_[level].reserve(hist_size(level));
@@ -40,7 +40,7 @@ public:
   static bool constexpr compute_rho = false;
 
   void fill_borders() {
-    for (uint64_t level = borders_.size() - 2; level > 0; --level) {
+    for (uint64_t level = levels_ - 1; level > 0; --level) {
       for (uint64_t pos = 0; pos < hist_size(level); ++pos) {
         hist_[level][pos] = hist_[level + 1][pos << 1] +
           hist_[level + 1][(pos << 1) + 1];
@@ -111,6 +111,7 @@ private:
   std::vector<std::vector<uint64_t>> borders_;
   std::vector<uint64_t> zeros_;
   bit_vectors bv_;
+  uint64_t levels_;
 
 }; // ctx_compute_borders
 
