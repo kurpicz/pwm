@@ -10,6 +10,7 @@
 #pragma once
 
 #include "bit_vectors.hpp"
+#include "permutation.hpp"
 
 // TODO: WM/WT abstract that selects zeros and rho
 // TODO: flatten vectors where possible, to reduce indirection
@@ -26,7 +27,8 @@ struct ctx_single_level {
   ctx_single_level(uint64_t const size, uint64_t const levels)
   : m_hist(1ULL << levels, 0), m_borders(1ULL << levels, 0),
     m_zeros(levels, 0), m_bv(size, levels),
-    m_bit_reverse(is_matrix ? BitReverse(levels - 1) : std::vector<uint64_t>(0)) { }
+    m_bit_reverse(is_matrix ?
+      bit_reverse_permutation(levels - 1) : std::vector<uint64_t>(0)) { }
 
   uint64_t hist_size(uint64_t const level) {
     return 1ull << level;

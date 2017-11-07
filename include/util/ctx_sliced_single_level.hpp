@@ -10,6 +10,7 @@
 #pragma once
 
 #include "bit_vectors.hpp"
+#include "permutation.hpp"
 
 // TODO: WM/WT abstract that selects zeros and rho
 // TODO: flatten vectors where possible, to reduce indirection
@@ -24,8 +25,8 @@ public:
     : hist_(omp_size, std::vector<uint64_t>(1ULL << levels, 0)),
       borders_(omp_size, std::vector<uint64_t>(1ULL << levels, 0)),
       zeros_(levels, 0), bv_(size, levels),
-      bit_reverse_(
-      is_matrix ? BitReverse(levels - 1) : std::vector<uint64_t>(0)) { }
+      bit_reverse_(is_matrix ?
+        bit_reverse_permutation(levels - 1) : std::vector<uint64_t>(0)) { }
 
   uint64_t borders_size(uint64_t const level) {
     return 1ULL << level;
