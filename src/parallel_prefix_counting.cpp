@@ -1,5 +1,5 @@
 /*******************************************************************************
- * src/sequential_prefix_counting.cpp
+ * src/parallel_prefix_counting.cpp
  *
  * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
  *
