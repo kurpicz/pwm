@@ -7,12 +7,9 @@
  ******************************************************************************/
 #pragma once
 
-template <typename AlphabetType, typename ctx_t>
-void pc(AlphabetType const* text,
-    uint64_t const size,
-    uint64_t const levels,
-    ctx_t& ctx)
-{
+template <typename AlphabetType, typename ContextType>
+void pc(AlphabetType const* text, uint64_t const size, uint64_t const levels,
+  ContextType& ctx) {
   uint64_t cur_max_char = (1 << levels);
 
   auto& zeros = ctx.zeros();
@@ -42,7 +39,7 @@ void pc(AlphabetType const* text,
   }
 
   // The number of 0s at the last level is the number of "even" characters
-  if (ctx_t::compute_zeros) {
+  if (ContextType::compute_zeros) {
     for (uint64_t i = 0; i < cur_max_char; i += 2) {
       zeros[levels - 1] += ctx.hist(levels, i);
     }
@@ -71,13 +68,13 @@ void pc(AlphabetType const* text,
       borders[ctx.rho(level, i)] =
         borders[prev_rho] + ctx.hist(level, prev_rho);
 
-      if (ctx_t::compute_rho)  {
+      if (ContextType::compute_rho)  {
         ctx.set_rho(level - 1, i - 1, prev_rho >> 1);
       }
     }
 
     // The number of 0s is the position of the first 1 in the previous level
-    if (ctx_t::compute_zeros) {
+    if (ContextType::compute_zeros) {
       zeros[level - 1] = borders[1];
     }
 
