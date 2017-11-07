@@ -17,6 +17,7 @@
 
 template <bool is_matrix>
 class ctx_sliced_single_level {
+
 public:
   ctx_sliced_single_level() = default;
 
@@ -86,7 +87,6 @@ public:
 private:
   std::vector<std::vector<uint64_t>> hist_;
   std::vector<std::vector<uint64_t>> borders_;
-
   std::vector<uint64_t> zeros_;
   bit_vectors bv_;
   std::vector<uint64_t> bit_reverse_;

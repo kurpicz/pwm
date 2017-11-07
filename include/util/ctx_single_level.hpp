@@ -17,17 +17,13 @@
 
 // Overwrite information for each level
 template<bool is_matrix>
-struct ctx_single_level {
-  std::vector<uint64_t> m_hist;
-  std::vector<uint64_t> m_borders;
-  std::vector<uint64_t> m_zeros;
-  bit_vectors m_bv;
-  std::vector<uint64_t> m_bit_reverse;
+class ctx_single_level {
 
+public:
   ctx_single_level(uint64_t const size, uint64_t const levels)
-  : m_hist(1ULL << levels, 0), m_borders(1ULL << levels, 0),
-    m_zeros(levels, 0), m_bv(size, levels),
-    m_bit_reverse(is_matrix ?
+  : hist_(1ULL << levels, 0), borders_(1ULL << levels, 0),
+    zeros_(levels, 0), bv_(size, levels),
+    bit_reverse_(is_matrix ?
       bit_reverse_permutation(levels - 1) : std::vector<uint64_t>(0)) { }
 
   uint64_t hist_size(uint64_t const level) {
@@ -35,47 +31,54 @@ struct ctx_single_level {
   }
 
   uint64_t& hist(uint64_t const /*level*/, uint64_t const i) {
-    return m_hist[i];
+    return hist_[i];
   }
 
   uint64_t hist(uint64_t const /*level*/, uint64_t const i) const {
-    return m_hist[i];
+    return hist_[i];
   }
 
   uint64_t rho(size_t /*level*/, size_t i) {
     if (is_matrix) {
-      return m_bit_reverse[i];
+      return bit_reverse_[i];
     }else {
       return i;
     }
   }
 
   void set_rho(size_t /*level*/, size_t i, uint64_t val) {
-    m_bit_reverse[i] = val;
+    bit_reverse_[i] = val;
   }
 
   std::vector<uint64_t>& borders() {
-    return m_borders;
+    return borders_;
   }
 
   static bool constexpr compute_zeros = is_matrix;
   static bool constexpr compute_rho = is_matrix;
 
   std::vector<uint64_t>& zeros() {
-    return m_zeros;
+    return zeros_;
   }
 
   bit_vectors& bv() {
-    return m_bv;
+    return bv_;
   }
 
   bit_vectors const& bv() const {
-    return m_bv;
+    return bv_;
   }
 
   void discard_non_merge_data() {
     // Not used in merge algorithm
   }
+
+private:
+  std::vector<uint64_t> hist_;
+  std::vector<uint64_t> borders_;
+  std::vector<uint64_t> zeros_;
+  bit_vectors bv_;
+  std::vector<uint64_t> bit_reverse_;
 }; // ctx_single_level
 
 /******************************************************************************/
