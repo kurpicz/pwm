@@ -20,8 +20,7 @@
 
 template <typename AlphabetType, bool is_matrix>
 class wx_dd_pc {
-  using ctx_t = ctx_all_levels<
-    is_matrix, typename rho_dispatch<is_matrix>::type>;
+  using ctx_t = ctx_all_levels<is_matrix>;
 
 public:
   static constexpr bool  is_parallel = true;

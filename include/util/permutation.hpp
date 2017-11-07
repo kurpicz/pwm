@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 using permutation_type = std::vector<uint64_t> (*)(const uint64_t levels);
 
 inline std::vector<uint64_t> bit_reverse_permutation(const uint64_t levels) {

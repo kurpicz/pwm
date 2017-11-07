@@ -9,75 +9,80 @@
 
 #pragma once
 
+#include "permutation.hpp"
 #include "bit_vectors.hpp"
 
 // TODO: WM/WT abstract that selects zeros and rho
 // TODO: flatten vectors where possible, to reduce indirection
 
 /// Keep calculated information for individual levels around
-template<bool is_matrix, typename rho_t>
-struct ctx_all_levels {
-  std::vector<std::vector<uint64_t>> m_hist;
-  rho_t const* m_rho = nullptr;
-  std::vector<uint64_t> m_borders;
-  std::vector<uint64_t> m_zeros;
-  bit_vectors m_bv;
+template<bool is_matrix>
+class ctx_all_levels {
+  
+public:
+  using rho_t = typename rho_dispatch<is_matrix>::type;
 
   ctx_all_levels() = default;
 
   ctx_all_levels(uint64_t const size, uint64_t const levels, rho_t const& rho)
-  : m_hist(levels + 1, std::vector<uint64_t>(2)),
-    m_rho(&rho), m_borders(1ULL << levels, 0), m_zeros(levels, 0),
-    m_bv(size, levels) {
+  : hist_(levels + 1, std::vector<uint64_t>(2)), rho_(&rho),
+    borders_(1ULL << levels, 0), zeros_(levels, 0), bv_(size, levels) {
 
     for(size_t level = 0; level < (levels + 1); level++) {
-      m_hist[level].reserve(hist_size(level));
-      m_hist[level].resize(hist_size(level));
+      hist_[level].reserve(hist_size(level));
+      hist_[level].resize(hist_size(level));
     }
   }
+
+  static bool constexpr compute_zeros = is_matrix;
+  static bool constexpr compute_rho = false;
 
   uint64_t hist_size(uint64_t const level) {
     return 1ull << level;
   }
 
   uint64_t& hist(uint64_t const level, uint64_t const i) {
-    return m_hist[level][i];
+    return hist_[level][i];
   }
 
   uint64_t hist(uint64_t const level, uint64_t const i) const {
-    return m_hist[level][i];
+    return hist_[level][i];
   }
 
   uint64_t rho(size_t level, size_t i) {
-    return (*m_rho)(level, i);
+    return (*rho_)(level, i);
   }
 
   void set_rho(size_t /*level*/, size_t /*i*/, uint64_t /*val*/) {
-    // m_rho is already calculated
+    // rho_ is already calculated
   }
 
   std::vector<uint64_t>& borders() {
-    return m_borders;
+    return borders_;
   }
 
-  static bool constexpr compute_zeros = is_matrix;
-  static bool constexpr compute_rho = false;
-
   std::vector<uint64_t>& zeros() {
-    return m_zeros;
+    return zeros_;
   }
 
   bit_vectors& bv() {
-    return m_bv;
+    return bv_;
   }
 
   bit_vectors const& bv() const {
-    return m_bv;
+    return bv_;
   }
 
   void discard_non_merge_data() {
-    drop_me(std::move(m_borders));
+    drop_me(std::move(borders_));
   }
-}; // ctx_all_levels
+
+private:
+  std::vector<std::vector<uint64_t>> hist_;
+  rho_t const* rho_ = nullptr;
+  std::vector<uint64_t> borders_;
+  std::vector<uint64_t> zeros_;
+  bit_vectors bv_;
+}; // class ctx_all_levels
 
 /******************************************************************************/
