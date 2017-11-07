@@ -97,7 +97,8 @@ public:
         const uint64_t requierd_characters = (1 << (levels - level));
         for (uint64_t i = 0; i < local_max_char; ++i) {
           for (uint64_t j = 0; j < requierd_characters; ++j) {
-            ctx.hist(level, i) += ctx.hist(levels, (i * requierd_characters) + j);
+            ctx.hist(level, i) +=
+              ctx.hist(levels, (i * requierd_characters) + j);
           }
         }
       }
@@ -116,7 +117,8 @@ public:
         borders[0] = 0;
         for (uint64_t i = 1; i < local_max_char; ++i) {
           const auto prev_rho = ctx.rho(level, i - 1);
-          borders[ctx.rho(level, i)] = borders[prev_rho] + ctx.hist(level, prev_rho);
+          borders[ctx.rho(level, i)] =
+            borders[prev_rho] + ctx.hist(level, prev_rho);
         }
         // The number of 0s is the position of the first 1 in the previous level
         if (ctx_t::compute_zeros) {

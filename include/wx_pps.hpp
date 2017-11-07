@@ -90,7 +90,8 @@ public:
           ctx.hist(0, i) += ctx.hist(0, i + (1ULL << cur_bit_shift));
           for (int32_t rank = 1; rank < omp_size; ++rank) {
             ctx.hist(rank, i) += ctx.hist(rank, i + (1ULL << cur_bit_shift));
-            ctx.borders(rank, i) = ctx.borders(rank - 1, i) + ctx.hist(rank - 1, i);
+            ctx.borders(rank, i) = 
+              ctx.borders(rank - 1, i) + ctx.hist(rank - 1, i);
           }
         }
 
