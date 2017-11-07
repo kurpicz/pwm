@@ -20,7 +20,6 @@ First clone this repository, then build all executables.
 ```sh
 git clone https://github.com/kurpicz/pwm.git
 cd pwm
-git submodule update --init
 mkdir build
 cd build
 cmake ..
