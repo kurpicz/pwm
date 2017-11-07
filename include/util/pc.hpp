@@ -7,8 +7,6 @@
  ******************************************************************************/
 #pragma once
 
-#include "common.hpp"
-
 template <typename AlphabetType, typename ctx_t>
 void pc(AlphabetType const* text,
         uint64_t const size,

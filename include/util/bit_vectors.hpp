@@ -71,11 +71,6 @@ public:
   }
 
 private:
-  constexpr uint64_t word_size(uint64_t size) const {
-      return (size + 63ULL) >> 6;
-  }
-
-private:
   std::vector<uint64_t*> data_;
   uint64_t size_;
 };

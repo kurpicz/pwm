@@ -14,13 +14,15 @@
 #include <vector>
 
 #include "util/common.hpp"
+#include "util/ctx_all_levels.hpp"
 #include "util/merge.hpp"
 #include "util/ps.hpp"
 #include "util/wavelet_structure.hpp"
 
 template <typename AlphabetType, bool is_matrix>
 class wx_dd_ps {
-    using ctx_t = KeepLevel<is_matrix, typename rho_dispatch<is_matrix>::type>;
+    using ctx_t = ctx_all_levels<
+        is_matrix, typename rho_dispatch<is_matrix>::type>;
 
 public:
     static constexpr bool    is_parallel = true;
@@ -70,7 +72,7 @@ public:
         }
         drop_me(std::move(global_sorted_text));
         
-        auto _bv = merge_bvs(size, levels, shards, ctxs, rho);
+        auto _bv = merge_bit_vectors(size, levels, shards, ctxs, rho);
 
         if (ctx_t::compute_zeros) {
             auto _zeros = std::vector<uint64_t>(levels, 0);

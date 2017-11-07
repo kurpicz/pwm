@@ -9,13 +9,14 @@
 #pragma once
 
 #include <omp.h>
+
 #include "util/common.hpp"
-#include "util/context.hpp"
+#include "util/ctx_sliced_single_level.hpp"
 #include "util/wavelet_structure.hpp"
 
 template <typename AlphabetType, bool is_matrix>
 class wx_pps {
-  using ctx_t = sliced_single_level_pass<is_matrix>;
+  using ctx_t = ctx_sliced_single_level<is_matrix>;
 
 public:
   static constexpr bool    is_parallel = true;

@@ -9,7 +9,6 @@
 #pragma once
 
 #include "common.hpp"
-#include "context.hpp"
 
 template<
     typename AlphabetType,

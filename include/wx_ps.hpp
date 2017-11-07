@@ -10,13 +10,13 @@
 
 #include <vector>
 
-#include "util/common.hpp"
+#include "util/ctx_single_level.hpp"
 #include "util/wavelet_structure.hpp"
 #include "util/ps.hpp"
 
 template <typename AlphabetType, bool is_matrix>
 class wx_ps {
-    using ctx_t = LevelSinglePass<is_matrix>;
+    using ctx_t = ctx_single_level<is_matrix>;
 
 public:
     static constexpr bool    is_parallel = false;

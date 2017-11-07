@@ -9,6 +9,7 @@
 #pragma once
 
 #include <cstring>
+
 #include "util/wavelet_structure.hpp"
 
 template <typename AlphabetType, bool is_matrix>
@@ -28,7 +29,7 @@ public:
     {
     if(size == 0) { return wavelet_structure(); }
 
-    auto _bv = Bvs(size, levels);
+    auto _bv = bit_vectors(size, levels);
     auto& bv = _bv.vec();
 
     std::vector<AlphabetType> local_text(size);
@@ -87,7 +88,7 @@ public:
 
     if(size == 0) { return wavelet_structure(); }
 
-    auto _bv = Bvs(size, levels);
+    auto _bv = bit_vectors(size, levels);
     auto _zeros = std::vector<size_t>(levels, 0);
     auto& bv = _bv.vec();
 

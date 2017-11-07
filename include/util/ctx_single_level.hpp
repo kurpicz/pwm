@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include "common.hpp"
+#include "bit_vectors.hpp"
 
 // TODO: WM/WT abstract that selects zeros and rho
 // TODO: flatten vectors where possible, to reduce indirection
@@ -20,7 +20,7 @@ struct ctx_single_level {
   std::vector<uint64_t> m_hist;
   std::vector<uint64_t> m_borders;
   std::vector<uint64_t> m_zeros;
-  Bvs m_bv;
+  bit_vectors m_bv;
   std::vector<uint64_t> m_bit_reverse;
 
   ctx_single_level(uint64_t const size, uint64_t const levels)
@@ -63,11 +63,11 @@ struct ctx_single_level {
     return m_zeros;
   }
 
-  Bvs& bv() {
+  bit_vectors& bv() {
     return m_bv;
   }
 
-  Bvs const& bv() const {
+  bit_vectors const& bv() const {
     return m_bv;
   }
 

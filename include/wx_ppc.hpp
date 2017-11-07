@@ -11,12 +11,13 @@
 #include <omp.h>
 
 #include "util/common.hpp"
-#include "util/context.hpp"
+#include "util/ctx_all_levels.hpp"
 #include "util/wavelet_structure.hpp"
 
 template <typename AlphabetType, bool is_matrix>
 class wx_ppc {
-  using ctx_t = KeepLevel<is_matrix, typename rho_dispatch<is_matrix>::type>;
+  using ctx_t = ctx_all_levels<
+    is_matrix, typename rho_dispatch<is_matrix>::type>;
 
 public:
   static constexpr bool    is_parallel = true;
