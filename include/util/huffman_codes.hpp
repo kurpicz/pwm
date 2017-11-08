@@ -68,7 +68,7 @@ public:
         cur_word |= code.code_word;
         cur_word_pos += code.code_length;
       }
-      result.emplace_back(cur_word)
+      result.emplace_back(cur_word);
     }
     return result;
   }
@@ -107,9 +107,8 @@ private:
       uint64_t occurrences;
       std::vector<AlphabetType> covered_symbols;
 
-      bool operator < (const frequency_tree_item& a,
-        const frequency_tree_item& b) {
-        return a.occurrences < b.occurrences;
+      bool operator < (const frequency_tree_item& other) {
+        return occurrences < other.occurrences;
       }
     } __attribute__((packed)); // struct frequency_tree_item 
 
@@ -154,7 +153,7 @@ private:
       code_length_order[i] = i;
     }
     std::sort(code_length_order.begin(), code_length_order.end(),
-      [](const uint64_t a, const uint64_t b) {
+      [&](const uint64_t a, const uint64_t b) {
         return code_pairs_[a].code_length < code_pairs_[b].code_length;
       });
     uint64_t code_word = 0;
@@ -162,7 +161,7 @@ private:
     // The code lengths are correct, move to the second code word that has a
     // code_lenght > 0. The first one gehts code_word = 0ULL.
     while (code_pairs_[code_length_order[code_pos++]].code_length == 0) { }
-    for (; code_pos < code_length_order; ++code_pos) {
+    for (; code_pos < code_pairs_.size(); ++code_pos) {
       code_word = (code_word + 1) <<
         (code_pairs_[code_length_order[code_pos]].code_length -
           code_pairs_[code_length_order[code_pos - 1]].code_length);
@@ -175,7 +174,7 @@ private:
 
     compute_code_words_wavelet_tree();
     for (auto& cp : code_pairs_) {
-      ~code_pairs_.code_word;
+      ~cp.code_word;
     }
   }
 }; // class canonical_huffman_codes
