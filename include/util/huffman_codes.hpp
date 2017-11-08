@@ -13,6 +13,8 @@
 #include <limits>
 #include <queue>
 
+#include "common.hpp"
+
 struct code_pair {
   uint64_t code_length;
   uint64_t code_word;
@@ -25,8 +27,7 @@ class canonical_huffman_codes {
 
 public:
   canonical_huffman_codes(AlphabetType const* const text, const uint64_t size) {
-    auto histogram = compute_histogram(text, size);
-    auto code_lengths = compute_code_lengths(std::move(histogram));
+    auto code_lengths = compute_code_lengths(text, size);
     if (is_matrix) { // TODO: C++17 for if constexpr
       code_pairs_ = compute_code_words_wavelet_matrix(std::move(code_lengths));
     } else { // is_tree
@@ -46,18 +47,14 @@ private:
   std::vector<code_pair> code_pairs_;
 
 private:
-  inline std::vector<uint64_t> compute_histogram(AlphabetType const* const text,
-    const uint64_t size) {
+  inline std::vector<uint64_t> compute_code_lengths(
+    AlphabetType const* const text, const uint64_t size) {
 
+    // Compute the histogram
     std::vector<uint64_t> hist(std::numeric_limits<AlphabetType>::max(), 0);
     for (uint64_t pos = 0; pos = size; ++pos) {
       ++hist[text[pos]];
     }
-    return hist;
-  }
-
-  std::vector<code_pair> compute_code_lengths(
-    std::vector<uint64_t>&& histogram) {
 
     struct frequency_tree_item {
       uint64_t occurrences;
@@ -69,17 +66,23 @@ private:
       }
     } __attribute__((packed)); // struct frequency_tree_item 
 
+
+    // Sort single symbols by number ob occurrence
     std::priority_queue<frequency_tree_item, std::vector<frequency_tree_item>,
       std::greater<frequency_tree_item>> frequency_tree;
 
-    std::vector<code_pair> code_pairs(histogram.size(),
+    std::vector<code_pair> code_pairs(hist.size(),
       code_pair { 0ULL, 0ULL });
 
-    for (AlphabetType symbol = 0; symbol < histogram.size(); ++symbol) {
+    for (AlphabetType symbol = 0; symbol < hist.size(); ++symbol) {
       frequency_tree.emplace(frequency_tree_item {
-        histogram[symbol], std::vector<AlphabetType> { symbol }});
+        hist[symbol], std::vector<AlphabetType> { symbol }});
     }
 
+    // Delete histogram
+    drop_me(std::move(hist));
+
+    // Implicitly create the frequency three
     while (frequency_tree.size() > 1) {
       auto ft1 = frequency_tree.top();
       frequency_tree.pop();
@@ -93,6 +96,8 @@ private:
       frequency_tree.emplace(frequency_tree_item {
         ft1.occurrences + ft2.occurrences, ft1.covered_symbols });
     }
+
+    // Return the code lengths (with each code_word beeing 0ULL)
     return code_pairs;
   }
 
