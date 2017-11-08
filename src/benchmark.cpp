@@ -10,7 +10,8 @@
 #include <vector>
 
 #include "benchmark/algorithm.hpp"
-#include "benchmark/file_util.hpp"
+#include "util/alphabet_util.hpp"
+#include "util/file_util.hpp"
 
 #ifdef MALLOC_COUNT
 #include "benchmark/malloc_count.h"

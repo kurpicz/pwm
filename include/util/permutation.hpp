@@ -1,5 +1,5 @@
 /*******************************************************************************
- * include/util/common.hpp
+ * include/util/permutation.hpp
  *
  * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
  * Copyright (C) 2017 Marvin Löbel <loebel.marvin@gmail.com>
@@ -18,12 +18,12 @@ inline std::vector<uint64_t> bit_reverse_permutation(const uint64_t levels) {
   result[0] = 0;
   result[1] = 1;
   for (uint64_t i = 1; i < levels; ++i) {
-  for (uint64_t j = 0; j < (1u << i); ++j) {
-    result[j] <<= 1;
-  }
-  for (uint64_t j = 0; j < (1u << i); ++j) {
-    result[j + (1 << i)] = result[j] + 1;
-  }
+    for (uint64_t j = 0; j < (1u << i); ++j) {
+      result[j] <<= 1;
+    }
+    for (uint64_t j = 0; j < (1u << i); ++j) {
+      result[j + (1 << i)] = result[j] + 1;
+    }
   }
   return result;
 }

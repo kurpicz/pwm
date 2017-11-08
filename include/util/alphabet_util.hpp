@@ -1,5 +1,5 @@
 /*******************************************************************************
- * include/file_util.hpp
+ * include/util/alphabet_util.hpp
  *
  * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
  *
@@ -7,34 +7,16 @@
  ******************************************************************************/
 
 #pragma once
-#ifndef FILE_UTIL_HEADER
-#define FILE_UTIL_HEADER
 
-#include <fstream>
 #include <limits>
 #include <type_traits>
 #include <unordered_map>
 #include <vector>
 
-#include "util/type_for_bytes.hpp"
-
-template <uint8_t BytesPerWord>
-static std::vector<typename type_for_bytes<BytesPerWord>::type> file_to_vector(
-  const std::string& file_name) {
-  std::ifstream stream(file_name.c_str(), std::ios::in | std::ios::binary);
-  stream.seekg(0, std::ios::end);
-  uint64_t size = stream.tellg() / BytesPerWord;
-  stream.seekg(0);
-  std::vector<typename type_for_bytes<BytesPerWord>::type> result(size);
-  stream.read(reinterpret_cast<char*>(result.data()), size);
-  stream.close();
-  return result;
-}
-
 template <typename AlphabetType>
 static uint64_t reduce_alphabet(std::vector<AlphabetType>& text) {
   uint64_t max_char = uint64_t(0);
-  if (std::is_same<AlphabetType, uint8_t>::value) {
+  if (std::is_same<AlphabetType, uint8_t>::value) { // TODO: C++17 if constexpr
     std::array<uint64_t, std::numeric_limits<uint8_t>::max()> occ;
     occ.fill(0);
     for (auto& c : text) {
@@ -77,7 +59,5 @@ static uint64_t no_reduction_alphabet(const std::vector<AlphabetType>& /*t*/) {
   }
   return levels;
 }
-
-#endif // FILE_UTIL_HEADER
 
 /******************************************************************************/
