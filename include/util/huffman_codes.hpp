@@ -20,8 +20,8 @@ struct code_pair {
   uint64_t code_word;
 } __attribute__((packed)); // struct code_pair
 
-// Class constructing canonical huffman codes for an text over an effective
-// alphabet.
+// Class constructing canonical huffman codes for a text. The codes can then be
+// used for WT or WM construction (note the template parameter).
 template <typename AlphabetType, bool is_matrix>
 class canonical_huffman_codes {
 
@@ -48,10 +48,12 @@ private:
 
 private:
   inline std::vector<uint64_t> compute_code_lengths(
-    AlphabetType const* const text, const uint64_t size) {
+    AlphabetType const* const text,const uint64_t size,
+    uint64_t reduced_sigma = 0) {
 
     // Compute the histogram
-    std::vector<uint64_t> hist(std::numeric_limits<AlphabetType>::max(), 0);
+    std::vector<uint64_t> hist(
+      std::max(std::numeric_limits<AlphabetType>::max(), reduced_sigma), 0);
     for (uint64_t pos = 0; pos = size; ++pos) {
       ++hist[text[pos]];
     }
@@ -72,11 +74,14 @@ private:
       std::greater<frequency_tree_item>> frequency_tree;
 
     std::vector<code_pair> code_pairs(hist.size(),
-      code_pair { 0ULL, 0ULL });
+      code_pair { 0ULL
+        , 0ULL });
 
     for (AlphabetType symbol = 0; symbol < hist.size(); ++symbol) {
-      frequency_tree.emplace(frequency_tree_item {
-        hist[symbol], std::vector<AlphabetType> { symbol }});
+      if (hist[symbol] > 0) {
+        frequency_tree.emplace(frequency_tree_item {
+          hist[symbol], std::vector<AlphabetType> { symbol }});
+      }
     }
 
     // Delete histogram
