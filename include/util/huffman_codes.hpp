@@ -88,6 +88,8 @@ public:
 
 private:
   std::vector<code_pair> code_pairs_;
+  std::vector<uint64_t> codes_of_length_;
+  std::vector<AlphabetType> symbols_in_code_order_;
 
 private:
   void compute_code_lengths(
@@ -156,7 +158,11 @@ private:
         return code_pairs_[a].code_length < code_pairs_[b].code_length;
       });
     uint64_t code_word = 0;
-    for (uint64_t code_pos = 1; code_pos < code_length_order; ++code_pos) {
+    uint64_t code_pos = 0;
+    // The code lengths are correct, move to the second code word that has a
+    // code_lenght > 0. The first one gehts code_word = 0ULL.
+    while (code_pairs_[code_length_order[code_pos++]].code_length == 0) { }
+    for (; code_pos < code_length_order; ++code_pos) {
       code_word = (code_word + 1) <<
         (code_pairs_[code_length_order[code_pos]].code_length -
           code_pairs_[code_length_order[code_pos - 1]].code_length);
