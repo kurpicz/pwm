@@ -20,6 +20,12 @@ struct code_pair {
   uint64_t code_word;
 } __attribute__((packed)); // struct code_pair
 
+template <typename AlphabetType>
+struct decode_result {
+  AlphabetType symbol;
+  uint64_t code_length;
+} __attribute__((packed));
+
 // Class constructing canonical huffman codes for a text. The codes can then be
 // used for WT or WM construction (note the template parameter).
 template <typename AlphabetType, bool is_matrix>
@@ -27,27 +33,64 @@ class canonical_huffman_codes {
 
 public:
   canonical_huffman_codes(AlphabetType const* const text, const uint64_t size) {
-    auto code_lengths = compute_code_lengths(text, size);
+    compute_code_lengths(text, size);
     if (is_matrix) { // TODO: C++17 for if constexpr
-      code_pairs_ = compute_code_words_wavelet_matrix(std::move(code_lengths));
+      compute_code_words_wavelet_matrix();
     } else { // is_tree
-      code_pairs_ = compute_code_words_wavelet_tree(std::move(code_lengths));
+      compute_code_words_wavelet_tree();
     }
   }
 
-  code_pair& operator [](const uint64_t index) {
-    return code_pairs_[index];
+  // Returns code_length and code_word for a given symbol, w.r.t. the text that
+  // was used to create the canonical_huffman_codes-instance.
+  code_pair encode_symbol(AlphabetType symbol) const {
+    return code_pairs_[symbol];
   }
 
-  code_pair operator [](const uint64_t index) const {
-    return code_pairs_[index];
+  std::vector<uint64_t> encode_text(AlphabetType const* const text,
+    const uint64_t size) {
+
+    std::vector<uint64_t> result;
+
+    uint64_t cur_word = 0ULL;
+    uint64_t cur_word_pos = 0;
+    for (uint64_t pos = 0, cur_word_pos = 0; pos < size; ++pos) {
+      const auto code = encode_symbol(text[pos]);
+      if (cur_word_pos + code.code_length > 64) { // split code_word
+        cur_word << (64 - cur_word_pos);
+        cur_word |= code.code_word >> (64 - cur_word_pos);
+        result.emplace_back(cur_word);
+        cur_word = 0ULL;
+        cur_word |= (((1ULL << (64 - cur_word_pos)) - 1) | code.code_word);
+        cur_word_pos = (64 - cur_word_pos);
+      } else {
+        cur_word << code.code_length;
+        cur_word |= code.code_word;
+        cur_word_pos += code.code_length;
+      }
+      result.emplace_back(cur_word)
+    }
+    return result;
+  }
+
+  // Given an array of 64-bit words and an offset (from the beginning of the
+  // array), this function returns the first symbol (of the original alphabet)
+  // and the length of the code_word that was used to encode the symbol.
+  decode_result<AlphabetType> decode_symbol(
+    uint64_t const* const encoded_vector, const uint64_t offset) {
+
+
+  }
+
+  std::vector<AlphabetType> decode_text(const std::vector<uint64_t>& enc_text) {
+
   }
 
 private:
   std::vector<code_pair> code_pairs_;
 
 private:
-  inline std::vector<uint64_t> compute_code_lengths(
+  void compute_code_lengths(
     AlphabetType const* const text,const uint64_t size,
     uint64_t reduced_sigma = 0) {
 
@@ -73,9 +116,8 @@ private:
     std::priority_queue<frequency_tree_item, std::vector<frequency_tree_item>,
       std::greater<frequency_tree_item>> frequency_tree;
 
-    std::vector<code_pair> code_pairs(hist.size(),
-      code_pair { 0ULL
-        , 0ULL });
+    code_pairs_ = std::vector<code_pair>(hist.size(),
+      code_pair { 0ULL, 0ULL });
 
     for (AlphabetType symbol = 0; symbol < hist.size(); ++symbol) {
       if (hist[symbol] > 0) {
@@ -96,46 +138,39 @@ private:
       std::move(ft2.covered_symbols.begin(), ft2.covered_symbols.end,
         std::back_inserter(ft1.covered_symbols));
       for (const auto c : ft1.covered_symbols) {
-        ++code_pairs[c].code_length;
+        ++code_pairs_[c].code_length;
       }
       frequency_tree.emplace(frequency_tree_item {
         ft1.occurrences + ft2.occurrences, ft1.covered_symbols });
     }
-
-    // Return the code lengths (with each code_word beeing 0ULL)
-    return code_pairs;
   }
 
-  std::vector<code_pair> compute_code_words_wavelet_tree(
-    std::vector<code_pair>&& code_pairs) {
+  std::vector<code_pair> compute_code_words_wavelet_tree() {
 
-    std::vector<uint64_t> code_length_order(code_pairs.size(), 0);
-    for (uint64_t i = 0; i < code_pairs.size(); ++i) {
+    std::vector<uint64_t> code_length_order(code_pairs_.size(), 0);
+    for (uint64_t i = 0; i < code_pairs_.size(); ++i) {
       code_length_order[i] = i;
     }
     std::sort(code_length_order.begin(), code_length_order.end(),
       [](const uint64_t a, const uint64_t b) {
-        return code_pairs[a].code_length < code_pairs[b].code_length;
+        return code_pairs_[a].code_length < code_pairs_[b].code_length;
       });
     uint64_t code_word = 0;
     for (uint64_t code_pos = 1; code_pos < code_length_order; ++code_pos) {
       code_word = (code_word + 1) <<
-        (code_pairs[code_length_order[code_pos]].code_length -
-          code_pairs[code_length_order[code_pos - 1]].code_length);
-      code_pairs[code_length_order[code_pos]].code_word = code_word;
+        (code_pairs_[code_length_order[code_pos]].code_length -
+          code_pairs_[code_length_order[code_pos - 1]].code_length);
+      code_pairs_[code_length_order[code_pos]].code_word = code_word;
     }
-    return code_pairs;
   }
 
   std::vector<code_pair> compute_code_words_wavelet_matrix(
     std::vector<code_pair>&& code_pairs) {
 
-    auto res_pairs = compute_code_words_wavelet_tree(
-      std::forward<std::vector<code_pair>>(code_pairs));
-    for (auto& cp : res_pairs) {
-      ~res_pairs.code_word;
+    compute_code_words_wavelet_tree();
+    for (auto& cp : code_pairs_) {
+      ~code_pairs_.code_word;
     }
-    return res_pairs
   }
 }; // class canonical_huffman_codes
 

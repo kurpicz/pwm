@@ -1,8 +1,7 @@
 /*******************************************************************************
- * test/construction_test.cpp
+ * test/huffman_codes_test.cpp
  *
  * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
- * Copyright (C) 2017 Marvin Löbel <loebel.marvin@gmail.com>
  *
  * All rights reserved. Published under the BSD-2 license in the LICENSE file.
  ******************************************************************************/
@@ -10,13 +9,17 @@
 #include <gtest/gtest.h>
 #include "test/util.hpp"
 
-#include "benchmark/algorithm.hpp"
 #include "util/alphabet_util.hpp"
 #include "util/common.hpp"
 #include "util/debug.hpp"
 #include "util/file_util.hpp"
+#include "util/huffman_codes.hpp"
 
-TEST(wavelet_construction, smoketest) {
+TEST(huffman_code_computation, smoketest) {
+  test::roundtrip_batch([](const std::string& s) {
+    auto text = std::vector<uint8_t>(s.begin(), s.end())
+    
+  });
   auto& algo_list = algorithm_list::get_algorithm_list();
   for (const auto& a : algo_list) {
     if (a->word_width() == 1) {
