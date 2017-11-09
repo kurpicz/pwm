@@ -100,10 +100,10 @@ void roundtrip_batch(F f) {
 
 
   f("abcdebcdeabc");
-  // f("a");
-  // f("");
+  f("a");
+  f("");
 
-  // f("aaaaaaaaa");
+  f("aaaaaaaaa");
   f("banana");
   f("ananas");
   f("abcdefgh#defgh_abcde");

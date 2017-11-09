@@ -93,6 +93,11 @@ private:
       }
     }
 
+    // Cornder case: Text consists of just one character
+    if (frequency_tree.size() == 1) {
+      ++code_pairs_[frequency_tree.top().covered_symbols.front()].code_length;
+    }
+
     // Implicitly create the frequency three
     while (frequency_tree.size() > 1) {
       auto ft1 = frequency_tree.top();
