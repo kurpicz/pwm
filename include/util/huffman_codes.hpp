@@ -29,8 +29,9 @@ template <typename AlphabetType, bool is_matrix>
 class canonical_huffman_codes {
 
 public:
-  canonical_huffman_codes(AlphabetType const* const text, const uint64_t size) {
-    compute_codes_wt(text, size);
+  canonical_huffman_codes(AlphabetType const* const text, const uint64_t size,
+    const uint64_t reduced_sigma = 0) {
+    compute_codes_wt(text, size, reduced_sigma);
   }
 
   // Returns code_length and code_word for a given symbol, w.r.t. the text that
@@ -50,7 +51,7 @@ private:
 private:
   void compute_codes_wt(
     AlphabetType const* const text,const uint64_t size,
-    uint64_t reduced_sigma = 0) {
+    const uint64_t reduced_sigma = 0) {
 
     // Compute the histogram
     const uint64_t max_char = std::max(

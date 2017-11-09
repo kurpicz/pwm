@@ -39,13 +39,11 @@ static uint64_t reduce_alphabet(std::vector<AlphabetType>& text) {
       text[i] = static_cast<AlphabetType>(word_list.find(text[i])->second);
     }
   }
-  std::cout << "Max. char: " << max_char << std::endl;
   uint64_t levels = 0;
   while (max_char) {
     max_char >>= 1;
     ++levels;
   }
-  std::cout << "Levels: " << levels << std::endl;
   return levels;
 }
 
