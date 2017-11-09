@@ -1,5 +1,5 @@
 /*******************************************************************************
- * test/huffman_codes_test.cpp
+ * test/huffman_code_tests.cpp
  *
  * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
  *
@@ -7,6 +7,7 @@
  ******************************************************************************/
 
 #include <gtest/gtest.h>
+
 #include "test/util.hpp"
 
 #include "util/alphabet_util.hpp"
@@ -15,7 +16,7 @@
 #include "util/file_util.hpp"
 #include "util/huffman_codes.hpp"
 
-TEST(huffman_code_computation, smoketest) {
+TEST(huffman_code_tests, wt_codes) {
   test::roundtrip_batch([](const std::string& s) {
     auto text = std::vector<uint8_t>(s.begin(), s.end());
     canonical_huffman_codes<uint8_t, false> chc(text.data(), text.size());
@@ -25,7 +26,21 @@ TEST(huffman_code_computation, smoketest) {
     }
     ASSERT_EQ(encoded_text.size(), text.size());
     for (uint64_t i = 0; i < encoded_text.size(); ++i) {
-      // std::cout << encoded_text[i] << std::endl;
+      ASSERT_EQ(chc.decode_symbol(encoded_text[i]), text[i]);
+    }
+  });
+}
+
+TEST(huffman_code_tests, wm_codes) {
+  test::roundtrip_batch([](const std::string& s) {
+    auto text = std::vector<uint8_t>(s.begin(), s.end());
+    canonical_huffman_codes<uint8_t, true> chc(text.data(), text.size());
+    std::vector<uint64_t> encoded_text;
+    for (const auto c : text) {
+      encoded_text.emplace_back(chc.encode_symbol(c).code_word);
+    }
+    ASSERT_EQ(encoded_text.size(), text.size());
+    for (uint64_t i = 0; i < encoded_text.size(); ++i) {
       ASSERT_EQ(chc.decode_symbol(encoded_text[i]), text[i]);
     }
   });

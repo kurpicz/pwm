@@ -90,7 +90,6 @@ std::vector<uint8_t> ostream_to_bytes(Lambda f) {
 template<class F>
 void roundtrip_batch(F f) {
 
-
   std::vector<uint8_t> test {
     0,1,6,7,1,5,4,2,6,3
   };
@@ -154,7 +153,7 @@ void roundtrip_batch(F f) {
 
   f("struct Foo { uint8_t bar }");
 
-  // f("ABBCBCABA");
+  f("ABBCBCABA");
   f("abcabca");
   f("abbbbbbbbbbcbbbbbbbbbb");
 
@@ -176,7 +175,7 @@ void roundtrip_batch(F f) {
     224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239,
     240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255,
   };
-  // f(std::string(all_bytes.begin(), all_bytes.end()));
+  f(std::string(all_bytes.begin(), all_bytes.end()));
 
   f(
     "報チ申猛あち涙境ワセ周兵いわ郵入せすをだ漏告されて話巡わッき"

@@ -38,6 +38,8 @@ macro(generic_run_test test_target test_file
       ${PROJECT_SOURCE_DIR}/src/sequential_prefix_counting_single_scan.cpp
       ${PROJECT_SOURCE_DIR}/src/sequential_prefix_sorting.cpp
       )
+  else()
+    unset(CONSTRUCTION_ALGORITHMS) 
   endif()
 
   add_executable(${test_target}_testrunner
