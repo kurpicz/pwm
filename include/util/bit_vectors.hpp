@@ -14,9 +14,9 @@
 class bit_vectors {
 
 public:
-  inline bit_vectors() : size_(0) { }
+  bit_vectors() : size_(0) { }
 
-  inline bit_vectors(uint64_t size, uint64_t levels) : data_(levels),
+  bit_vectors(const uint64_t size, const uint64_t levels) : data_(levels),
     size_(size) {
     assert(levels != 0);
 
@@ -28,17 +28,24 @@ public:
     }
   }
 
-  inline bit_vectors(const std::vector<uint64_t>& level_sizes)
-  : data_(level_sizes.size()), size_(level_sizes.size()) {
-    assert(level_sizes.size() != 0);
+  //non-copyable
+  bit_vectors(const bit_vectors&) = delete;
+  bit_vectors& operator =(const bit_vectors&) = delete;
 
-
-  }
-
-  inline bit_vectors(bit_vectors&& other) : data_(std::move(other.data_)),
+  bit_vectors(bit_vectors&& other) : data_(std::move(other.data_)),
     size_(other.size_) { }
 
-  inline ~bit_vectors() {
+  bit_vectors& operator =(bit_vectors&& other) {
+    if (data_.size() > 0) {
+      delete[] data_[0];
+    }
+    data_ = std::move(other.data_);
+    size_ = other.size_;
+
+    return *this;
+  }
+
+  ~bit_vectors() {
     if (data_.size() > 0) {
       delete[] data_[0];
     }
@@ -58,16 +65,6 @@ public:
 
   inline std::vector<uint64_t*>& vec() {
     return data_;
-  }
-
-  inline bit_vectors& operator =(bit_vectors&& other) {
-    if (data_.size() > 0) {
-      delete[] data_[0];
-    }
-    data_ = std::move(other.data_);
-    size_ = other.size_;
-
-    return *this;
   }
 
 private:

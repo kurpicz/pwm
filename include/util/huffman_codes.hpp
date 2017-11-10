@@ -31,7 +31,11 @@ class canonical_huffman_codes {
 public:
   canonical_huffman_codes(AlphabetType const* const text, const uint64_t size,
     const uint64_t reduced_sigma = 0) {
-    compute_codes_wt(text, size, reduced_sigma);
+    compute_codes(compute_histogram(text, size, reduced_sigma));
+  }
+
+  canonical_huffman_codes(const std::vector<uint64_t>& histogram) {
+    compute_codes(histogram);
   }
 
   // Returns code_length and code_word for a given symbol, w.r.t. the text that
@@ -49,10 +53,9 @@ private:
   std::unordered_map<uint64_t, AlphabetType> decode_table_;
 
 private:
-  void compute_codes_wt(
-    AlphabetType const* const text,const uint64_t size,
-    const uint64_t reduced_sigma = 0) {
 
+  std::vector<uint64_t> compute_histogram(AlphabetType const* const text,
+    const uint64_t size, const uint64_t reduced_sigma = 0) {
     // Compute the histogram
     const uint64_t max_char = std::max(
       static_cast<decltype(reduced_sigma)>(
@@ -61,6 +64,11 @@ private:
     for (uint64_t pos = 0; pos < size; ++pos) {
       ++hist[text[pos]];
     }
+    return hist;
+  }
+
+  void compute_codes(const std::vector<uint64_t>& histogram) {
+
     struct frequency_tree_item {
       uint64_t occurrences;
       std::vector<AlphabetType> covered_symbols;
@@ -74,13 +82,14 @@ private:
     std::priority_queue<frequency_tree_item, std::vector<frequency_tree_item>,
       std::greater<frequency_tree_item>> frequency_tree;
 
-    code_pairs_ = std::vector<code_pair>(hist.size(),
+    code_pairs_ = std::vector<code_pair>(histogram.size(),
       code_pair { 0ULL, 0ULL });
 
-    for (uint64_t symbol = 0; symbol < hist.size(); ++symbol) {
-      if (hist[symbol] > 0) {
+    for (uint64_t symbol = 0; symbol < histogram.size(); ++symbol) {
+      if (histogram[symbol] > 0) {
         frequency_tree.emplace(frequency_tree_item {
-          hist[symbol], std::vector<AlphabetType> { AlphabetType(symbol) }});
+          histogram[symbol],
+          std::vector<AlphabetType> { AlphabetType(symbol) }});
       }
     }
 
