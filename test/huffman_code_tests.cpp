@@ -10,11 +10,11 @@
 
 #include "test/util.hpp"
 
+#include "huffman/huffman_codes.hpp"
 #include "util/alphabet_util.hpp"
 #include "util/common.hpp"
 #include "util/debug.hpp"
 #include "util/file_util.hpp"
-#include "util/huffman_codes.hpp"
 
 TEST(huffman_code_tests, wt_codes) {
   test::roundtrip_batch([](const std::string& s) {

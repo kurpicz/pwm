@@ -15,8 +15,8 @@
 #include <queue>
 #include <type_traits>
 
-#include "common.hpp"
-#include "macros.hpp"
+#include "util/common.hpp"
+#include "util/macros.hpp"
 
 struct code_pair {
   uint64_t code_length;
