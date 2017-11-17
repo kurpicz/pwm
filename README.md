@@ -12,6 +12,7 @@ Using these ideas, we have implemented:
 3. a parallel version of the algorithms using *domain decomposition* (*wx_dd_ps* and *wx_dd_ps*).
 4. a version of *pc* that scans the text just twice and fills all levels but the first level at once (indicated by an *_ss*-suffix).
 
+In addition, there are also a naive construction algorithms (*wx_naive*).
 Replace _wx_ with either _wt_ or _wm_ for the corresponding WT- or WM-construction algorithm.
 
 A detailed description and benchmarks of the implemented algorithms can be found in this [arXiv preprint](https://arxiv.org/abs/1702.07578).
