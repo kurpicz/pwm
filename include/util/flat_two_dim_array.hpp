@@ -74,6 +74,14 @@ public:
     return data_.size();
   }
 
+  inline const IndexType* operator [](const uint64_t index) const {
+    return data_[index];
+  }
+
+  inline IndexType* operator [](const uint64_t index) {
+    return data_[index];
+  }
+
   // TODO: Rename to data_vector
   inline const std::vector<IndexType*>& vec() const {
     return data_;

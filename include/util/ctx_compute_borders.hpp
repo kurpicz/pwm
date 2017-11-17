@@ -9,9 +9,9 @@
 #pragma once
 
 #include "bit_vectors.hpp"
+#include "border_hist_array.hpp"
 
 // TODO: WM/WT abstract that selects zeros and rho
-// TODO: flatten vectors where possible, to reduce indirection
 
 /// Keep calculated information for individual levels around
 template<bool is_matrix>
@@ -24,17 +24,8 @@ public:
 
   ctx_compute_borders(uint64_t const size, uint64_t const levels,
     rho_t const& rho)
-  : hist_(levels + 1, std::vector<uint64_t>(2)), rho_(&rho),
-    borders_(levels + 1, std::vector<uint64_t>(2)),
-    zeros_(levels, 0), bv_(levels, size), levels_(levels) {
-
-    for(uint64_t level = 0; level < levels_ + 1; ++level) {
-      hist_[level].reserve(hist_size(level));
-      hist_[level].resize(hist_size(level));
-      borders_[level].reserve(hist_size(level));
-      borders_[level].resize(hist_size(level));
-    }
-  }
+  : hist_(levels + 1), rho_(&rho), borders_(levels + 1), zeros_(levels, 0),
+    bv_(levels, size), levels_(levels) { }
 
   static bool constexpr compute_zeros = is_matrix;
   static bool constexpr compute_rho = false;
@@ -106,9 +97,9 @@ public:
   }
 
 private:
-  std::vector<std::vector<uint64_t>> hist_;
+  border_hist_array hist_;
   rho_t const* rho_ = nullptr;
-  std::vector<std::vector<uint64_t>> borders_;
+  border_hist_array borders_;
   std::vector<uint64_t> zeros_;
   bit_vectors bv_;
   uint64_t levels_;

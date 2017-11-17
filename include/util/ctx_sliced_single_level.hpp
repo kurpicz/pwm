@@ -10,10 +10,18 @@
 #pragma once
 
 #include "bit_vectors.hpp"
+#include "flat_two_dim_array.hpp"
 #include "permutation.hpp"
 
 // TODO: WM/WT abstract that selects zeros and rho
-// TODO: flatten vectors where possible, to reduce indirection
+
+struct helper_array_sizes {
+  static uint64_t level_size(const uint64_t, const uint64_t size) {
+    return size;
+  }
+}; // struct helper_array_sizes
+
+using helper_array =  flat_two_dim_array<uint64_t, helper_array_sizes>;
 
 template <bool is_matrix>
 class ctx_sliced_single_level {
@@ -22,12 +30,10 @@ public:
   ctx_sliced_single_level() = default;
 
   ctx_sliced_single_level(uint64_t const size, uint64_t const levels,
-    const uint64_t omp_size)
-    : hist_(omp_size, std::vector<uint64_t>(1ULL << levels, 0)),
-      borders_(omp_size, std::vector<uint64_t>(1ULL << levels, 0)),
-      zeros_(levels, 0), bv_(levels, size),
-      bit_reverse_(is_matrix ?
-        bit_reverse_permutation(levels - 1) : std::vector<uint64_t>(0)) { }
+    const uint64_t omp_size) : hist_(omp_size, 1ULL << levels),
+    borders_(omp_size, 1ULL << levels), zeros_(levels, 0), bv_(levels, size),
+    bit_reverse_(is_matrix ?
+      bit_reverse_permutation(levels - 1) : std::vector<uint64_t>(0)) { }
 
   uint64_t borders_size(uint64_t const level) {
     return 1ULL << level;
@@ -85,8 +91,8 @@ public:
   }
 
 private:
-  std::vector<std::vector<uint64_t>> hist_;
-  std::vector<std::vector<uint64_t>> borders_;
+  helper_array hist_;
+  helper_array borders_;
   std::vector<uint64_t> zeros_;
   bit_vectors bv_;
   std::vector<uint64_t> bit_reverse_;

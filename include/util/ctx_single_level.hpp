@@ -13,7 +13,6 @@
 #include "permutation.hpp"
 
 // TODO: WM/WT abstract that selects zeros and rho
-// TODO: flatten vectors where possible, to reduce indirection
 
 // Overwrite information for each level
 template<bool is_matrix>

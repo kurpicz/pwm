@@ -11,9 +11,9 @@
 
 #include "permutation.hpp"
 #include "bit_vectors.hpp"
+#include "border_hist_array.hpp"
 
 // TODO: WM/WT abstract that selects zeros and rho
-// TODO: flatten vectors where possible, to reduce indirection
 
 /// Keep calculated information for individual levels around
 template<bool is_matrix>
@@ -25,20 +25,14 @@ public:
   ctx_all_levels() = default;
 
   ctx_all_levels(uint64_t const size, uint64_t const levels, rho_t const& rho)
-  : hist_(levels + 1, std::vector<uint64_t>(2)), rho_(&rho),
-    borders_(1ULL << levels, 0), zeros_(levels, 0), bv_(levels, size) {
-
-    for(size_t level = 0; level < (levels + 1); level++) {
-      hist_[level].reserve(hist_size(level));
-      hist_[level].resize(hist_size(level));
-    }
-  }
+  : hist_(levels + 1), rho_(&rho),
+    borders_(1ULL << levels, 0), zeros_(levels, 0), bv_(levels, size) { }
 
   static bool constexpr compute_zeros = is_matrix;
   static bool constexpr compute_rho = false;
 
   uint64_t hist_size(uint64_t const level) {
-    return 1ull << level;
+    return 1ULL << level;
   }
 
   uint64_t& hist(uint64_t const level, uint64_t const i) {
@@ -78,7 +72,7 @@ public:
   }
 
 private:
-  std::vector<std::vector<uint64_t>> hist_;
+  border_hist_array hist_;
   rho_t const* rho_ = nullptr;
   std::vector<uint64_t> borders_;
   std::vector<uint64_t> zeros_;
