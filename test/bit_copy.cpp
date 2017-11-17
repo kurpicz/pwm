@@ -124,9 +124,4 @@ TEST(BitCopy, test2) {
 
 }
 
-TEST(BitCopy, env_debug) {
-  std::cout << "size_t size: " << sizeof(size_t) * CHAR_BIT << "\n";
-  std::cout << "omp size: " << omp_get_max_threads() << "\n";
-}
-
 /******************************************************************************/
