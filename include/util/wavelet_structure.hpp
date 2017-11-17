@@ -10,6 +10,7 @@
 
 #include <vector>
 #include <type_traits>
+
 #include "bit_vectors.hpp"
 
 class wavelet_structure {

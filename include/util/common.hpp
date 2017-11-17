@@ -14,7 +14,6 @@
 #include <cassert>
 #include <type_traits>
 #include <climits>
-#include <cstring>
 
 #include "permutation.hpp"
 
@@ -34,17 +33,17 @@ void drop_me(T&& t) {
   std::remove_reference_t<T>(std::move(t));
 }
 
-constexpr size_t log2(size_t n) {
+constexpr uint64_t log2(uint64_t n) {
   return (n < 2) ? 1 : 1 + log2(n / 2);
 }
 
 template<typename WordType = uint64_t, typename bv_t>
-inline auto bit_at(const bv_t& bv, size_t i) -> bool {
+inline auto bit_at(const bv_t& bv, uint64_t i) -> bool {
   constexpr WordType BITS = (sizeof(WordType) * CHAR_BIT);
   constexpr WordType MOD_MASK = BITS - 1;
 
-  size_t offset = i / BITS;
-  size_t word_offset = i & MOD_MASK;
+  uint64_t offset = i / BITS;
+  uint64_t word_offset = i & MOD_MASK;
   return (bv[offset] >> (MOD_MASK - word_offset)) & 1ull;
 }
 

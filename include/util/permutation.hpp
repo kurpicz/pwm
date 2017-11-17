@@ -37,10 +37,10 @@ inline auto rho_identity(uint64_t /*levels*/) {
 inline auto rho_bit_reverse(uint64_t levels) {
   auto bit_reverse = std::vector<std::vector<uint64_t>>(levels);
   bit_reverse[levels - 1] = bit_reverse_permutation(levels - 1);
-  for(size_t level = levels - 1; level > 0; level--) {
+  for(uint64_t level = levels - 1; level > 0; level--) {
     bit_reverse[level - 1] =
       std::vector<uint64_t>(bit_reverse[level].size() >> 1);
-    for(size_t i = 0; i < bit_reverse[level - 1].size(); i++) {
+    for(uint64_t i = 0; i < bit_reverse[level - 1].size(); i++) {
       bit_reverse[level - 1][i] = bit_reverse[level][i] >> 1;
     }
   }
@@ -57,7 +57,7 @@ template<>
 struct rho_dispatch<true> {
   using type = decltype(rho_bit_reverse(0));
 
-  static auto create(size_t levels) {
+  static auto create(uint64_t levels) {
     return rho_bit_reverse(levels);
   }
 };
@@ -66,7 +66,7 @@ template<>
 struct rho_dispatch<false> {
   using type = decltype(rho_identity(0));
 
-  static auto create(size_t levels) {
+  static auto create(uint64_t levels) {
     return rho_identity(levels);
   }
 };

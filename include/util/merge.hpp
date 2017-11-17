@@ -232,7 +232,7 @@ inline auto merge_bit_vectors(uint64_t size, uint64_t levels, uint64_t shards,
     triple_loop_exit:; // we are done
   }
 
-  auto r = bit_vectors(size, levels);
+  auto r = bit_vectors(levels, size);
   auto& _bv = r.vec();
 
   #pragma omp parallel

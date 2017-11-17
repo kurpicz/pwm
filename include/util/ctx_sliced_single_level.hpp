@@ -25,7 +25,7 @@ public:
     const uint64_t omp_size)
     : hist_(omp_size, std::vector<uint64_t>(1ULL << levels, 0)),
       borders_(omp_size, std::vector<uint64_t>(1ULL << levels, 0)),
-      zeros_(levels, 0), bv_(size, levels),
+      zeros_(levels, 0), bv_(levels, size),
       bit_reverse_(is_matrix ?
         bit_reverse_permutation(levels - 1) : std::vector<uint64_t>(0)) { }
 

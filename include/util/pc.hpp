@@ -38,6 +38,7 @@ void pc(AlphabetType const* text, uint64_t const size, uint64_t const levels,
     bv[0][size >> 6] = word;
   }
 
+
   // The number of 0s at the last level is the number of "even" characters
   if (ContextType::compute_zeros) {
     for (uint64_t i = 0; i < cur_max_char; i += 2) {

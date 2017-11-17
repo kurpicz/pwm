@@ -22,7 +22,7 @@ class ctx_single_level {
 public:
   ctx_single_level(uint64_t const size, uint64_t const levels)
   : hist_(1ULL << levels, 0), borders_(1ULL << levels, 0),
-    zeros_(levels, 0), bv_(size, levels),
+    zeros_(levels, 0), bv_(levels, size),
     bit_reverse_(is_matrix ?
       bit_reverse_permutation(levels - 1) : std::vector<uint64_t>(0)) { }
 

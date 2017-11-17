@@ -26,7 +26,7 @@ public:
 
   ctx_all_levels(uint64_t const size, uint64_t const levels, rho_t const& rho)
   : hist_(levels + 1, std::vector<uint64_t>(2)), rho_(&rho),
-    borders_(1ULL << levels, 0), zeros_(levels, 0), bv_(size, levels) {
+    borders_(1ULL << levels, 0), zeros_(levels, 0), bv_(levels, size) {
 
     for(size_t level = 0; level < (levels + 1); level++) {
       hist_[level].reserve(hist_size(level));

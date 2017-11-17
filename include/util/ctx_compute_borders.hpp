@@ -26,7 +26,7 @@ public:
     rho_t const& rho)
   : hist_(levels + 1, std::vector<uint64_t>(2)), rho_(&rho),
     borders_(levels + 1, std::vector<uint64_t>(2)),
-    zeros_(levels, 0), bv_(size, levels), levels_(levels) {
+    zeros_(levels, 0), bv_(levels, size), levels_(levels) {
 
     for(uint64_t level = 0; level < levels_ + 1; ++level) {
       hist_[level].reserve(hist_size(level));
