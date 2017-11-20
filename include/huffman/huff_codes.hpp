@@ -1,5 +1,5 @@
 /*******************************************************************************
- * include/util/huffman_codes.hpp
+ * include/huffman/huff_codes.hpp
  *
  * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
  *
@@ -10,13 +10,13 @@
 
 #include <algorithm>
 #include <cstdint>
-#include <limits>
 #include <unordered_map>
 #include <queue>
 #include <type_traits>
 
 #include "util/common.hpp"
 #include "util/macros.hpp"
+#include "util/histogram.hpp"
 
 struct code_pair {
   uint64_t code_length;
@@ -26,26 +26,31 @@ struct code_pair {
 // Class constructing canonical huffman codes for a text. The codes can then be
 // used for WT or WM construction (note the template parameter).
 template <typename AlphabetType, bool is_matrix>
-class canonical_huffman_codes {
+class canonical_huff_codes {
 
 public:
-  canonical_huffman_codes(AlphabetType const* const text, const uint64_t size,
+  canonical_huff_codes(AlphabetType const* const text, const uint64_t size,
     const uint64_t reduced_sigma = 0) {
-    compute_codes(compute_histogram(text, size, reduced_sigma));
+    const auto hist = compute_initial_histogram(text, size, reduced_sigma);
+    compute_codes(std::forward<decltype(hist)>(hist));
   }
 
-  canonical_huffman_codes(const std::vector<uint64_t>& histogram) {
+  canonical_huff_codes(const std::vector<uint64_t>& histogram) {
     compute_codes(histogram);
   }
 
   // Returns code_length and code_word for a given symbol, w.r.t. the text that
-  // was used to create the canonical_huffman_codes-instance.
-  code_pair encode_symbol(AlphabetType symbol) const {
+  // was used to create the canonical_huff_codes-instance.
+  inline code_pair encode_symbol(AlphabetType symbol) const {
     return code_pairs_[symbol];
   }
 
-  AlphabetType decode_symbol(const uint64_t encoded_symbol) {
+  inline AlphabetType decode_symbol(const uint64_t encoded_symbol) {
     return decode_table_[encoded_symbol];
+  }
+
+  inline const std::vector<code_pair>& code_pairs() const {
+    return code_pairs_;
   }
 
 private:
@@ -53,19 +58,6 @@ private:
   std::unordered_map<uint64_t, AlphabetType> decode_table_;
 
 private:
-
-  std::vector<uint64_t> compute_histogram(AlphabetType const* const text,
-    const uint64_t size, const uint64_t reduced_sigma = 0) {
-    // Compute the histogram
-    const uint64_t max_char = std::max(
-      static_cast<decltype(reduced_sigma)>(
-        std::numeric_limits<AlphabetType>::max() + 1), reduced_sigma);
-    std::vector<uint64_t> hist(max_char, 0);
-    for (uint64_t pos = 0; pos < size; ++pos) {
-      ++hist[text[pos]];
-    }
-    return hist;
-  }
 
   void compute_codes(const std::vector<uint64_t>& histogram) {
 
@@ -148,6 +140,6 @@ private:
     }
   }
 
-}; // class canonical_huffman_codes
+}; // class canonical_huff_codes
 
 /******************************************************************************/
