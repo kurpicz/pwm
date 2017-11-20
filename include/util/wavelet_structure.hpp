@@ -32,11 +32,15 @@ public:
   inline wavelet_structure(wavelet_structure&& other) = default;
   inline wavelet_structure& operator =(wavelet_structure&& other) = default;
 
-  inline std::vector<uint64_t*> const& raw_bvs() const {
-    return bvs_.vec();
+  inline uint64_t levels() const {
+    return bvs_.levels();
   }
 
-  inline std::vector<uint64_t> const& raw_zeros() const {
+  inline bit_vectors const& bvs() const {
+    return bvs_;
+  }
+
+  inline std::vector<uint64_t> const& zeros() const {
     return zeros_;
   }
 private:

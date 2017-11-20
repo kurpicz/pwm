@@ -44,7 +44,7 @@ inline auto bit_at(const bv_t& bv, uint64_t i) -> bool {
 
   uint64_t offset = i / BITS;
   uint64_t word_offset = i & MOD_MASK;
-  return (bv[offset] >> (MOD_MASK - word_offset)) & 1ull;
+  return (bv[offset] >> (MOD_MASK - word_offset)) & 1ULL;
 }
 
 /******************************************************************************/
