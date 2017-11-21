@@ -8,7 +8,7 @@
 #pragma once
 
 template <typename AlphabetType, typename ContextType>
-void pc(AlphabetType const* text, uint64_t const size, uint64_t const levels,
+void pc(AlphabetType const* text, const uint64_t size, const uint64_t levels,
   ContextType& ctx) {
   uint64_t cur_max_char = (1 << levels);
 

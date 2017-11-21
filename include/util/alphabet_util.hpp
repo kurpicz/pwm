@@ -42,6 +42,7 @@ static uint64_t reduce_alphabet(std::vector<AlphabetType>& text) {
   return max_char;
 }
 
+[[gnu::unused]] // TODO: C++17 [[maybe_unused]] 
 static uint64_t levels_for_max_char(uint64_t max_char) {
   uint64_t levels = 0;
   while (max_char) {
