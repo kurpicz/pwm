@@ -34,7 +34,8 @@ TEST(huffman_code_tests, wt_codes) {
 TEST(huffman_code_tests, wt_codes_reduced) {
   test::roundtrip_batch([](const std::string& s) {
     auto text = std::vector<uint8_t>(s.begin(), s.end());
-    uint64_t reduced_sigma = reduce_alphabet(text);
+    uint64_t max_char = reduce_alphabet(text);
+    uint64_t reduced_sigma = levels_for_max_char(max_char);
     canonical_huff_codes<uint8_t, false> chc(
       text.data(), text.size(), reduced_sigma);
     std::vector<uint64_t> encoded_text;
@@ -66,7 +67,8 @@ TEST(huffman_code_tests, wm_codes) {
 TEST(huffman_code_tests, wm_codes_reduced) {
   test::roundtrip_batch([](const std::string& s) {
     auto text = std::vector<uint8_t>(s.begin(), s.end());
-    uint64_t reduced_sigma = reduce_alphabet(text);
+    uint64_t max_char = reduce_alphabet(text);
+    uint64_t reduced_sigma = levels_for_max_char(max_char);
     canonical_huff_codes<uint8_t, true> chc(
       text.data(), text.size(), reduced_sigma);
     std::vector<uint64_t> encoded_text;

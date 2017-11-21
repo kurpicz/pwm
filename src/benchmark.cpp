@@ -89,6 +89,7 @@ int32_t main(int32_t argc, char const* argv[]) {
     std::cout << std::endl << "Text: " << path << std::endl;
     void* txt_prt = nullptr;
     uint64_t text_size = 0;
+    uint64_t max_char = 0;
     uint64_t levels = 0;
     std::vector<uint8_t> text_uint8;
     std::vector<uint16_t> text_uint16;
@@ -100,22 +101,26 @@ int32_t main(int32_t argc, char const* argv[]) {
     if (word_width == 1) {
       text_uint8 = file_to_vector<1>(path);
       text_size = text_uint8.size();
-      levels = reduce_alphabet(text_uint8);
+      max_char = reduce_alphabet(text_uint8);
+      levels = levels_for_max_char(max_char);
       txt_prt = &text_uint8;
     } else if (word_width == 2) {
       text_uint16 = file_to_vector<2>(path);
       text_size = text_uint16.size();
-      levels = reduce_alphabet(text_uint16);
+      max_char = reduce_alphabet(text_uint16);
+      levels = levels_for_max_char(max_char);
       txt_prt = &text_uint16;
     } else if (word_width == 4) {
       text_uint32 = file_to_vector<4>(path);
       text_size = text_uint32.size();
-      levels = reduce_alphabet(text_uint32);
+      max_char = reduce_alphabet(text_uint32);
+      levels = levels_for_max_char(max_char);
       txt_prt = &text_uint32;
     } else if (word_width == 8) {
       text_uint64 = file_to_vector<8>(path);
       text_size = text_uint64.size();
-      levels = reduce_alphabet(text_uint64);
+      max_char = reduce_alphabet(text_uint64);
+      levels = levels_for_max_char(max_char);
       txt_prt = &text_uint64;
     } else {
       std::cerr << "You entered an invalid number of bytes per character "
