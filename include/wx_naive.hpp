@@ -22,12 +22,14 @@ public:
   static constexpr bool    is_parallel = false;
   static constexpr bool    is_tree     = true;
   static constexpr uint8_t word_width  = sizeof(AlphabetType);
+  static constexpr bool    is_huffman_shaped = false;
 
-    static wavelet_structure compute(AlphabetType const* const text,
-                                     const uint64_t size,
-                                     const uint64_t levels)
-    {
-    if(size == 0) { return wavelet_structure(); }
+  static wavelet_structure compute(AlphabetType const* const text,
+    const uint64_t size, const uint64_t levels) {
+
+    if(size == 0) {
+      return wavelet_structure();
+    }
 
     auto _bv = bit_vectors(levels, size);
     auto& bv = _bv.vec();
@@ -80,13 +82,14 @@ public:
   static constexpr bool    is_parallel = false;
   static constexpr bool    is_tree     = false;
   static constexpr uint8_t word_width  = sizeof(AlphabetType);
+  static constexpr bool    is_huffman_shaped = false;
 
-    static wavelet_structure compute(AlphabetType const* const text,
-                                     const uint64_t size,
-                                     const uint64_t levels)
-    {
+  static wavelet_structure compute(AlphabetType const* const text,
+    const uint64_t size, const uint64_t levels) {
 
-    if(size == 0) { return wavelet_structure(); }
+    if(size == 0) {
+      return wavelet_structure();
+    }
 
     auto _bv = bit_vectors(levels, size);
     auto _zeros = std::vector<size_t>(levels, 0);

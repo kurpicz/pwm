@@ -22,10 +22,11 @@ public:
   static constexpr bool  is_parallel = false;
   static constexpr bool  is_tree   = !is_matrix;
   static constexpr uint8_t word_width  = sizeof(AlphabetType);
+  static constexpr bool  is_huffman_shaped = false;
 
   static wavelet_structure compute(AlphabetType const* const text,
-                   const uint64_t size,
-                   const uint64_t levels) {
+    const uint64_t size, const uint64_t levels) {
+
     if(size == 0) {
       return wavelet_structure();
     }
@@ -34,7 +35,7 @@ public:
 
     pc(text, size, levels, ctx);
 
-    if (ctx_t::compute_zeros)  {
+    if (ctx_t::compute_zeros) {
       return wavelet_structure(
         std::move(ctx.bv()), std::move(ctx.zeros()));
     } else {

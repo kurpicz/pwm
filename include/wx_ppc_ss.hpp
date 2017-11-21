@@ -20,6 +20,7 @@ public:
   static constexpr bool is_parallel = true;
   static constexpr bool is_tree     = !is_matrix;
   static constexpr uint8_t word_width = sizeof(AlphabteType);
+  static constexpr bool  is_huffman_shaped = false;
 
   static wavelet_structure compute(AlphabteType const* const text,
                                    const uint64_t size,

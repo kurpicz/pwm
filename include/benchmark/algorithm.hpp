@@ -64,6 +64,7 @@ public:
   virtual bool is_parallel() const = 0;
   virtual bool is_tree() const = 0;
   virtual uint8_t word_width() const = 0;
+  virtual bool is_huffman_shaped() const = 0;
 
   std::string name() const {
     return name_;
@@ -133,6 +134,10 @@ public:
 
   uint8_t word_width() const override {
     return Algorithm::word_width;
+  }
+
+  bool is_huffman_shaped() const override {
+    return Algorithm::is_huffman_shaped;
   }
 
 }; // class concrete_algorithm
