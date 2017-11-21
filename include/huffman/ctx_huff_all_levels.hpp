@@ -1,5 +1,5 @@
 /*******************************************************************************
- * include/huffman/huff_ctx_all_levels.hpp
+ * include/huffman/ctx_huff_all_levels.hpp
  *
  * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
  *
@@ -14,14 +14,14 @@
 
 /// Keep calculated information for individual levels around
 template<bool is_matrix>
-class huff_ctx_all_levels {
+class ctx_huff_all_levels {
   
 public:
   using rho_t = typename rho_dispatch<is_matrix>::type;
 
-  ctx_all_levels() = default;
+  ctx_huff_all_levels() = default;
 
-  ctx_all_levels(const std::vector<uint64_t>& sizes, uint64_t const levels,
+  ctx_huff_all_levels(const std::vector<uint64_t>& sizes, uint64_t const levels,
     rho_t const& rho)
   : hist_(levels + 1), rho_(&rho),
     borders_(1ULL << levels, 0), zeros_(levels, 0), bv_(levels, sizes) { }
@@ -75,6 +75,6 @@ private:
   std::vector<uint64_t> borders_;
   std::vector<uint64_t> zeros_;
   huff_bit_vectors bv_;
-}; // class ctx_all_levels
+}; // class ctx_huff_all_levels
 
 /******************************************************************************/

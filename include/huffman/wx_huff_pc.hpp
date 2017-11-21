@@ -1,5 +1,5 @@
 /*******************************************************************************
- * include/huffman/huff_wx_pc.hpp
+ * include/huffman/wx_huff_pc.hpp
  *
  * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
  *
@@ -11,10 +11,10 @@
 #include "huff_ctx_all_levels.hpp"
 
 template <typename AlphabetType, bool is_matrix>
-class huff_wx_pc {
+class wx_huff_pc {
   using ctx_t = huff_ctx_all_levels<is_matrix>;
 
 
-}; // class huff_wx_pc
+}; // class wx_huff_pc
 
 /******************************************************************************/
