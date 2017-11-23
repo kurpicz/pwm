@@ -8,9 +8,10 @@
 
 #pragma once
 
-template <typename AlphabetType, typename ContextType>
-void ps(AlphabetType const* const text, uint64_t const size,
-  uint64_t const levels, ContextType& ctx, AlphabetType* const sorted_text) {
+template <typename AlphabetType, typename ContextType, typename InputType>
+void ps(const InputType& text, uint64_t const size, const uint64_t levels,
+  ContextType& ctx, AlphabetType* const sorted_text) {
+  
   uint64_t cur_max_char = (1 << levels);
 
   auto& zeros = ctx.zeros();

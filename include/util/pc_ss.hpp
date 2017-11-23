@@ -8,9 +8,9 @@
 
 #pragma once
 
-template <typename AlphabetType, typename ContextType>
-void pc_ss(AlphabetType const* const text, uint64_t const size,
-  uint64_t const levels, ContextType& ctx) {
+template <typename InputType, typename ContextType>
+void pc_ss(const InputType& text, uint64_t const size, const uint64_t levels,
+  ContextType& ctx) {
 
   auto& bv = ctx.bv().vec();
 

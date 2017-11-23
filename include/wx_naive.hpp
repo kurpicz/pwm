@@ -24,8 +24,9 @@ public:
   static constexpr uint8_t word_width  = sizeof(AlphabetType);
   static constexpr bool    is_huffman_shaped = false;
 
-  static wavelet_structure compute(AlphabetType const* const text,
-    const uint64_t size, const uint64_t levels) {
+  template <typename InputType>
+  static wavelet_structure compute(const InputType& text, const uint64_t size,
+    const uint64_t levels) {
 
     if(size == 0) {
       return wavelet_structure();
@@ -84,7 +85,8 @@ public:
   static constexpr uint8_t word_width  = sizeof(AlphabetType);
   static constexpr bool    is_huffman_shaped = false;
 
-  static wavelet_structure compute(AlphabetType const* const text,
+  template <typename InputType>
+  static wavelet_structure compute(const InputType& text,
     const uint64_t size, const uint64_t levels) {
 
     if(size == 0) {

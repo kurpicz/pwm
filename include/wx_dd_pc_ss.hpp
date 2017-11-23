@@ -28,7 +28,8 @@ public:
   static constexpr uint8_t word_width  = sizeof(AlphabetType);
   static constexpr bool  is_huffman_shaped = false;
 
-  static wavelet_structure compute(AlphabetType const* const global_text,
+  template <typename InputType>
+  static wavelet_structure compute(const InputType& global_text,
     const uint64_t size, const uint64_t levels) {
 
     if(size == 0) { return wavelet_structure(); }
@@ -57,7 +58,7 @@ public:
       const uint64_t offset = (omp_rank * (size / omp_size)) +
         std::min<uint64_t>(omp_rank, size % omp_size);
 
-      const AlphabetType* text = global_text + offset;
+      const AlphabetType* text = global_text.data() + offset;
 
       pc_ss(text, local_size, levels, ctxs[omp_rank]);
     }
