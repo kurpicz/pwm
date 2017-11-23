@@ -18,13 +18,16 @@ template <typename AlphabetType, uint64_t buffer_size=1024*1024>
 class file_stream {
 
 public:
-  file_stream(const std::string& file_name) : max_text_pos_(0) {
+  file_stream(const std::string& file_name, const uint64_t offset=0)
+  : offset_(offset), max_text_pos_(0) {
+
     file_descriptor_ = open(file_name.c_str(), O_RDONLY);
     if (file_descriptor_ == -1) {
       std::exit(-1);
     }
     // We will only scan the text in 
     posix_fadvise(file_descriptor_, 0, 0, 1);
+    reset_stream();
     read_next_buffer();
     --max_text_pos_; // Position starts at 0; we add buffer_size elements.
   }
@@ -34,7 +37,7 @@ public:
   }
 
   void reset_stream() {
-    if (lseek(file_descriptor_, 0, SEEK_SET) < 0) {
+    if (lseek(file_descriptor_, offset_, SEEK_SET) < 0) {
       std::exit(-1);
     }
   }
@@ -57,6 +60,7 @@ private:
   }
 
 private:
+  uint64_t offset_;
   uint64_t max_text_pos_;
   std::array<AlphabetType, buffer_size> buffer_;
   int32_t file_descriptor_;
