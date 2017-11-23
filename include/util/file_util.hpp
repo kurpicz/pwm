@@ -31,7 +31,8 @@ static void vector_to_file(const std::vector<Type>& vec,
   const std::string& file_name) {
 
   std::ofstream stream(file_name.c_str(), std::ios::binary | std::ios::out);
-  stream.write(reinterpret_cast<char*>(vec.data()), sizeof(Type) * vec.size());
+  stream.write(reinterpret_cast<const char*>(vec.data()),
+    sizeof(Type) * vec.size());
   stream.close();
 }
 
