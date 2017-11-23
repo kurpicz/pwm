@@ -26,4 +26,13 @@ static std::vector<typename type_for_bytes<BytesPerWord>::type> file_to_vector(
   return result;
 }
 
+template <typename Type>
+static void vector_to_file(const std::vector<Type>& vec,
+  const std::string& file_name) {
+
+  std::ofstream stream(file_name.c_str(), std::ios::binary | std::ios::out);
+  stream.write(reinterpret_cast<char*>(vec.data()), sizeof(Type) * vec.size());
+  stream.close();
+}
+
 /******************************************************************************/
