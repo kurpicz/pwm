@@ -61,7 +61,7 @@ public:
       const uint64_t offset = (omp_rank * (size / omp_size)) +
         std::min<uint64_t>(omp_rank, size % omp_size);
 
-      AlphabetType const* text = global_text.data() + offset;
+      AlphabetType const* text = global_text + offset;
       AlphabetType* sorted_text = global_sorted_text.data() + offset;
 
       ps(text, local_size, levels, ctxs[omp_rank], sorted_text);
