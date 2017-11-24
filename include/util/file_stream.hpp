@@ -15,10 +15,10 @@
 #include "util/macros.hpp"
 
 template <typename AlphabetType, uint64_t buffer_size=1024*1024>
-class file_stream {
+class ifile_stream {
 
 public:
-  file_stream(const std::string& file_name, const uint64_t offset=0)
+  ifile_stream(const std::string& file_name, const uint64_t offset=0)
   : offset_(offset), max_text_pos_(0) {
 
     file_descriptor_ = open(file_name.c_str(), O_RDONLY);
@@ -32,7 +32,7 @@ public:
     --max_text_pos_; // Position starts at 0; we add buffer_size elements.
   }
 
-  ~file_stream() {
+  ~ifile_stream() {
     close(file_descriptor_);
   }
 
@@ -64,6 +64,54 @@ private:
   uint64_t max_text_pos_;
   std::array<AlphabetType, buffer_size> buffer_;
   int32_t file_descriptor_;
-}; // class file_stream
+}; // class ifile_stream
+
+template <typename AlphabetType, uint64_t buffer_size=1024*1024>
+class ofile_stream {
+
+public:
+  ofile_stream(const std::string& file_name) : buffer_first_pos_(0) {
+    file_descriptor_ = open(file_name.c_str(), O_RDWR | O_CREAT, S_IRWXU);
+    if (file_descriptor_ == -1) {
+      std::exit(-1);
+    }
+  }
+
+  ~ofile_stream() {
+    write_buffer();
+    close(file_descriptor_);
+  }
+
+  AlphabetType& operator [](const uint64_t index) {
+    if (PWM_UNLIKELY(index < buffer_first_pos_ ||
+      index >= buffer_first_pos_ + buffer_size)) {
+      read_buffer(index);
+    }
+    return buffer_[index % buffer_size];
+  }
+
+private:
+  inline void read_buffer(const uint64_t index) {
+    write_buffer();
+    if (lseek(file_descriptor_, index / buffer_size, SEEK_SET) < 0) {
+      std::exit(-1);
+    }
+  }
+
+  inline void write_buffer() {
+    int64_t bytes_written = write(file_descriptor_, buffer_.data(),
+      buffer_size * sizeof(AlphabetType));
+    if (PWM_UNLIKELY(bytes_written) == -1) {
+      std::exit(-1);
+    }
+  }
+
+private:
+  uint64_t buffer_first_pos_;
+  uint64_t max_text_pos_;
+  std::array<AlphabetType, buffer_size> buffer_;
+  int32_t file_descriptor_;
+
+}; // class ofile_stream
 
 /******************************************************************************/
