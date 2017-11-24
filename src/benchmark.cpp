@@ -65,6 +65,9 @@ int32_t main(int32_t argc, char const* argv[]) {
   TCLAP::SwitchArg memory_arg("", "memory",
     "Compute peak memory during construction.", false);
   cmd.add(memory_arg);
+  TCLAP::SwitchArg semi_external_arg("e", "semi_external",
+    "Stream the input and output instead of keeping it in RAM.", false);
+  cmd.add(semi_external_arg);
   cmd.parse( argc, argv );
 
   auto& algo_list = algorithm_list::get_algorithm_list();
@@ -84,6 +87,7 @@ int32_t main(int32_t argc, char const* argv[]) {
   const bool no_trees = no_trees_arg.getValue();
   const bool no_matrices = no_matrices_arg.getValue();
   const bool memory = memory_arg.getValue();
+  const bool semi_external = semi_external_arg.getValue();
 
   for (const auto& path : file_paths) {
     std::cout << std::endl << "Text: " << path << std::endl;
@@ -91,6 +95,7 @@ int32_t main(int32_t argc, char const* argv[]) {
     uint64_t text_size = 0;
     uint64_t max_char = 0;
     uint64_t levels = 0;
+    std::string txt_path;
     std::vector<uint8_t> text_uint8;
     std::vector<uint16_t> text_uint16;
     std::vector<uint32_t> text_uint32;
@@ -98,35 +103,60 @@ int32_t main(int32_t argc, char const* argv[]) {
 #ifdef MALLOC_COUNT
     malloc_count_reset_peak();
 #endif
-    if (word_width == 1) {
-      text_uint8 = file_to_vector<1>(path);
-      text_size = text_uint8.size();
-      max_char = reduce_alphabet(text_uint8);
-      levels = levels_for_max_char(max_char);
-      txt_prt = &text_uint8;
-    } else if (word_width == 2) {
-      text_uint16 = file_to_vector<2>(path);
-      text_size = text_uint16.size();
-      max_char = reduce_alphabet(text_uint16);
-      levels = levels_for_max_char(max_char);
-      txt_prt = &text_uint16;
-    } else if (word_width == 4) {
-      text_uint32 = file_to_vector<4>(path);
-      text_size = text_uint32.size();
-      max_char = reduce_alphabet(text_uint32);
-      levels = levels_for_max_char(max_char);
-      txt_prt = &text_uint32;
-    } else if (word_width == 8) {
-      text_uint64 = file_to_vector<8>(path);
-      text_size = text_uint64.size();
-      max_char = reduce_alphabet(text_uint64);
-      levels = levels_for_max_char(max_char);
-      txt_prt = &text_uint64;
+    if (semi_external) {
+      if (word_width == 1) {
+        auto reduced_result = reduce_alphabet_stream<uint8_t>(path);
+        txt_path = reduced_result.file_name;
+        text_size = reduced_result.file_size;
+        max_char = reduced_result.max_char;
+      } else if (word_width == 2) {
+        auto reduced_result = reduce_alphabet_stream<uint16_t>(path);
+        txt_path = reduced_result.file_name;
+        text_size = reduced_result.file_size;
+        max_char = reduced_result.max_char;
+      } else if (word_width == 4) {
+        auto reduced_result = reduce_alphabet_stream<uint32_t>(path);
+        txt_path = reduced_result.file_name;
+        text_size = reduced_result.file_size;
+        max_char = reduced_result.max_char;
+      } else if (word_width == 8) {
+        auto reduced_result = reduce_alphabet_stream<uint64_t>(path);
+        txt_path = reduced_result.file_name;
+        text_size = reduced_result.file_size;
+        max_char = reduced_result.max_char;
+      } else {
+        std::cerr << "You entered an invalid number of bytes per character "
+                     "(parameter 'b')." << std::endl;
+        return -1;
+      }
     } else {
-      std::cerr << "You entered an invalid number of bytes per character "
-                   "(parameter 'b')." << std::endl;
-      return -1;
+      if (word_width == 1) {
+        text_uint8 = file_to_vector<1>(path);
+        text_size = text_uint8.size();
+        max_char = reduce_alphabet(text_uint8);
+        txt_prt = &text_uint8;
+      } else if (word_width == 2) {
+        text_uint16 = file_to_vector<2>(path);
+        text_size = text_uint16.size();
+        max_char = reduce_alphabet(text_uint16);
+        txt_prt = &text_uint16;
+      } else if (word_width == 4) {
+        text_uint32 = file_to_vector<4>(path);
+        text_size = text_uint32.size();
+        max_char = reduce_alphabet(text_uint32);
+        txt_prt = &text_uint32;
+      } else if (word_width == 8) {
+        text_uint64 = file_to_vector<8>(path);
+        text_size = text_uint64.size();
+        max_char = reduce_alphabet(text_uint64);
+        txt_prt = &text_uint64;
+      } else {
+        std::cerr << "You entered an invalid number of bytes per character "
+                     "(parameter 'b')." << std::endl;
+        return -1;
+      }
     }
+    levels = levels_for_max_char(max_char);
     std::cout << "Characters: " << text_size << std::endl;
 #ifdef MALLOC_COUNT
     std::cout << "Memory peak text: " << malloc_count_peak() << ", MB: "
@@ -158,6 +188,9 @@ int32_t main(int32_t argc, char const* argv[]) {
           }
         }
       }
+    }
+    if (semi_external) {
+      remove(txt_path.c_str());
     }
   }
   return 0;

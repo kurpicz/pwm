@@ -42,8 +42,6 @@ TEST(ofile_stream, smoketest) {
   test::roundtrip_batch([&](const std::string& s){
     auto vec = std::vector<uint8_t>(s.begin(), s.end());
     std::string file_name = "test_file";
-    // vector_to_file(vec, file_name);
-
     {
       ofile_stream<uint8_t> fs(file_name);
       for (uint64_t i = 0; i < vec.size(); ++i) {

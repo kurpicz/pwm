@@ -25,6 +25,9 @@ public:
     if (file_descriptor_ == -1) {
       std::exit(-1);
     }
+    file_size_ = lseek(file_descriptor_, 0, SEEK_END);
+    lseek(file_descriptor_, 0, SEEK_SET);
+
     // We will only scan the text in 
     posix_fadvise(file_descriptor_, 0, 0, 1);
     reset_stream();
@@ -40,6 +43,10 @@ public:
     if (lseek(file_descriptor_, offset_, SEEK_SET) < 0) {
       std::exit(-1);
     }
+  }
+
+  uint64_t file_size() const {
+    return file_size_;
   }
 
   const AlphabetType operator [](const uint64_t index) {
@@ -64,6 +71,7 @@ private:
   uint64_t max_text_pos_;
   std::array<AlphabetType, buffer_size> buffer_;
   int32_t file_descriptor_;
+  uint64_t file_size_;
 }; // class ifile_stream
 
 template <typename AlphabetType, uint64_t buffer_size=1024*1024>

@@ -15,7 +15,13 @@ Using these ideas, we have implemented:
 In addition, there are also a naive construction algorithms (*wx_naive*).
 Replace _wx_ with either _wt_ or _wm_ for the corresponding WT- or WM-construction algorithm.
 
+### More Details
 A detailed description and benchmarks of the implemented algorithms can be found in this [arXiv preprint](https://arxiv.org/abs/1702.07578).
+
+### Additional (*not yet described in detail*) Features
+#### Semi-External Construction
+The input ~~and output~~ of our algorithms (i.e., the text ~~and the final WT/WM~~) can be written to files directly, which greatly reduces the space required for construction.
+This feature can be enabled by calling our algorithms by adding the command line argument `-e`.
 
 ## How to get it?
 First clone this repository, then build all executables.
