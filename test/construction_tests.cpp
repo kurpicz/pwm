@@ -25,7 +25,7 @@ TEST(wavelet_construction, smoketest) {
       a->print_info();
       test::roundtrip_batch([&](const std::string& s){
         auto vec = std::vector<uint8_t>(s.begin(), s.end());
-        uint64_t levels = no_reduction_alphabet(vec);
+        uint64_t levels = levels_for_max_char(no_reduction_alphabet(vec));
         auto bvz = a->compute_bitvector(&vec, vec.size() , levels);
         if (a->is_tree()) {
           auto decoded_s = decode_wt(bvz.bvs(), vec.size());
@@ -46,7 +46,7 @@ TEST(huffman_shaped_wavelet_construction, smoketest) {
       a->print_info();
       test::roundtrip_batch([&](const std::string& s){
         auto vec = std::vector<uint8_t>(s.begin(), s.end());
-        uint64_t levels = no_reduction_alphabet(vec);
+        uint64_t levels = levels_for_max_char(no_reduction_alphabet(vec));
         auto bvz = a->compute_bitvector(&vec, vec.size() , levels);
         if (a->is_tree()) {
           auto decoded_s = decode_wt_huff(bvz.bvs(), vec.size());
