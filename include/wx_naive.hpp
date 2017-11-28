@@ -33,7 +33,7 @@ public:
     }
 
     auto _bv = bit_vectors(levels, size);
-    auto& bv = _bv.vec();
+    auto& bv = _bv.raw_data();
 
     std::vector<AlphabetType> local_text(size);
     for(size_t i = 0; i < size; i++) {
@@ -95,7 +95,7 @@ public:
 
     auto _bv = bit_vectors(levels, size);
     auto _zeros = std::vector<size_t>(levels, 0);
-    auto& bv = _bv.vec();
+    auto& bv = _bv.raw_data();
 
     std::vector<AlphabetType> local_text(size);
     for(size_t i = 0; i < size; i++) {

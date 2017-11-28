@@ -97,6 +97,14 @@ public:
     close(file_descriptor_);
   }
 
+  inline void write_buffer() {
+    int64_t bytes_written = write(file_descriptor_, buffer_.data(),
+      buffer_size * sizeof(AlphabetType));
+    if (PWM_UNLIKELY(bytes_written) == -1) {
+      std::exit(-1);
+    }
+  }
+
   AlphabetType& operator [](const uint64_t index) {
     if (PWM_UNLIKELY(index < buffer_first_pos_ ||
       index >= buffer_first_pos_ + buffer_size)) {
@@ -109,14 +117,6 @@ private:
   inline void read_buffer(const uint64_t index) {
     write_buffer();
     if (lseek(file_descriptor_, index / buffer_size, SEEK_SET) < 0) {
-      std::exit(-1);
-    }
-  }
-
-  inline void write_buffer() {
-    int64_t bytes_written = write(file_descriptor_, buffer_.data(),
-      buffer_size * sizeof(AlphabetType));
-    if (PWM_UNLIKELY(bytes_written) == -1) {
       std::exit(-1);
     }
   }

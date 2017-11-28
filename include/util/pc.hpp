@@ -14,7 +14,7 @@ void pc(const InputType& text, const uint64_t size, const uint64_t levels,
 
   auto& zeros = ctx.zeros();
   auto& borders = ctx.borders();
-  auto& bv = ctx.bv().vec();
+  auto& bv = ctx.bv().raw_data();
 
   // While initializing the histogram, we also compute the first level
   uint64_t cur_pos = 0;

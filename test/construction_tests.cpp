@@ -51,7 +51,8 @@ TEST(semi_external_wavelet_construction, smoketest) {
         uint64_t levels = levels_for_max_char(no_reduction_alphabet(vec));
         vector_to_file(vec, file_name);
         ifile_stream<uint8_t> ifs(file_name);
-        auto bvz = a->compute_bitvector_semi_external(&ifs, vec.size() , levels);
+        auto bvz = a->compute_bitvector_semi_external(
+          &ifs, vec.size() , levels);
         ASSERT_TRUE(remove(file_name.c_str()) == 0) <<
           "Could not remove file, something went wrong";
         if (a->is_tree()) {

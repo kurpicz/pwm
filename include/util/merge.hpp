@@ -233,7 +233,7 @@ inline auto merge_bit_vectors(uint64_t size, uint64_t levels, uint64_t shards,
   }
 
   auto r = bit_vectors(levels, size);
-  auto& _bv = r.vec();
+  auto& _bv = r.raw_data();
 
   #pragma omp parallel
   //for(size_t omp_rank = 0; omp_rank < shards; omp_rank++)
@@ -260,7 +260,7 @@ inline auto merge_bit_vectors(uint64_t size, uint64_t levels, uint64_t shards,
         seq_i++;
 
         const auto& h = src_ctxs[read_shard];
-        const auto& local_bv = src_ctxs[read_shard].bv().vec()[level];
+        const auto& local_bv = src_ctxs[read_shard].bv().raw_data()[level];
 
         auto const block_size = std::min<uint64_t>(
           target_right - write_offset,

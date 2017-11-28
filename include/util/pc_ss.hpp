@@ -12,7 +12,7 @@ template <typename InputType, typename ContextType>
 void pc_ss(const InputType& text, uint64_t const size, const uint64_t levels,
   ContextType& ctx) {
 
-  auto& bv = ctx.bv().vec();
+  auto& bv = ctx.bv().raw_data();
 
   // While initializing the histogram, we also compute the first level
   uint64_t cur_pos = 0;

@@ -14,7 +14,7 @@ void huff_pc(AlphabetType const* text, const uint64_t size,
 
   auto& zeros = ctx.zeros();
   auto& borders = ctx.border();
-  auto& bv = ctx.bv().vec();
+  auto& bv = ctx.bv().raw_data();
 }
 
 /******************************************************************************/
