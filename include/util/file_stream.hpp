@@ -8,8 +8,10 @@
 
 #pragma once
 
+#include <chrono>
 #include <cstdlib>
 #include <fcntl.h>
+#include <tuple>
 #include <unistd.h>
 
 #include "util/macros.hpp"
@@ -85,10 +87,31 @@ template <typename AlphabetType, uint64_t buffer_size=1024*1024>
 class ofile_stream {
 
 public:
-  ofile_stream(const std::string& file_name) : buffer_first_pos_(0) {
+  ofile_stream(const uint64_t size=0) : file_name_("output_" + std::string(
+    std::chrono::duration_cast<std::chrono::milliseconds>(
+      std::chrono::system_clock::now().time_since_epoch()))),
+    buffer_first_pos_(0) {
+
     file_descriptor_ = open(file_name.c_str(), O_RDWR | O_CREAT, S_IRWXU);
     if (file_descriptor_ == -1) {
       std::exit(-1);
+    }
+    if (size > 0) {
+      ftruncate(file_descriptor_, size * sizeof(AlphabetType));
+      lseek(file_descriptor_, 0, SEEK_SET);
+    }
+  }
+
+  ofile_stream(const std::string& file_name, const uint64_t size=0)
+  : file_name_(file_name), buffer_first_pos_(0) {
+
+    file_descriptor_ = open(file_name.c_str(), O_RDWR | O_CREAT, S_IRWXU);
+    if (file_descriptor_ == -1) {
+      std::exit(-1);
+    }
+    if (size > 0) {
+      ftruncate(file_descriptor_, size * sizeof(AlphabetType));
+      lseek(file_descriptor_, 0, SEEK_SET);
     }
   }
 
@@ -105,12 +128,25 @@ public:
     }
   }
 
+  std::string file_name() const {
+    return file_name_;
+  }
+
   AlphabetType& operator [](const uint64_t index) {
     if (PWM_UNLIKELY(index < buffer_first_pos_ ||
       index >= buffer_first_pos_ + buffer_size)) {
       read_buffer(index);
     }
     return buffer_[index % buffer_size];
+  }
+
+  bool operator ==(const ofile_stream& other) const {
+    return std::tie(buffer_, file_descriptor_) == std::tie(other.buffer_,
+      other.file_descriptor_);
+  }
+
+  bool operator !=(const ofile_stream& other) const {
+    return *this != other;
   }
 
 private:
@@ -122,6 +158,7 @@ private:
   }
 
 private:
+  std::string file_name_;
   uint64_t buffer_first_pos_;
   uint64_t max_text_pos_;
   std::array<AlphabetType, buffer_size> buffer_;
