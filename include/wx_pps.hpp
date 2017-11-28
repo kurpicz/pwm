@@ -14,15 +14,16 @@
 #include "util/ctx_sliced_single_level.hpp"
 #include "util/wavelet_structure.hpp"
 
-template <typename AlphabetType, bool is_matrix>
+template <typename AlphabetType, bool is_tree_>
 class wx_pps {
-  using ctx_t = ctx_sliced_single_level<is_matrix>;
 
 public:
   static constexpr bool    is_parallel = true;
-  static constexpr bool    is_tree     = !is_matrix;
+  static constexpr bool    is_tree     = is_tree_;
   static constexpr uint8_t word_width  = sizeof(AlphabetType);
   static constexpr bool  is_huffman_shaped = false;
+
+  using ctx_t = ctx_sliced_single_level<is_tree>;
 
   template <typename InputType>
   static wavelet_structure compute(const InputType& text, const uint64_t size,

@@ -12,15 +12,16 @@
 #include "util/pc_ss.hpp"
 #include "util/wavelet_structure.hpp"
 
-template <typename AlphabteType, bool is_matrix>
+template <typename AlphabteType, bool is_tree_>
 class wx_pc_ss {
-  using ctx_t = ctx_compute_borders<is_matrix>;
 
 public:
   static constexpr bool is_parallel = false;
-  static constexpr bool is_tree     = !is_matrix;
+  static constexpr bool is_tree     = is_tree_;
   static constexpr uint8_t word_width = sizeof(AlphabteType);
   static constexpr bool  is_huffman_shaped = false;
+
+  using ctx_t = ctx_compute_borders<is_tree>;
 
   template <typename InputType>
   static wavelet_structure compute(const InputType& text, const uint64_t size,
@@ -30,7 +31,7 @@ public:
       return wavelet_structure();
     }
 
-    const auto rho = rho_dispatch<is_matrix>::create(levels);
+    const auto rho = rho_dispatch<is_tree>::create(levels);
     auto ctx = ctx_t(size, levels, rho);
     
     pc_ss(text, size, levels, ctx);

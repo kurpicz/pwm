@@ -19,15 +19,16 @@
 #include "util/ps.hpp"
 #include "util/wavelet_structure.hpp"
 
-template <typename AlphabetType, bool is_matrix>
+template <typename AlphabetType, bool is_tree_>
 class wx_dd_ps {
-  using ctx_t = ctx_all_levels<is_matrix>;
 
 public:
   static constexpr bool  is_parallel = true;
-  static constexpr bool  is_tree   = !is_matrix;
+  static constexpr bool  is_tree   = is_tree_;
   static constexpr uint8_t word_width  = sizeof(AlphabetType);
   static constexpr bool  is_huffman_shaped = false;
+
+  using ctx_t = ctx_all_levels<is_tree>;
 
   template <typename InputType>
   static wavelet_structure compute(const InputType& global_text,
@@ -37,7 +38,7 @@ public:
 
     const uint64_t shards = omp_get_max_threads();
 
-    const auto rho = rho_dispatch<is_matrix>::create(levels);
+    const auto rho = rho_dispatch<is_tree>::create(levels);
     auto ctxs = std::vector<ctx_t>(shards);
 
     for (size_t shard = 0; shard < shards; shard++) {

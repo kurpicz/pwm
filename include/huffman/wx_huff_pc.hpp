@@ -15,13 +15,13 @@
 #include "util/alphabet_util.hpp"
 #include "util/histogram.hpp"
 
-template <typename AlphabetType, bool is_matrix>
+template <typename AlphabetType, bool is_tree>
 class wx_huff_pc {
-  using ctx_t = ctx_huff_all_levels<is_matrix>;
+  using ctx_t = ctx_huff_all_levels<is_tree>;
 
 public:
   static constexpr bool is_parallel = false;
-  static constexpr bool is_tree = !is_matrix;
+  static constexpr bool is_tree = !is_tree;
   static constexpr uint8_t word_width = sizeof(AlphabetType);
 
   static wavelet_structure compute(AlphabetType const* const text,
@@ -33,7 +33,7 @@ public:
 
     std::vector<uint64_t> hist =
       compute_initial_histogram(text, size, reduced_sigma);
-    auto codes = huff_codes<AlphabetType, is_matrix>(hist);
+    auto codes = huff_codes<AlphabetType, is_tree>(hist);
     // There is no code with length longer than the number of codes 
     std::vector<uint64_t> sizes(codes.code_pairs().size(), 0);
 
@@ -51,7 +51,7 @@ public:
     assert(sizes[0] == size);
 
     const uint64_t levels = levels_for_max_char(sizes.back());
-    const auto rho = rho_dispatch<is_matrix>::create(levels);
+    const auto rho = rho_dispatch<is_tree>::create(levels);
 
     auto ctx = ctx_t(sizes, levels, rho)
     huff_pc(text, size, ctx, codes);

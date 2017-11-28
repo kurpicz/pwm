@@ -25,7 +25,7 @@ struct code_pair {
 
 // Class constructing canonical huffman codes for a text. The codes can then be
 // used for WT or WM construction (note the template parameter).
-template <typename AlphabetType, bool is_matrix>
+template <typename AlphabetType, bool is_tree>
 class canonical_huff_codes {
 
 public:
@@ -128,7 +128,7 @@ private:
       code_word = (code_word + 1) << (code_pairs_[cur_code_pos].code_length -
               code_pairs_[code_length_order[code_nr - 1]].code_length);
 
-      if (is_matrix) { // TODO: C++17 for if constexpr
+      if (!is_tree) { // TODO: C++17 for if constexpr
         code_pairs_[cur_code_pos].code_word = ~code_word;
         decode_table_.emplace(
           std::make_pair(~code_word, AlphabetType(cur_code_pos)));

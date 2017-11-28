@@ -50,24 +50,24 @@ inline auto rho_bit_reverse(uint64_t levels) {
   };
 }
 
-template<bool is_matrix>
+template<bool is_tree>
 struct rho_dispatch {};
 
 template<>
 struct rho_dispatch<true> {
-  using type = decltype(rho_bit_reverse(0));
+  using type = decltype(rho_identity(0));
 
   static auto create(uint64_t levels) {
-    return rho_bit_reverse(levels);
+    return rho_identity(levels);
   }
 };
 
 template<>
 struct rho_dispatch<false> {
-  using type = decltype(rho_identity(0));
+  using type = decltype(rho_bit_reverse(0));
 
   static auto create(uint64_t levels) {
-    return rho_identity(levels);
+    return rho_bit_reverse(levels);
   }
 };
 

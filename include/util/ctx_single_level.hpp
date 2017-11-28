@@ -15,15 +15,15 @@
 // TODO: WM/WT abstract that selects zeros and rho
 
 // Overwrite information for each level
-template<bool is_matrix>
+template<bool is_tree>
 class ctx_single_level {
 
 public:
   ctx_single_level(uint64_t const size, uint64_t const levels)
   : hist_(1ULL << levels, 0), borders_(1ULL << levels, 0),
     zeros_(levels, 0), bv_(levels, size),
-    bit_reverse_(is_matrix ?
-      bit_reverse_permutation(levels - 1) : std::vector<uint64_t>(0)) { }
+    bit_reverse_(is_tree ?
+     std::vector<uint64_t>(0) :  bit_reverse_permutation(levels - 1)) { }
 
   uint64_t hist_size(uint64_t const level) {
     return 1ull << level;
@@ -38,7 +38,7 @@ public:
   }
 
   uint64_t rho(size_t /*level*/, size_t i) {
-    if (is_matrix) {
+    if (!is_tree) {
       return bit_reverse_[i];
     }else {
       return i;
@@ -53,8 +53,8 @@ public:
     return borders_;
   }
 
-  static bool constexpr compute_zeros = is_matrix;
-  static bool constexpr compute_rho = is_matrix;
+  static bool constexpr compute_zeros = !is_tree;
+  static bool constexpr compute_rho = !is_tree;
 
   std::vector<uint64_t>& zeros() {
     return zeros_;

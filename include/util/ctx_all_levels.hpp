@@ -16,11 +16,11 @@
 // TODO: WM/WT abstract that selects zeros and rho
 
 /// Keep calculated information for individual levels around
-template<bool is_matrix>
+template<bool is_tree>
 class ctx_all_levels {
   
 public:
-  using rho_t = typename rho_dispatch<is_matrix>::type;
+  using rho_t = typename rho_dispatch<is_tree>::type;
 
   ctx_all_levels() = default;
 
@@ -28,7 +28,7 @@ public:
   : hist_(levels + 1), rho_(&rho),
     borders_(1ULL << levels, 0), zeros_(levels, 0), bv_(levels, size) { }
 
-  static bool constexpr compute_zeros = is_matrix;
+  static bool constexpr compute_zeros = !is_tree;
   static bool constexpr compute_rho = false;
 
   uint64_t hist_size(uint64_t const level) {
