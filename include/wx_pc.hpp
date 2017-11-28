@@ -14,18 +14,20 @@
 #include "util/pc.hpp"
 #include "util/wavelet_structure.hpp"
 
-template <typename AlphabetType, bool is_matrix>
+template <typename AlphabetType, bool is_tree_>
 class wx_pc {
-  using ctx_t = ctx_single_level<is_matrix>;
 
 public:
   static constexpr bool  is_parallel = false;
-  static constexpr bool  is_tree   = !is_matrix;
+  static constexpr bool  is_tree   = is_tree_;
   static constexpr uint8_t word_width  = sizeof(AlphabetType);
   static constexpr bool  is_huffman_shaped = false;
 
-  static wavelet_structure compute(AlphabetType const* const text,
-    const uint64_t size, const uint64_t levels) {
+  using ctx_t = ctx_single_level<is_tree>;
+
+  template <typename InputType>
+  static wavelet_structure compute(const InputType& text, const uint64_t size,
+    const uint64_t levels) {
 
     if(size == 0) {
       return wavelet_structure();

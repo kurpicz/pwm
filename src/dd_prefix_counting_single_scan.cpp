@@ -9,9 +9,9 @@
 #include "wx_dd_pc_ss.hpp"
 #include "benchmark/algorithm.hpp"
 
-using wm_dd_pc_ss_8 = wx_dd_pc_ss<uint8_t, true>;
-using wm_dd_pc_ss_16 = wx_dd_pc_ss<uint16_t, true>;
-using wm_dd_pc_ss_32 = wx_dd_pc_ss<uint32_t, true>;
+using wm_dd_pc_ss_8 = wx_dd_pc_ss<uint8_t, false>;
+using wm_dd_pc_ss_16 = wx_dd_pc_ss<uint16_t, false>;
+using wm_dd_pc_ss_32 = wx_dd_pc_ss<uint32_t, false>;
 
 CONSTRUCTION_REGISTER("wm_dd_pc_ss",
   "Parallel wavelet matrix construction with 8-bit alphabet "
@@ -26,9 +26,9 @@ CONSTRUCTION_REGISTER("wm_dd_pc_ss",
   "(using domain decomposition and prefix counting and a single scan).",
   wm_dd_pc_ss_32)
 
-using wt_dd_pc_ss_8 = wx_dd_pc_ss<uint8_t, false>;
-using wt_dd_pc_ss_16 = wx_dd_pc_ss<uint16_t, false>;
-using wt_dd_pc_ss_32 = wx_dd_pc_ss<uint32_t, false>;
+using wt_dd_pc_ss_8 = wx_dd_pc_ss<uint8_t, true>;
+using wt_dd_pc_ss_16 = wx_dd_pc_ss<uint16_t, true>;
+using wt_dd_pc_ss_32 = wx_dd_pc_ss<uint32_t, true>;
 
 CONSTRUCTION_REGISTER("wt_dd_pc_ss",
   "Parallel wavelet tree construction with 8-bit alphabet "

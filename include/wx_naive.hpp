@@ -12,11 +12,11 @@
 
 #include "util/wavelet_structure.hpp"
 
-template <typename AlphabetType, bool is_matrix>
+template <typename AlphabetType, bool is_tree_>
 class wx_naive;
 
 template <typename AlphabetType>
-class wx_naive<AlphabetType, false> {
+class wx_naive<AlphabetType, true> {
 
 public:
   static constexpr bool    is_parallel = false;
@@ -78,7 +78,7 @@ public:
 }; // class wt_naive
 
 template <typename AlphabetType>
-class wx_naive<AlphabetType, true> {
+class wx_naive<AlphabetType, false> {
 
 public:
   static constexpr bool    is_parallel = false;

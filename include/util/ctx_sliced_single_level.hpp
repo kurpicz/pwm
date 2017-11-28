@@ -25,7 +25,7 @@ struct helper_array_sizes {
 
 using helper_array =  flat_two_dim_array<uint64_t, helper_array_sizes>;
 
-template <bool is_matrix>
+template <bool is_tree>
 class ctx_sliced_single_level {
 
 public:
@@ -34,8 +34,8 @@ public:
   ctx_sliced_single_level(uint64_t const size, uint64_t const levels,
     const uint64_t omp_size) : hist_(omp_size, 1ULL << levels),
     borders_(omp_size, 1ULL << levels), zeros_(levels, 0), bv_(levels, size),
-    bit_reverse_(is_matrix ?
-      bit_reverse_permutation(levels - 1) : std::vector<uint64_t>(0)) { }
+    bit_reverse_(is_tree ?
+      std::vector<uint64_t>(0) : bit_reverse_permutation(levels - 1)) { }
 
   uint64_t borders_size(uint64_t const level) {
     return 1ULL << level;
@@ -62,7 +62,7 @@ public:
   }
 
   uint64_t rho (uint64_t /*level*/, uint64_t const index) {
-    if (is_matrix) {
+    if (!is_tree) { // TODO: if constexpr C++17
       return bit_reverse_[index];
     } else {
       return index;
@@ -73,8 +73,8 @@ public:
     bit_reverse_[index] = val;
   }
 
-  static bool constexpr compute_zeros = is_matrix;
-  static bool constexpr compute_rho = is_matrix;
+  static bool constexpr compute_zeros = !is_tree;
+  static bool constexpr compute_rho = !is_tree;
 
   std::vector<uint64_t>& zeros() {
     return zeros_;

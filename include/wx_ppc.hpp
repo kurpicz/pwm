@@ -14,24 +14,26 @@
 #include "util/ctx_all_levels.hpp"
 #include "util/wavelet_structure.hpp"
 
-template <typename AlphabetType, bool is_matrix>
+template <typename AlphabetType, bool is_tree_>
 class wx_ppc {
-  using ctx_t = ctx_all_levels<is_matrix>;
 
 public:
   static constexpr bool    is_parallel = true;
-  static constexpr bool    is_tree     = !is_matrix;
+  static constexpr bool    is_tree     = is_tree_;
   static constexpr uint8_t word_width  = sizeof(AlphabetType);
   static constexpr bool  is_huffman_shaped = false;
 
-  static wavelet_structure compute(AlphabetType const* const text,
-    const uint64_t size, const uint64_t levels) {
+  using ctx_t = ctx_all_levels<is_tree>;
+
+  template <typename InputType>
+  static wavelet_structure compute(const InputType& text, const uint64_t size,
+    const uint64_t levels) {
 
     if (size == 0) {
       return wavelet_structure();
     }
 
-    const auto rho = rho_dispatch<is_matrix>::create(levels);
+    const auto rho = rho_dispatch<is_tree>::create(levels);
     // TODO create new context with all max size hist-levels.
     ctx_t ctx(size, levels, rho);
     auto& bv = ctx.bv().raw_data();

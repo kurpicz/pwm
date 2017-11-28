@@ -52,7 +52,7 @@ struct code_pair {
 
 // Class constructing canonical huffman codes for a text. The codes can then be
 // used for WT or WM construction (note the template parameter).
-template <typename AlphabetType, bool is_matrix>
+template <typename AlphabetType, bool is_tree>
 class canonical_huff_codes {
 
 public:
@@ -161,7 +161,7 @@ private:
     level_sizes_ = std::vector<uint64_t>(
       code_pairs_[code_length_order.back()].code_length, 0);
 
-    if (is_matrix) { // TODO: C++17 (if constexpr)
+    if (!is_tree) { // TODO: C++17 (if constexpr)
       uint64_t code_nr = 0;
       uint64_t cur_length = 1;
       std::vector<uint64_t> code_words { 0ULL, 1ULL };
