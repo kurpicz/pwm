@@ -44,7 +44,7 @@ public:
       #pragma omp single
       ctx = ctx_t(size, levels, omp_size);
 
-      auto& bv = ctx.bv().vec();
+      auto& bv = ctx.bv().raw_data();
       auto& zeros = ctx.zeros();
 
       // While initializing the histogram, we also compute the fist level

@@ -107,13 +107,11 @@ public:
     return data_[index];
   }
 
-  // TODO: Rename to data_vector
-  inline const std::vector<IndexType*>& vec() const {
+  inline const std::vector<IndexType*>& raw_data() const {
     return data_;
   }
 
-  // TODO: Rename to data_vector
-  inline std::vector<IndexType*>& vec() {
+  inline std::vector<IndexType*>& raw_data() {
     return data_;
   }
 

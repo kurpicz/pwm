@@ -32,7 +32,7 @@ public:
     }
 
     auto _bv = bit_vectors(levels, size);
-    auto& bv = _bv.vec();
+    auto& bv = _bv.raw_data();
 
     // TODO: When not semi_xternal, this can/should be done way nicer.
     std::vector<AlphabetType> local_text(size);
@@ -95,7 +95,7 @@ public:
 
     auto _bv = bit_vectors(levels, size);
     auto _zeros = std::vector<size_t>(levels, 0);
-    auto& bv = _bv.vec();
+    auto& bv = _bv.raw_data();
 
     // TODO: When not semi_xternal, this can/should be done way nicer.
     std::vector<AlphabetType> local_text(size);
