@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "util/common.hpp"
+#include "util/file_stream.hpp"
 #include "util/type_for_bytes.hpp"
 #include "util/wavelet_structure.hpp"
 
@@ -57,6 +58,8 @@ public:
 
   virtual wavelet_structure compute_bitvector(const void* global_text,
     const uint64_t size, const uint64_t levels) const = 0;
+  virtual wavelet_structure compute_bitvector_semi_external(void* file_stream,
+    const uint64_t size, const uint64_t levels) const = 0;
   virtual float median_time(const void* global_text, const uint64_t size,
       const uint64_t levels, size_t runs) const = 0;
   virtual void memory_peak(const void* global_text, const uint64_t size,
@@ -96,6 +99,14 @@ public:
       std::vector<typename type_for_bytes<Algorithm::word_width>::type>;
     auto const* text = static_cast<text_vec_type const*>(global_text);
     return Algorithm::compute(text->data(), size, levels);
+  }
+
+  inline wavelet_structure compute_bitvector_semi_external(void* file_stream,
+    const uint64_t size, const uint64_t levels) const override {
+    using stream_type =
+      ifile_stream<typename type_for_bytes<Algorithm::word_width>::type>;
+    auto& ifs = *static_cast<stream_type*>(file_stream);
+    return Algorithm::compute(ifs, size, levels);
   }
 
   float median_time(const void* global_text, const uint64_t size,

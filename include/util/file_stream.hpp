@@ -19,7 +19,7 @@ class ifile_stream {
 
 public:
   ifile_stream(const std::string& file_name, const uint64_t offset=0)
-  : offset_(offset), max_text_pos_(0) {
+  : file_name_(file_name), offset_(offset), max_text_pos_(0) {
 
     file_descriptor_ = open(file_name.c_str(), O_RDONLY);
     if (file_descriptor_ == -1) {
@@ -49,15 +49,20 @@ public:
     return file_size_;
   }
 
-  const AlphabetType operator [](const uint64_t index) {
+  AlphabetType operator [](const uint64_t index) const {
     if (PWM_UNLIKELY(index > max_text_pos_)) {
       read_next_buffer();
     }
     return buffer_[index % buffer_size];
   }
 
+  ifile_stream operator +(const uint64_t index) const {
+    ifile_stream new_stream(file_name_, offset_ + index);
+    return new_stream;
+  }
+
 private:
-  inline void read_next_buffer() {
+  inline void read_next_buffer() const {
     int64_t bytes_read = read(file_descriptor_, buffer_.data(),
       buffer_size * sizeof(AlphabetType));
     if (PWM_UNLIKELY(bytes_read) == -1) {
@@ -67,9 +72,11 @@ private:
   }
 
 private:
+  std::string file_name_;
   uint64_t offset_;
-  uint64_t max_text_pos_;
-  std::array<AlphabetType, buffer_size> buffer_;
+
+  mutable uint64_t max_text_pos_;
+  mutable std::array<AlphabetType, buffer_size> buffer_;
   int32_t file_descriptor_;
   uint64_t file_size_;
 }; // class ifile_stream

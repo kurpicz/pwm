@@ -28,9 +28,9 @@ TEST(ifile_stream, smoketest) {
         result[i] = fs[i];
       }
     }
-    if (remove(file_name.c_str()) != 0) {
-      ASSERT_TRUE(false) << "Could not remove file, something went wrong";
-    }
+
+    ASSERT_TRUE(remove(file_name.c_str()) == 0) <<
+      "Could not remove file, something went wrong";
     for (uint64_t i = 0; i < vec.size(); ++i) {
       ASSERT_EQ(vec[i], result[i]) << "Failure when reading vector from file at"
                                    << " position " << i;
@@ -50,9 +50,8 @@ TEST(ofile_stream, smoketest) {
     }
     auto result = file_to_vector<1>(file_name);
 
-    if (remove(file_name.c_str()) != 0) {
-      ASSERT_TRUE(false) << "Could not remove file, something went wrong";
-    }
+    ASSERT_TRUE(remove(file_name.c_str()) == 0) <<
+      "Could not remove file, something went wrong";
     for (uint64_t i = 0; i < vec.size(); ++i) {
       ASSERT_EQ(vec[i], result[i]) << "Failure when reading vector from file at"
                                    << " position " << i;
