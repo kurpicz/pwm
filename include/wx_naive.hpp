@@ -34,6 +34,7 @@ public:
     auto _bv = bit_vectors(levels, size);
     auto& bv = _bv.vec();
 
+    // TODO: When not semi_xternal, this can/should be done way nicer.
     std::vector<AlphabetType> local_text(size);
     for(size_t i = 0; i < size; i++) {
         local_text[i] = text[i];
@@ -58,16 +59,17 @@ public:
         word <<= (64 - (size & 63ULL));
         bv[level][size >> 6] = word;
       }
-
-      std::vector<std::vector<AlphabetType>> buckets(1ULL << (level + 1));
-      for (uint64_t i = 0; i < local_text.size(); ++i) {
-        buckets[local_text[i] >> (levels - (level + 1))]
-          .emplace_back(local_text[i]);
-      }
-      cur_pos = 0;
-      for (const auto& bucket : buckets) {
-        for (const auto character : bucket) {
-          local_text[cur_pos++] = character;
+      if (level + 1 < levels) {
+        std::vector<std::vector<AlphabetType>> buckets(1ULL << (level + 1));
+        for (uint64_t i = 0; i < local_text.size(); ++i) {
+          buckets[local_text[i] >> (levels - (level + 1))]
+            .emplace_back(local_text[i]);
+        }
+        cur_pos = 0;
+        for (const auto& bucket : buckets) {
+          for (const auto character : bucket) {
+            local_text[cur_pos++] = character;
+          }
         }
       }
     }
@@ -95,6 +97,7 @@ public:
     auto _zeros = std::vector<size_t>(levels, 0);
     auto& bv = _bv.vec();
 
+    // TODO: When not semi_xternal, this can/should be done way nicer.
     std::vector<AlphabetType> local_text(size);
     for(size_t i = 0; i < size; i++) {
         local_text[i] = text[i];
@@ -134,14 +137,16 @@ public:
           text0.push_back(local_text[i]);
         }
       }
-      // "Sort" the text stably based on the bit inserted in the bit vector
-      for (uint64_t i = 0; i < text0.size(); ++i) {
-        local_text[i] = text0[i];
-      }
-      for (uint64_t i = 0; i < text1.size(); ++i) {
-        local_text[i + text0.size()] = text1[i];
-      }
       _zeros[level] = text0.size();
+      if (level + 1 < levels) {
+        // "Sort" the text stably based on the bit inserted in the bit vector
+        for (uint64_t i = 0; i < text0.size(); ++i) {
+          local_text[i] = text0[i];
+        }
+        for (uint64_t i = 0; i < text1.size(); ++i) {
+          local_text[i + text0.size()] = text1[i];
+        }
+      }
     }
     return wavelet_structure(std::move(_bv), std::move(_zeros));
   }
