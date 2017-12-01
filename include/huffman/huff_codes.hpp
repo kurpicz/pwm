@@ -31,12 +31,8 @@ class canonical_huff_codes {
 public:
   canonical_huff_codes(AlphabetType const* const text, const uint64_t size,
     const uint64_t reduced_sigma = 0) {
-    const auto hist = compute_initial_histogram(text, size, reduced_sigma);
-    compute_codes(std::forward<decltype(hist)>(hist));
-  }
-
-  canonical_huff_codes(const std::vector<uint64_t>& histogram) {
-    compute_codes(histogram);
+    const histogram<AlphabetType> hist(text, size, reduced_sigma);
+    compute_codes(hist);
   }
 
   // Returns code_length and code_word for a given symbol, w.r.t. the text that
@@ -59,8 +55,7 @@ private:
 
 private:
 
-  void compute_codes(const std::vector<uint64_t>& histogram) {
-
+  void compute_codes(const histogram<AlphabetType>& histogram) {
     struct frequency_tree_item {
       uint64_t occurrences;
       std::vector<AlphabetType> covered_symbols;
@@ -74,15 +69,13 @@ private:
     std::priority_queue<frequency_tree_item, std::vector<frequency_tree_item>,
       std::greater<frequency_tree_item>> frequency_tree;
 
-    code_pairs_ = std::vector<code_pair>(histogram.size(),
+    code_pairs_ = std::vector<code_pair>(histogram.max_symbol() + 1,
       code_pair { 0ULL, 0ULL });
 
-    for (uint64_t symbol = 0; symbol < histogram.size(); ++symbol) {
-      if (histogram[symbol] > 0) {
-        frequency_tree.emplace(frequency_tree_item {
-          histogram[symbol],
-          std::vector<AlphabetType> { AlphabetType(symbol) }});
-      }
+    for (uint64_t i = 0; i < histogram.size(); ++i) {
+      frequency_tree.emplace(frequency_tree_item {
+        histogram[i].frequency,
+        std::vector<AlphabetType> { histogram[i].symbol }});
     }
 
     // Cornder case: Text consists of just one character
@@ -126,7 +119,7 @@ private:
 
       // Create new code word
       code_word = (code_word + 1) << (code_pairs_[cur_code_pos].code_length -
-              code_pairs_[code_length_order[code_nr - 1]].code_length);
+        code_pairs_[code_length_order[code_nr - 1]].code_length);
 
       if (is_matrix) { // TODO: C++17 for if constexpr
         code_pairs_[cur_code_pos].code_word = ~code_word;
