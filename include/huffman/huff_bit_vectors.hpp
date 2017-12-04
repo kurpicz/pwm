@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include "common.hpp"
-#include "flat_two_dim_array.hpp"
+#include "util/common.hpp"
+#include "util/flat_two_dim_array.hpp"
 
 struct huff_bit_vectors_sizes {
   static uint64_t level_size(const uint64_t level,

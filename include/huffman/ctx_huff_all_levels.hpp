@@ -9,7 +9,7 @@
 #pragma once
 
 #include "huff_bit_vectors.hpp"
-#include "util/permutation.hpp"
+#include "huff_permutation.hpp"
 #include "util/border_hist_array.hpp"
 
 /// Keep calculated information for individual levels around

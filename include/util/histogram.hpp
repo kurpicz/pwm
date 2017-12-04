@@ -16,6 +16,13 @@ template <typename AlphabetType>
 struct histogram_entry {
   const AlphabetType symbol;
   uint64_t frequency;
+
+  friend std::ostream& operator <<(std::ostream& os,
+    const histogram_entry& he) {
+
+    return os << "[ " << he.symbol << "(" << uint64_t(he.symbol) << ") | "
+              << he.frequency << " ]";
+  }
 }; // struct histogram_entry
 
 template <typename AlphabetType>
@@ -66,6 +73,17 @@ public:
 
   uint64_t size() const {
     return data_.size();
+  }
+
+  // Returns the frequency of a symbol. Does not check if symbol exists. If the
+  // symbol does not exits, the behavior is undefined.
+  uint64_t frequency(const AlphabetType symbol) const {
+    for (const auto& he : data_) {
+      if (he.symbol == symbol) {
+        return he.frequency;
+      }
+    }
+    return 0;
   }
 
   histogram_entry<AlphabetType>& operator [](const uint64_t index) {

@@ -10,6 +10,8 @@
 
 #include <cstring>
 
+#include "huff_bit_vectors.hpp"
+#include "huff_codes.hpp"
 #include "util/wavelet_structure.hpp"
 
 template <typename AlphabetType, bool is_matrix>
@@ -25,22 +27,23 @@ public:
   static constexpr bool    is_huffman_shaped = true;
 
   static wavelet_structure compute(AlphabetType const* const text,
-    const uint64_t size, const uint64_t levels) {
+    const uint64_t size, const uint64_t /*levels*/) {
 
     if(size == 0) {
       return wavelet_structure();
     }
 
+    canonical_huff_codes<AlphabetType, !is_tree> codes(text, size);
+
+    const uint64_t levels = codes.levels();
+
+    auto _bv = huff_bit_vectors(levels, codes.level_sizes());
+    auto& bv = _bv.vec();
 
     std::vector<AlphabetType> local_text(size);
     for(size_t i = 0; i < size; i++) {
-      const AlphabetType cur_char = text[i];
-      local_text[i] = cur_char;
+      local_text[i] = text[i];
     }
-
-    auto _bv = bit_vectors(levels, size);
-    auto& bv = _bv.vec();
-
 
     for (uint64_t level = 0; level < levels; ++level) {
       uint32_t cur_pos = 0;
@@ -48,7 +51,7 @@ public:
         uint64_t word = 0ULL;
         for (uint32_t i = 0; i < 64; ++i) {
           word <<= 1;
-          word |= ((local_text[cur_pos + i] >> (levels - (level + 1))) & 1ULL);
+          word |= ((codes[local_text[cur_pos + i]] >> (levels - (level + 1))) & 1ULL);
         }
         bv[level][cur_pos >> 6] = word;
       }
@@ -56,22 +59,27 @@ public:
         uint64_t word = 0ULL;
         for (uint32_t i = 0; i < size - cur_pos; ++i) {
           word <<= 1;
-          word |= ((local_text[cur_pos + i] >> (levels - (level + 1))) & 1ULL);
+          word |= ((codes[local_text[cur_pos + i]] >> (levels - (level + 1))) & 1ULL);
         }
         word <<= (64 - (size & 63ULL));
         bv[level][size >> 6] = word;
       }
-
       std::vector<std::vector<AlphabetType>> buckets(1ULL << (level + 1));
+      uint64_t remaining_symbols = 0;
       for (uint64_t i = 0; i < local_text.size(); ++i) {
-        buckets[local_text[i] >> (levels - (level + 1))]
-          .emplace_back(local_text[i]);
+        const AlphabetType cur_symbol = local_text[i];
+        if (codes.code_length(cur_symbol) > level) {
+          ++remaining_symbols;
+          buckets[codes[cur_symbol] >> (levels - (level + 1))]
+            .emplace_back(cur_symbol);
+        }
       }
+      local_text.resize(remaining_symbols);
       cur_pos = 0;
       // Go through buckets in reverse (1s branch to the left when 
       // Huffman-shaped).
-      for (uint64_t i = buckets.size() - 1; i >= 0; --i) {
-        for (const auto character : buckets[i]) {
+      for (auto rit = buckets.rbegin(); rit!= buckets.rend(); ++rit) {
+        for (const auto character : *rit) {
           local_text[cur_pos++] = character;
         }
       }

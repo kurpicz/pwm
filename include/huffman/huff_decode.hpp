@@ -8,48 +8,58 @@
 
 #pragma once
 
+#include "huff_bit_vectors.hpp"
 #include "util/debug.hpp"
 
-[[gnu::unused]] // TODO: C++17 [[maybe_unused]] 
-static std::string decode_wt_huff(const bit_vectors& bv, uint64_t length) {
-  auto ls = level_sizes(bv, 0, length, 0);
+[[gnu::unused]] // TODO: C++17 [[maybe_unused]]
+static std::vector<std::vector<uint64_t>> border_offsets(const huff_bit_vectors& bv) {
+  std::vector<std::vector<uint64_t>> result(bv.levels());
+  // The first level starts at pos 0;
+  // result[0].emplace_back(std::vector<uint64_t>{ 0 });
 
-  for (auto& v : ls) {
-    for (uint64_t i = 1; i < v.size(); i++) {
-      v[i] = v[i - 1] + v[i];
-    }
-    for (uint64_t i = 1; i < v.size(); i++) {
-      uint64_t j = v.size() - i;
-      v[j] = v[j - 1];
-    }
-    if (v.size() > 0) {
-      v[0] = 0;
-    }
-  }
+  return result;
+}
+
+[[gnu::unused]] // TODO: C++17 [[maybe_unused]] 
+static std::string decode_wt_huff(const huff_bit_vectors& bv, uint64_t length) {
+  // auto ls = level_sizes(bv, 0, length, 0);
+
+  // for (auto& v : ls) {
+  //   for (uint64_t i = 1; i < v.size(); i++) {
+  //     v[i] = v[i - 1] + v[i];
+  //   }
+  //   for (uint64_t i = 1; i < v.size(); i++) {
+  //     uint64_t j = v.size() - i;
+  //     v[j] = v[j - 1];
+  //   }
+  //   if (v.size() > 0) {
+  //     v[0] = 0;
+  //   }
+  // }
 
   auto r = std::vector<uint8_t>(length);
 
-  for (uint64_t i = 0; i < length; i++) {
-    uint8_t value = 0;
-    uint64_t j = 0;
-    for (uint64_t level = 0; level < bv.levels(); level++) {
-      auto& offset = ls[level][j];
-      uint8_t bit = bit_at(bv[level], offset);
+  // for (uint64_t i = 0; i < length; i++) {
+  //   uint8_t value = 0;
+  //   uint64_t j = 0;
+  //   for (uint64_t level = 0; level < bv.levels(); level++) {
+  //     auto& offset = ls[level][j];
+  //     uint8_t bit = bit_at(bv[level], offset);
 
-      value <<= 1;
-      value |= bit;
+  //     value <<= 1;
+  //     value |= bit;
 
-      offset++;
-      j = 2 * j + bit;
-    }
-    r[i] = value;
-  }
+  //     offset++;
+  //     j = 2 * j + bit;
+  //   }
+  //   r[i] = value;
+  // }
 
   return std::string(r.begin(), r.end());
 }
 
 [[gnu::unused]] // TODO: C++17 [[maybe_unused]] 
-static std::string decode_wm_huff(const bit_vectors& bv,
+static std::string decode_wm_huff(const huff_bit_vectors& bv,
   const std::vector<uint64_t>& zeros, const uint64_t length) {
 
   if (bv.levels() == 0) {
