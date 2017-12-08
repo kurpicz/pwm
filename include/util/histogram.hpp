@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <limits>
 #include <type_traits>
+#include <unordered_map>
 
 template <typename AlphabetType>
 struct histogram_entry {

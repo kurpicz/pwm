@@ -21,12 +21,17 @@ TEST(huffman_code_tests, wt_codes) {
     auto text = std::vector<uint8_t>(s.begin(), s.end());
     canonical_huff_codes<uint8_t, false> chc(text.data(), text.size());
     std::vector<uint64_t> encoded_text;
+    std::vector<uint64_t> code_lengths;
     for (const auto c : text) {
-      encoded_text.emplace_back(chc.encode_symbol(c).code_word);
+      const auto code = chc.encode_symbol(c);
+      encoded_text.emplace_back(code.code_word);
+      code_lengths.emplace_back(code.code_length);
     }
     ASSERT_EQ(encoded_text.size(), text.size());
     for (uint64_t i = 0; i < encoded_text.size(); ++i) {
-      ASSERT_EQ(chc.decode_symbol(encoded_text[i]), text[i]);
+      EXPECT_EQ(chc.decode_symbol(code_lengths[i], encoded_text[i]), text[i])
+        << "pos: " << i << ", length: " << code_lengths[i] << ", symbol: "
+        << encoded_text[i];
     }
   });
 }
@@ -39,12 +44,17 @@ TEST(huffman_code_tests, wt_codes_reduced) {
     canonical_huff_codes<uint8_t, false> chc(
       text.data(), text.size(), reduced_sigma);
     std::vector<uint64_t> encoded_text;
+    std::vector<uint64_t> code_lengths;
     for (const auto c : text) {
-      encoded_text.emplace_back(chc.encode_symbol(c).code_word);
+      const auto code = chc.encode_symbol(c);
+      encoded_text.emplace_back(code.code_word);
+      code_lengths.emplace_back(code.code_length);
     }
     ASSERT_EQ(encoded_text.size(), text.size());
     for (uint64_t i = 0; i < encoded_text.size(); ++i) {
-      ASSERT_EQ(chc.decode_symbol(encoded_text[i]), text[i]);
+      EXPECT_EQ(chc.decode_symbol(code_lengths[i], encoded_text[i]), text[i])
+        << "pos: " << i << ", length: " << code_lengths[i] << ", symbol: "
+        << encoded_text[i];
     }
   });
 }
@@ -54,12 +64,17 @@ TEST(huffman_code_tests, wm_codes) {
     auto text = std::vector<uint8_t>(s.begin(), s.end());
     canonical_huff_codes<uint8_t, true> chc(text.data(), text.size());
     std::vector<uint64_t> encoded_text;
+    std::vector<uint64_t> code_lengths;
     for (const auto c : text) {
-      encoded_text.emplace_back(chc.encode_symbol(c).code_word);
+      const auto code = chc.encode_symbol(c);
+      encoded_text.emplace_back(code.code_word);
+      code_lengths.emplace_back(code.code_length);
     }
     ASSERT_EQ(encoded_text.size(), text.size());
     for (uint64_t i = 0; i < encoded_text.size(); ++i) {
-      ASSERT_EQ(chc.decode_symbol(encoded_text[i]), text[i]);
+      EXPECT_EQ(chc.decode_symbol(code_lengths[i], encoded_text[i]), text[i])
+        << "pos: " << i << ", length: " << code_lengths[i] << ", symbol: "
+        << encoded_text[i];
     }
   });
 }
@@ -72,12 +87,17 @@ TEST(huffman_code_tests, wm_codes_reduced) {
     canonical_huff_codes<uint8_t, true> chc(
       text.data(), text.size(), reduced_sigma);
     std::vector<uint64_t> encoded_text;
+    std::vector<uint64_t> code_lengths;
     for (const auto c : text) {
-      encoded_text.emplace_back(chc.encode_symbol(c).code_word);
+      const auto code = chc.encode_symbol(c);
+      encoded_text.emplace_back(code.code_word);
+      code_lengths.emplace_back(code.code_length);
     }
     ASSERT_EQ(encoded_text.size(), text.size());
     for (uint64_t i = 0; i < encoded_text.size(); ++i) {
-      ASSERT_EQ(chc.decode_symbol(encoded_text[i]), text[i]);
+      EXPECT_EQ(chc.decode_symbol(code_lengths[i], encoded_text[i]), text[i])
+        << "pos: " << i << ", length: " << code_lengths[i] << ", symbol: "
+        << encoded_text[i];
     }
   });
 }

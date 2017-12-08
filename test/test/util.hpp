@@ -115,7 +115,7 @@ void roundtrip_batch(F f) {
 
   f("abaaabbababb");
 
-  f(  "asdfasctjkcbweasbebvtiwetwcnbwbbqnqxernqze"
+  f("asdfasctjkcbweasbebvtiwetwcnbwbbqnqxernqze"
     "qcrnzxbneqebwcbqwicbqcbtnqweqxcbwuexcbzqwe"
     "dassdasdfzdfgfsdfsdgfducezctzqwebctuiqwiiq");
 
