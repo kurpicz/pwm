@@ -60,6 +60,10 @@ public:
     return code_pairs_[symbol].code_length;
   }
 
+  uint64_t code_word(const AlphabetType symbol) const {
+    return code_pairs_[symbol].code_word;
+  }
+
   // This is just for testing purposes!
   inline AlphabetType decode_symbol(const uint64_t length,
     const uint64_t encoded_symbol) {
@@ -176,6 +180,8 @@ private:
           code_pairs_[cur_code_pos].code_word = code_words.back();
           code_words.pop_back();
 
+          level_sizes_[code_pairs_[cur_code_pos].code_length - 1] +=
+            histogram.frequency(cur_code_pos);
           decode_table_.emplace(std::make_pair(
             code_pairs_[cur_code_pos],
             AlphabetType(cur_code_pos)));

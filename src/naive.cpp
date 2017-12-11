@@ -15,32 +15,37 @@
 // using wm_naive_32 = wx_naive<uint32_t, true>;
 
 // CONSTRUCTION_REGISTER("wm_naive",
-//   "Sequential wavelet matrix construction with 8-bit alphabet "
-//   "(using counting).", wm_naive_8)
+//  "Naive sequential wavelet matrix construction with 8-bit alphabet.",
+//  wm_naive_8)
 // CONSTRUCTION_REGISTER("wm_naive",
-//   "Sequential wavelet matrix construction with 16-bit alphabet "
-//   "(using counting).", wm_naive_16)
+//   "Naive sequential wavelet matrix construction with 16-bit alphabet.",
+//   wm_naive_16)
 // CONSTRUCTION_REGISTER("wm_naive",
-//   "Sequential wavelet matrix construction with 32-bit alphabet "
-//   "(using counting).", wm_naive_32)
+//   "Naive sequential wavelet matrix construction with 32-bit alphabet.",
+//   wm_naive_32)
 
 // using wt_naive_8 = wx_naive<uint8_t, false>;
 // using wt_naive_16 = wx_naive<uint16_t, false>;
 // using wt_naive_32 = wx_naive<uint32_t, false>;
 
 // CONSTRUCTION_REGISTER("wt_naive",
-//   "Sequential wavelet tree construction with 8-bit alphabet "
-//   "(using counting).", wt_naive_8)
+//   "Naive sequential wavelet tree construction with 8-bit alphabet.",
+//   wt_naive_8)
 // CONSTRUCTION_REGISTER("wt_naive",
-//   "Sequential wavelet tree construction with 16-bit alphabet "
-//   "(using counting).", wt_naive_16)
+//   "Naive sequential wavelet tree construction with 16-bit alphabet.",
+//   wt_naive_16)
 // CONSTRUCTION_REGISTER("wt_naive",
-//   "Sequential wavelet tree construction with 32-bit alphabet "
-//   "(using counting).", wt_naive_32)
+//   "Naive sequential wavelet tree construction with 32-bit alphabet.",
+//   wt_naive_32)
+
+using wm_huff_naive_8 = wx_huff_naive<uint8_t, true>;
+CONSTRUCTION_REGISTER("wm_huff_naive_8",
+  "Naive sequential Huffman-shaped wavelet matrix construction with 8-bit"
+  "alphabet.", wm_huff_naive_8)
 
 using wt_huff_naive_8 = wx_huff_naive<uint8_t, false>;
 CONSTRUCTION_REGISTER("wt_huff_naive_8",
-  "Sequential Huffman-shaped wavelet tree construction with 8-bit alphabet "
-  "(using counting).", wt_huff_naive_8)
+  "Naive sequential Huffman-shaped wavelet tree construction with 8-bit"
+  "alphabet.", wt_huff_naive_8)
 
 /******************************************************************************/

@@ -51,7 +51,8 @@ public:
         uint64_t word = 0ULL;
         for (uint32_t i = 0; i < 64; ++i) {
           word <<= 1;
-          word |= ((codes[local_text[cur_pos + i]] >> (levels - (level + 1))) & 1ULL);
+          word |= ((codes.code_word(local_text[cur_pos + i]) >>
+            (levels - (level + 1))) & 1ULL);
         }
         bv[level][cur_pos >> 6] = word;
       }
@@ -59,7 +60,8 @@ public:
         uint64_t word = 0ULL;
         for (uint32_t i = 0; i < size - cur_pos; ++i) {
           word <<= 1;
-          word |= ((codes[local_text[cur_pos + i]] >> (levels - (level + 1))) & 1ULL);
+          word |= ((codes.code_word(local_text[cur_pos + i]) >>
+            (levels - (level + 1))) & 1ULL);
         }
         word <<= (64 - (size & 63ULL));
         bv[level][size >> 6] = word;
@@ -70,16 +72,14 @@ public:
         const AlphabetType cur_symbol = local_text[i];
         if (codes.code_length(cur_symbol) > level) {
           ++remaining_symbols;
-          buckets[codes[cur_symbol] >> (levels - (level + 1))]
+          buckets[codes.code_word(cur_symbol) >> (levels - (level + 1))]
             .emplace_back(cur_symbol);
         }
       }
       local_text.resize(remaining_symbols);
       cur_pos = 0;
-      // Go through buckets in reverse (1s branch to the left when 
-      // Huffman-shaped).
-      for (auto rit = buckets.rbegin(); rit!= buckets.rend(); ++rit) {
-        for (const auto character : *rit) {
+      for (const auto& bucket : buckets) {
+        for (const auto character : bucket) {
           local_text[cur_pos++] = character;
         }
       }
@@ -95,18 +95,22 @@ public:
   static constexpr bool    is_parallel = false;
   static constexpr bool    is_tree     = false;
   static constexpr uint8_t word_width  = sizeof(AlphabetType);
-  static constexpr bool    is_huffman_shaped = false;
+  static constexpr bool    is_huffman_shaped = true;
 
   static wavelet_structure compute(AlphabetType const* const text,
-    const uint64_t size, const uint64_t levels) {
+    const uint64_t size, const uint64_t /*levels*/) {
 
     if(size == 0) {
       return wavelet_structure();
     }
 
-    auto _bv = bit_vectors(levels, size);
-    auto _zeros = std::vector<size_t>(levels, 0);
+    canonical_huff_codes<AlphabetType, !is_tree> codes(text, size);
+
+    const uint64_t levels = codes.levels();
+
+    auto _bv = huff_bit_vectors(levels, codes.level_sizes());
     auto& bv = _bv.vec();
+    auto _zeros = std::vector<size_t>(levels, 0);
 
     std::vector<AlphabetType> local_text(size);
     for(size_t i = 0; i < size; i++) {
@@ -121,7 +125,8 @@ public:
         uint64_t word = 0ULL;
         for (uint32_t i = 0; i < 64; ++i) {
           word <<= 1;
-          word |= ((local_text[cur_pos + i] >> (levels - (level + 1))) & 1ULL);
+          word |= ((codes.code_word(local_text[cur_pos + i]) >>
+            (levels - (level + 1))) & 1ULL);
         }
         bv[level][cur_pos >> 6] = word;
       }
@@ -129,7 +134,8 @@ public:
         uint64_t word = 0ULL;
         for (uint32_t i = 0; i < size - cur_pos; ++i) {
           word <<= 1;
-          word |= ((local_text[cur_pos + i] >> (levels - (level + 1))) & 1ULL);
+          word |= ((codes.code_word(local_text[cur_pos + i]) >>
+            (levels - (level + 1))) & 1ULL);
         }
         word <<= (64 - (size & 63ULL));
         bv[level][size >> 6] = word;
@@ -141,10 +147,13 @@ public:
       text1.reserve(size);
       // Scan the text and separate characters that inserted 0s and 1s
       for (uint64_t i = 0; i < local_text.size(); ++i) {
-        if ((local_text[i] >> (levels - (level + 1))) & 1ULL) {
-          text1.push_back(local_text[i]);
-        } else {
-          text0.push_back(local_text[i]);
+        const code_pair cp = codes.encode_symbol(local_text[i]);
+        if (cp.code_length >= level) {
+          if ((cp.code_word >> (levels - (level + 1))) & 1ULL) {
+            text1.push_back(local_text[i]);
+          } else {
+            text0.push_back(local_text[i]);
+          }
         }
       }
       // "Sort" the text stably based on the bit inserted in the bit vector
@@ -156,6 +165,7 @@ public:
       }
       _zeros[level] = text0.size();
     }
+    std::cout << std::endl << std::endl;
     return wavelet_structure(std::move(_bv), std::move(_zeros));
   }
 }; // class wx_huff_naive<MATRIX>
