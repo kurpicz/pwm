@@ -11,50 +11,23 @@
 #include "huff_bit_vectors.hpp"
 #include "util/debug.hpp"
 
-[[gnu::unused]] // TODO: C++17 [[maybe_unused]]
-static std::vector<std::vector<uint64_t>> border_offsets(const huff_bit_vectors& bv) {
-  std::vector<std::vector<uint64_t>> result(bv.levels());
-  // The first level starts at pos 0;
-  // result[0].emplace_back(std::vector<uint64_t>{ 0 });
-
-  return result;
-}
-
 [[gnu::unused]] // TODO: C++17 [[maybe_unused]] 
-static std::string decode_wt_huff(const huff_bit_vectors& bv, uint64_t length) {
-  // auto ls = level_sizes(bv, 0, length, 0);
+static std::string decode_wt_huff(const huff_bit_vectors& bv) {
+  std::vector<uint64_t> code_words;
+  std::vector<uint64_t> code_lengths;
 
-  // for (auto& v : ls) {
-  //   for (uint64_t i = 1; i < v.size(); i++) {
-  //     v[i] = v[i - 1] + v[i];
-  //   }
-  //   for (uint64_t i = 1; i < v.size(); i++) {
-  //     uint64_t j = v.size() - i;
-  //     v[j] = v[j - 1];
-  //   }
-  //   if (v.size() > 0) {
-  //     v[0] = 0;
-  //   }
-  // }
+  std::vector<std::vector<uint64_t>> borders(bv.levels());
 
-  auto r = std::vector<uint8_t>(length);
+  //  Count initial 0s and 1s.
+  for (uint64_t i = 0; i < bv.level_size(0); ++i) {
 
-  // for (uint64_t i = 0; i < length; i++) {
-  //   uint8_t value = 0;
-  //   uint64_t j = 0;
-  //   for (uint64_t level = 0; level < bv.levels(); level++) {
-  //     auto& offset = ls[level][j];
-  //     uint8_t bit = bit_at(bv[level], offset);
+  }
 
-  //     value <<= 1;
-  //     value |= bit;
+  for (uint64_t i = 0; i + 1 < bv.levels(); ++i) {
+    // for (uint64_t j = 0; j <)
+  } 
 
-  //     offset++;
-  //     j = 2 * j + bit;
-  //   }
-  //   r[i] = value;
-  // }
-
+  std::vector<uint8_t> r;
   return std::string(r.begin(), r.end());
 }
 

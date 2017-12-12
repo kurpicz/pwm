@@ -148,7 +148,6 @@ private:
     level_sizes_ = std::vector<uint64_t>(
       code_pairs_[code_length_order.back()].code_length, 0);
 
-
     if (is_matrix) { // TODO: C++17 (if constexpr)
       uint64_t code_nr = 0;
       uint64_t cur_length = 0;
@@ -157,7 +156,7 @@ private:
       while (code_nr < code_pairs_.size() &&
         code_pairs_[code_length_order[code_nr]].code_length == 0) { ++code_nr; }
 
-      for (; code_nr < code_pairs_.size();) {
+      while (code_nr < code_pairs_.size()) {
         if (code_pairs_[code_length_order[code_nr]].code_length > cur_length) {
           for (uint i = cur_length;
             i < code_pairs_[code_length_order[code_nr]].code_length; ++i) {

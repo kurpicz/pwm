@@ -14,7 +14,7 @@
 struct huff_bit_vectors_sizes {
   static uint64_t level_size(const uint64_t level,
     std::vector<uint64_t> level_sizes) {
-    return level_sizes[level];
+    return word_size(level_sizes[level]);
   }
 }; // struct huff_bit_vectors_sizes
 

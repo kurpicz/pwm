@@ -47,7 +47,7 @@ public:
 
     for (uint64_t level = 0; level < levels; ++level) {
       uint32_t cur_pos = 0;
-      for (; cur_pos + 64 <= size; cur_pos += 64) {
+      for (; cur_pos + 64 <= local_text.size(); cur_pos += 64) {
         uint64_t word = 0ULL;
         for (uint32_t i = 0; i < 64; ++i) {
           word <<= 1;
@@ -56,21 +56,21 @@ public:
         }
         bv[level][cur_pos >> 6] = word;
       }
-      if (size & 63ULL) {
+      if (local_text.size() & 63ULL) {
         uint64_t word = 0ULL;
-        for (uint32_t i = 0; i < size - cur_pos; ++i) {
+        for (uint32_t i = 0; i < local_text.size() - cur_pos; ++i) {
           word <<= 1;
           word |= ((codes.code_word(local_text[cur_pos + i]) >>
             (levels - (level + 1))) & 1ULL);
         }
-        word <<= (64 - (size & 63ULL));
-        bv[level][size >> 6] = word;
+        word <<= (64 - (local_text.size() & 63ULL));
+        bv[level][local_text.size() >> 6] = word;
       }
       std::vector<std::vector<AlphabetType>> buckets(1ULL << (level + 1));
       uint64_t remaining_symbols = 0;
       for (uint64_t i = 0; i < local_text.size(); ++i) {
         const AlphabetType cur_symbol = local_text[i];
-        if (codes.code_length(cur_symbol) > level) {
+        if (codes.code_length(cur_symbol) > level + 1) {
           ++remaining_symbols;
           buckets[codes.code_word(cur_symbol) >> (levels - (level + 1))]
             .emplace_back(cur_symbol);
@@ -121,7 +121,7 @@ public:
     for (uint64_t level = 0; level < levels; ++level) {
       // Insert the level-th MSB in the bit vector of the level (in text order)
       uint32_t cur_pos = 0;
-      for (; cur_pos + 64 <= size; cur_pos += 64) {
+      for (; cur_pos + 64 <= local_text.size(); cur_pos += 64) {
         uint64_t word = 0ULL;
         for (uint32_t i = 0; i < 64; ++i) {
           word <<= 1;
@@ -130,33 +130,32 @@ public:
         }
         bv[level][cur_pos >> 6] = word;
       }
-      if (size & 63ULL) {
+      if (local_text.size() & 63ULL) {
         uint64_t word = 0ULL;
-        for (uint32_t i = 0; i < size - cur_pos; ++i) {
+        for (uint32_t i = 0; i < local_text.size() - cur_pos; ++i) {
           word <<= 1;
           word |= ((codes.code_word(local_text[cur_pos + i]) >>
             (levels - (level + 1))) & 1ULL);
         }
-        word <<= (64 - (size & 63ULL));
-        bv[level][size >> 6] = word;
+        word <<= (64 - (local_text.size() & 63ULL));
+        bv[level][local_text.size() >> 6] = word;
       }
 
       std::vector<AlphabetType> text0;
-      text0.reserve(size);
       std::vector<AlphabetType> text1;
-      text1.reserve(size);
       // Scan the text and separate characters that inserted 0s and 1s
       for (uint64_t i = 0; i < local_text.size(); ++i) {
         const code_pair cp = codes.encode_symbol(local_text[i]);
-        if (cp.code_length >= level) {
+        if (cp.code_length > level + 1) {
           if ((cp.code_word >> (levels - (level + 1))) & 1ULL) {
-            text1.push_back(local_text[i]);
+            text1.emplace_back(local_text[i]);
           } else {
-            text0.push_back(local_text[i]);
+            text0.emplace_back(local_text[i]);
           }
         }
       }
       // "Sort" the text stably based on the bit inserted in the bit vector
+      local_text.resize(text0.size() + text1.size());
       for (uint64_t i = 0; i < text0.size(); ++i) {
         local_text[i] = text0[i];
       }
@@ -165,7 +164,6 @@ public:
       }
       _zeros[level] = text0.size();
     }
-    std::cout << std::endl << std::endl;
     return wavelet_structure(std::move(_bv), std::move(_zeros));
   }
 }; // class wx_huff_naive<MATRIX>
