@@ -51,8 +51,7 @@ public:
         uint64_t word = 0ULL;
         for (uint32_t i = 0; i < 64; ++i) {
           word <<= 1;
-          word |= ((codes.code_word(local_text[cur_pos + i]) >>
-            (levels - (level + 1))) & 1ULL);
+          word |= codes.encode_symbol(local_text[cur_pos + i])[level];
         }
         bv[level][cur_pos >> 6] = word;
       }
@@ -60,29 +59,24 @@ public:
         uint64_t word = 0ULL;
         for (uint32_t i = 0; i < local_text.size() - cur_pos; ++i) {
           word <<= 1;
-          word |= ((codes.code_word(local_text[cur_pos + i]) >>
-            (levels - (level + 1))) & 1ULL);
+          word |= codes.encode_symbol(local_text[cur_pos + i])[level];
         }
         word <<= (64 - (local_text.size() & 63ULL));
         bv[level][local_text.size() >> 6] = word;
       }
       std::vector<std::vector<AlphabetType>> buckets(1ULL << (level + 1));
-      uint64_t remaining_symbols = 0;
       for (uint64_t i = 0; i < local_text.size(); ++i) {
         const AlphabetType cur_symbol = local_text[i];
         if (codes.code_length(cur_symbol) > level + 1) {
-          ++remaining_symbols;
-          buckets[codes.code_word(cur_symbol) >> (levels - (level + 1))]
+          buckets[codes.encode_symbol(cur_symbol).prefix(level + 1)]
             .emplace_back(cur_symbol);
         }
       }
-      local_text.resize(remaining_symbols);
-      cur_pos = 0;
-      for (const auto& bucket : buckets) {
-        for (const auto character : bucket) {
-          local_text[cur_pos++] = character;
-        }
+      for (uint64_t i = 1; i < buckets.size(); ++i) {
+        std::move(buckets[i].begin(), buckets[i].end(),
+          std::back_inserter(buckets[0]));
       }
+      local_text.swap(buckets[0]);
     }
     return wavelet_structure(std::move(_bv));
   }
@@ -114,7 +108,7 @@ public:
 
     std::vector<AlphabetType> local_text(size);
     for(size_t i = 0; i < size; i++) {
-        local_text[i] = text[i];
+      local_text[i] = text[i];
     }
 
     // Construct each level top-down
@@ -125,8 +119,7 @@ public:
         uint64_t word = 0ULL;
         for (uint32_t i = 0; i < 64; ++i) {
           word <<= 1;
-          word |= ((codes.code_word(local_text[cur_pos + i]) >>
-            (levels - (level + 1))) & 1ULL);
+          word |= codes.encode_symbol(local_text[cur_pos + i])[level];
         }
         bv[level][cur_pos >> 6] = word;
       }
@@ -134,8 +127,7 @@ public:
         uint64_t word = 0ULL;
         for (uint32_t i = 0; i < local_text.size() - cur_pos; ++i) {
           word <<= 1;
-          word |= ((codes.code_word(local_text[cur_pos + i]) >>
-            (levels - (level + 1))) & 1ULL);
+          word |= codes.encode_symbol(local_text[cur_pos + i])[level];
         }
         word <<= (64 - (local_text.size() & 63ULL));
         bv[level][local_text.size() >> 6] = word;
@@ -144,25 +136,19 @@ public:
       std::vector<AlphabetType> text0;
       std::vector<AlphabetType> text1;
       // Scan the text and separate characters that inserted 0s and 1s
-      for (uint64_t i = 0; i < local_text.size(); ++i) {
-        const code_pair cp = codes.encode_symbol(local_text[i]);
+      for (const auto symbol : local_text) {
+        const code_pair cp = codes.encode_symbol(symbol);
         if (cp.code_length > level + 1) {
-          if ((cp.code_word >> (levels - (level + 1))) & 1ULL) {
-            text1.emplace_back(local_text[i]);
+          if (cp[level]) {
+            text1.emplace_back(symbol);
           } else {
-            text0.emplace_back(local_text[i]);
+            text0.emplace_back(symbol);
           }
         }
       }
-      // "Sort" the text stably based on the bit inserted in the bit vector
-      local_text.resize(text0.size() + text1.size());
-      for (uint64_t i = 0; i < text0.size(); ++i) {
-        local_text[i] = text0[i];
-      }
-      for (uint64_t i = 0; i < text1.size(); ++i) {
-        local_text[i + text0.size()] = text1[i];
-      }
       _zeros[level] = text0.size();
+      std::move(text1.begin(), text1.end(), std::back_inserter(text0));
+      local_text.swap(text0);
     }
     return wavelet_structure(std::move(_bv), std::move(_zeros));
   }

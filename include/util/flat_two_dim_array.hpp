@@ -12,6 +12,8 @@
 #include <cstring>
 #include <iostream>
 
+#include "util/common.hpp"
+
 template <typename IndexType, class size_function>
 class flat_two_dim_array {
 
@@ -20,23 +22,36 @@ public:
 
   template <typename... SizeFunctionArgs>
   flat_two_dim_array(const uint64_t levels, SizeFunctionArgs... size_f_args)
-  : levels_(levels), data_(levels + 1) {
+  : levels_(levels), data_(levels + 1), level_bit_sizes_(levels) {
     assert(levels > 0);
     uint64_t data_size = 0;
     for (uint64_t level = 0; level < levels; ++level) {
-      data_size += size_function::level_size(level, size_f_args...);
+      const uint64_t level_size =
+        size_function::level_size(level, size_f_args...);
+      // If its a bit vector, we still want to knwo how many bits there are
+      // actually stored in each level, not just
+      if (size_function::is_bit_vector) { // TODO: C++17 if constexpr
+        level_bit_sizes_[level] = level_size;
+        data_size += word_size(level_size);
+      } else {
+        level_bit_sizes_[level] = level_size * (sizeof(IndexType) >> 3);
+        data_size += level_size;
+      }
     }
     data_[0] = new IndexType[data_size];
     memset(data_[0], 0, data_size * sizeof(IndexType));
     for (uint64_t level = 1; level < data_.size(); ++level) {
-      data_[level] = data_[level - 1] +
+      const uint64_t level_size =
         size_function::level_size(level - 1, size_f_args...);
+      if (size_function::is_bit_vector) { // TODO: C++17 if constexpr
+        data_[level] = data_[level - 1] + word_size(level_size);
+      } else {
+        data_[level] = data_[level - 1] + level_size;
+      }
     }
   }
 
-  flat_two_dim_array(flat_two_dim_array&& other)
-  : levels_(other.levels_),
-    data_(std::forward<std::vector<IndexType*>>(other.data_)) { }
+  flat_two_dim_array(flat_two_dim_array&& other) = default;
 
   flat_two_dim_array& operator =(flat_two_dim_array&& other) {
     if (*this != other) {
@@ -80,6 +95,10 @@ public:
     return data_[level + 1] - data_[level];
   }
 
+  inline uint64_t level_bit_size(uint64_t level) const {
+    return level_bit_sizes_[level];
+  }
+
   inline const IndexType* operator [](const uint64_t index) const {
     return data_[index];
   }
@@ -101,6 +120,7 @@ public:
 private:
   uint64_t levels_;
   std::vector<IndexType*> data_;
+  std::vector<uint64_t> level_bit_sizes_;
 
 }; // class flat_two_dim_array
 

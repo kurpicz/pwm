@@ -8,67 +8,111 @@
 
 #pragma once
 
-#include "huff_bit_vectors.hpp"
+#include <algorithm>
+
+#include "huffman/huff_bit_vectors.hpp"
+#include "huffman/huff_codes.hpp"
+#include "util/border_hist_array.hpp"
 #include "util/debug.hpp"
 
-[[gnu::unused]] // TODO: C++17 [[maybe_unused]] 
-static std::string decode_wt_huff(const huff_bit_vectors& bv) {
-  std::vector<uint64_t> code_words;
-  std::vector<uint64_t> code_lengths;
-
-  std::vector<std::vector<uint64_t>> borders(bv.levels());
-
-  //  Count initial 0s and 1s.
-  for (uint64_t i = 0; i < bv.level_size(0); ++i) {
-
-  }
-
-  for (uint64_t i = 0; i + 1 < bv.levels(); ++i) {
-    // for (uint64_t j = 0; j <)
-  } 
-
-  std::vector<uint8_t> r;
-  return std::string(r.begin(), r.end());
-}
-
-[[gnu::unused]] // TODO: C++17 [[maybe_unused]] 
-static std::string decode_wm_huff(const huff_bit_vectors& bv,
-  const std::vector<uint64_t>& zeros, const uint64_t length) {
+[[gnu::unused]]
+static std::string decode_wt_huff(const huff_bit_vectors& bv,
+  const canonical_huff_codes<uint8_t, false>& codes) {
 
   if (bv.levels() == 0) {
-    return {};
+    return { };
   }
 
-  auto r = std::vector<uint8_t>(length, uint8_t(0));
-  auto rtmp = std::vector<uint8_t>(length, uint8_t(0));
-  // print_bv_zeros(bv, zeros, length);
+  struct icp {
+    uint64_t index;
+    code_pair cp;
+  }; // struct icp
 
-  for(uint64_t level = bv.levels() - 1; level > 0; level--) {
-    uint64_t offset0 = 0;
-    uint64_t offset1 = zeros[level - 1];
+  // All codes have length greater or equal to 1. By choosing the initial length
+  // to be 0, we can use the length to mark finished codes. To this end, we
+  // interpret every code_length > 0 as the code_length of a finished code.
+  std::vector<icp> icps(bv.level_bit_size(0), { 0, { 0ULL, 0ULL } });
+  for (uint64_t i = 0; i < icps.size(); ++i) {
+    icps[i].index = i;
+  }
 
-    for(uint64_t i = 0; i < length; i++) {
-      r[i] |= (bit_at(bv[level], i) << (bv.levels() - level - 1));
+  for (uint64_t level = 0; level < bv.levels(); ++level) {
+    uint64_t bit_pos = 0;
+    for (; bit_pos < bv.level_bit_size(level); ++bit_pos) {
+      icps[bit_pos].cp.code_word <<= 1;
+      icps[bit_pos].cp.code_word |= bit_at(bv[level], bit_pos);
     }
-
-    for(uint64_t i = 0; i < length; i++) {
-      if(bit_at(bv[level - 1], i) == 0) {
-        rtmp[i] = r[offset0];
-        offset0++;
-      } else {
-        rtmp[i] = r[offset1];
-        offset1++;
-      }
+    while (bit_pos < bv.level_bit_size(((level == 0) ? 0 : level - 1))) {
+      icps[bit_pos++].cp.code_length = level;
     }
-
-    r.swap(rtmp);
+    std::stable_sort(icps.begin(), icps.begin() + bv.level_bit_size(level),
+      [](const icp& a, const icp& b) {
+        return a.cp.code_word < b.cp.code_word;
+      });
+  }
+  for (uint64_t i = 0; i < bv.level_bit_size(bv.levels() - 1); ++i) {
+    icps[i].cp.code_length = bv.levels();
   }
 
-  for(uint64_t i = 0; i < length; i++) {
-    r[i] |= bit_at(bv[0], i) << (bv.levels() - 1);
+  std::sort(icps.begin(), icps.end(), [](const icp& a, const icp& b) {
+    return a.index < b.index;
+  });
+
+  std::string result;
+  for (const auto& icp : icps) {
+    result.push_back(codes.decode_symbol(icp.cp.code_length, icp.cp.code_word));
+  }
+  return result;
+}
+
+[[gnu::unused]]
+static std::string decode_wm_huff(const huff_bit_vectors& bv,
+  const canonical_huff_codes<uint8_t, true>& codes) {
+
+  if (bv.levels() == 0) {
+    return { };
   }
 
-  return std::string(r.begin(), r.end());
+  struct icp {
+    uint64_t index;
+    code_pair cp;
+  }; // struct icp
+
+  // All codes have length greater or equal to 1. By choosing the initial length
+  // to be 0, we can use the length to mark finished codes. To this end, we
+  // interpret every code_length > 0 as the code_length of a finished code.
+  std::vector<icp> icps(bv.level_bit_size(0), { 0, { 0ULL, 0ULL } });
+  for (uint64_t i = 0; i < icps.size(); ++i) {
+    icps[i].index = i;
+  }
+
+  for (uint64_t level = 0; level < bv.levels(); ++level) {
+    uint64_t bit_pos = 0;
+    for (; bit_pos < bv.level_bit_size(level); ++bit_pos) {
+      icps[bit_pos].cp.code_word <<= 1;
+      icps[bit_pos].cp.code_word |= bit_at(bv[level], bit_pos);
+    }
+    while (bit_pos < bv.level_bit_size(((level == 0) ? 0 : level - 1))) {
+      icps[bit_pos++].cp.code_length = level;
+    }
+    std::stable_sort(icps.begin(), icps.begin() + bv.level_bit_size(level),
+      [](const icp& a, const icp& b) {
+        return (a.cp.code_word & 1ULL) < (b.cp.code_word & 1ULL);
+      });
+  }
+  for (uint64_t i = 0; i < bv.level_bit_size(bv.levels() - 1); ++i) {
+    icps[i].cp.code_length = bv.levels();
+  }
+
+  std::sort(icps.begin(), icps.end(), [](const icp& a, const icp& b) {
+    return a.index < b.index;
+  });
+
+  std::string result;
+  for (const auto& icp : icps) {
+    result.push_back(codes.decode_symbol(icp.cp.code_length, icp.cp.code_word));
+  }
+  return result;
 }
 
 /******************************************************************************/

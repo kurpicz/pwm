@@ -34,19 +34,16 @@ static std::vector<std::vector<uint64_t>> level_sizes(const bit_vectors& bv,
 
   uint64_t zeroes = 0;
 
-  for(uint64_t i = 0; i < bit_length; i++) {
-    uint8_t bit = bit_at(bv[level], bit_offset + i);
-
-    if (bit == 0) {
-      zeroes++;
+  for(uint64_t i = 0; i < bit_length; ++i) {
+    if (bit_at(bv[level], bit_offset + i) == 0) {
+      ++zeroes;
     }
   }
 
   uint64_t size_left = zeroes;
   uint64_t size_right = bit_length - zeroes;
 
-  auto sizes_left  = level_sizes(
-    bv, bit_offset, size_left, level + 1);
+  auto sizes_left  = level_sizes(bv, bit_offset, size_left, level + 1);
   auto sizes_right = level_sizes(
     bv, bit_offset + size_left, size_right, level + 1);
 
@@ -154,7 +151,7 @@ static std::string decode_wm(const bit_vectors& bv,
   auto rtmp = std::vector<uint8_t>(length, uint8_t(0));
   // print_bv_zeros(bv, zeros, length);
 
-  for(uint64_t level = bv.levels() - 1; level > 0; level--) {
+  for(uint64_t level = bv.levels() - 1; level > 0; --level) {
     uint64_t offset0 = 0;
     uint64_t offset1 = zeros[level - 1];
 

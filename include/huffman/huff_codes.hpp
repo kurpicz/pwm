@@ -22,6 +22,18 @@ struct code_pair {
   uint64_t code_length;
   uint64_t code_word;
 
+  // Get the size-length prefix. This is necessary as shifting may not yield the
+  // correct result due to the different length of the code words
+  uint64_t prefix(const uint64_t size) {
+    return code_word >> (code_length - size);
+  }
+
+  // Get the index-th bit of the code word. Note that we cannot simply shift
+  // all the code words where they are used, as they have different lengths.
+  bool operator [](const uint64_t index) const {
+    return (code_word >> (code_length - index - 1)) & 1ULL;
+  }
+
   bool operator ==(const code_pair& other) const {
     return std::tie(code_length, code_word) == std::tie(
       other.code_length, other.code_word);
@@ -64,10 +76,11 @@ public:
     return code_pairs_[symbol].code_word;
   }
 
-  // This is just for testing purposes!
+  // This for TESTING purposes ONLY!
   inline AlphabetType decode_symbol(const uint64_t length,
-    const uint64_t encoded_symbol) {
-    return decode_table_[code_pair { length, encoded_symbol }];
+    const uint64_t encoded_symbol) const {
+
+    return decode_table_.find({ length, encoded_symbol })->second;
   }
 
   inline const std::vector<code_pair>& code_pairs() const {
@@ -150,7 +163,7 @@ private:
 
     if (is_matrix) { // TODO: C++17 (if constexpr)
       uint64_t code_nr = 0;
-      uint64_t cur_length = 0;
+      uint64_t cur_length = 1;
       std::vector<uint64_t> code_words { 0ULL, 1ULL };
 
       while (code_nr < code_pairs_.size() &&

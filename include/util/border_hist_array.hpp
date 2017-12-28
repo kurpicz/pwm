@@ -16,6 +16,8 @@ struct border_hist_level_size {
   static uint64_t level_size(const uint64_t level) {
     return 1ULL << level;
   };
+
+  static constexpr bool is_bit_vector = false;
 }; // struct border_hist_level_size
 
 using border_hist_array = flat_two_dim_array<uint64_t, border_hist_level_size>;

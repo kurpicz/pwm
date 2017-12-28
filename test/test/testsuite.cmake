@@ -27,16 +27,16 @@ macro(generic_run_test test_target test_file
 
   if (${construction_test})
     set(CONSTRUCTION_ALGORITHMS
-      # ${PROJECT_SOURCE_DIR}/src/dd_prefix_counting.cpp
-      # ${PROJECT_SOURCE_DIR}/src/dd_prefix_counting_single_scan.cpp
-      # ${PROJECT_SOURCE_DIR}/src/dd_prefix_sorting.cpp
+      ${PROJECT_SOURCE_DIR}/src/dd_prefix_counting.cpp
+      ${PROJECT_SOURCE_DIR}/src/dd_prefix_counting_single_scan.cpp
+      ${PROJECT_SOURCE_DIR}/src/dd_prefix_sorting.cpp
       ${PROJECT_SOURCE_DIR}/src/naive.cpp
-      # ${PROJECT_SOURCE_DIR}/src/parallel_prefix_counting.cpp
-      # ${PROJECT_SOURCE_DIR}/src/parallel_prefix_counting_single_scan.cpp
-      # ${PROJECT_SOURCE_DIR}/src/parallel_prefix_sorting.cpp
-      # ${PROJECT_SOURCE_DIR}/src/sequential_prefix_counting.cpp
-      # ${PROJECT_SOURCE_DIR}/src/sequential_prefix_counting_single_scan.cpp
-      # ${PROJECT_SOURCE_DIR}/src/sequential_prefix_sorting.cpp
+      ${PROJECT_SOURCE_DIR}/src/parallel_prefix_counting.cpp
+      ${PROJECT_SOURCE_DIR}/src/parallel_prefix_counting_single_scan.cpp
+      ${PROJECT_SOURCE_DIR}/src/parallel_prefix_sorting.cpp
+      ${PROJECT_SOURCE_DIR}/src/sequential_prefix_counting.cpp
+      ${PROJECT_SOURCE_DIR}/src/sequential_prefix_counting_single_scan.cpp
+      ${PROJECT_SOURCE_DIR}/src/sequential_prefix_sorting.cpp
       )
   else()
     unset(CONSTRUCTION_ALGORITHMS) 
