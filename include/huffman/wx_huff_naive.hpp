@@ -38,7 +38,7 @@ public:
     const uint64_t levels = codes.levels();
 
     auto _bv = huff_bit_vectors(levels, codes.level_sizes());
-    auto& bv = _bv.vec();
+    auto& bv = _bv.raw_data();
 
     std::vector<AlphabetType> local_text(size);
     for(size_t i = 0; i < size; i++) {
@@ -103,7 +103,7 @@ public:
     const uint64_t levels = codes.levels();
 
     auto _bv = huff_bit_vectors(levels, codes.level_sizes());
-    auto& bv = _bv.vec();
+    auto& bv = _bv.raw_data();
     auto _zeros = std::vector<size_t>(levels, 0);
 
     std::vector<AlphabetType> local_text(size);
