@@ -17,7 +17,7 @@
 
 [[gnu::unused]]
 static std::string decode_wt_huff(const huff_bit_vectors& bv,
-  const canonical_huff_codes<uint8_t, false>& codes) {
+  const canonical_huff_codes<uint8_t, true>& codes) {
 
   if (bv.levels() == 0) {
     return { };
@@ -67,7 +67,7 @@ static std::string decode_wt_huff(const huff_bit_vectors& bv,
 
 [[gnu::unused]]
 static std::string decode_wm_huff(const huff_bit_vectors& bv,
-  const canonical_huff_codes<uint8_t, true>& codes) {
+  const canonical_huff_codes<uint8_t, false>& codes) {
 
   if (bv.levels() == 0) {
     return { };

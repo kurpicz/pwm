@@ -14,11 +14,11 @@
 #include "huff_codes.hpp"
 #include "util/wavelet_structure.hpp"
 
-template <typename AlphabetType, bool is_matrix>
+template <typename AlphabetType, bool is_tree>
 class wx_huff_naive;
 
 template <typename AlphabetType>
-class wx_huff_naive<AlphabetType, false> {
+class wx_huff_naive<AlphabetType, true> {
 
 public:
   static constexpr bool    is_parallel = false;
@@ -33,7 +33,7 @@ public:
       return wavelet_structure();
     }
 
-    canonical_huff_codes<AlphabetType, !is_tree> codes(text, size);
+    canonical_huff_codes<AlphabetType, is_tree> codes(text, size);
 
     const uint64_t levels = codes.levels();
 
@@ -83,7 +83,7 @@ public:
 }; // class wt_huff_naive
 
 template <typename AlphabetType>
-class wx_huff_naive<AlphabetType, true> {
+class wx_huff_naive<AlphabetType, false> {
 
 public:
   static constexpr bool    is_parallel = false;
@@ -98,7 +98,7 @@ public:
       return wavelet_structure();
     }
 
-    canonical_huff_codes<AlphabetType, !is_tree> codes(text, size);
+    canonical_huff_codes<AlphabetType, is_tree> codes(text, size);
 
     const uint64_t levels = codes.levels();
 
