@@ -207,7 +207,13 @@ private:
       while (code_nr < code_pairs_.size() &&
         code_pairs_[code_length_order[code_nr]].code_length == 0) { ++code_nr; }
 
-      for (; code_nr < code_pairs_.size(); ++code_nr) {
+      code_pairs_[code_length_order[code_nr]].code_word = (~code_word) &
+          ((1ULL << code_pairs_[code_length_order[code_nr]].code_length) - 1);
+      decode_table_.emplace(std::make_pair(
+        code_pairs_[code_length_order[code_nr]], code_length_order[code_nr]));
+      level_sizes_[code_pairs_[code_length_order[code_nr]].code_length - 1] +=
+          histogram.frequency(code_length_order[code_nr]);
+      for (++code_nr; code_nr < code_pairs_.size(); ++code_nr) {
         const uint64_t cur_code_pos = code_length_order[code_nr];
         // Count the number of symbols that occur for each code length
         level_sizes_[code_pairs_[cur_code_pos].code_length - 1] +=
