@@ -21,8 +21,15 @@
 #include "util/type_for_bytes.hpp"
 #include "util/wavelet_structure.hpp"
 
+class construction_algorithm_base;
+
+template<bool is_semi_external>
 class construction_algorithm;
 
+template<typename Algorithm, bool is_semi_external>
+class concrete_algorithm;
+
+template<bool is_semi_external>
 class algorithm_list {
 public:
   algorithm_list(const algorithm_list& other) = delete;
@@ -35,7 +42,7 @@ public:
     return list;
   }
 
-  inline void register_algorithm(construction_algorithm const* algo) {
+  inline void register_algorithm(construction_algorithm<is_semi_external> const* algo) {
     algorithms_.push_back(algo);
   }
 
@@ -46,20 +53,16 @@ private:
   algorithm_list() { }
 
   // List of static pointers to the different algorithms
-  std::vector<construction_algorithm const*> algorithms_;
+  std::vector<construction_algorithm<is_semi_external> const*> algorithms_;
 }; // class algorithm_list
 
-class construction_algorithm {
-public:
-  construction_algorithm(std::string name, std::string description)
-    : name_(name), description_(description) {
-    algorithm_list::get_algorithm_list().register_algorithm(this);
-  }
 
-  virtual wavelet_structure<false> compute_bitvector(const void* global_text,
-    const uint64_t size, const uint64_t levels) const = 0;
-  virtual wavelet_structure<false> compute_bitvector_semi_external(void* file_stream,
-    const uint64_t size, const uint64_t levels) const = 0;
+class construction_algorithm_base {
+public:
+
+  construction_algorithm_base(std::string name, std::string description)
+    : name_(name), description_(description) {}
+
   virtual float median_time(const void* global_text, const uint64_t size,
       const uint64_t levels, size_t runs) const = 0;
   virtual void memory_peak(const void* global_text, const uint64_t size,
@@ -81,32 +84,49 @@ public:
     std::cout << name_ << ": " << description_ << std::endl;
   }
 
-private:
+protected:
   std::string name_;
   std::string description_;
 }; // class construction_algorithm
 
-template <typename Algorithm>
-class concrete_algorithm : construction_algorithm {
+template<>
+class construction_algorithm<false> : public construction_algorithm_base {
+public:
+  construction_algorithm(std::string name, std::string description)
+    : construction_algorithm_base(name, description) {
+    algorithm_list<false>::get_algorithm_list().register_algorithm(this);
+  }
+
+  virtual wavelet_structure<false> compute_bitvector(const void* global_text,
+    const uint64_t size, const uint64_t levels) const = 0;
+}; // class construction_algorithm
+
+template<>
+class construction_algorithm<true> : public construction_algorithm_base {
+public:
+  construction_algorithm(std::string name, std::string description)
+    : construction_algorithm_base(name, description) {
+    algorithm_list<true>::get_algorithm_list().register_algorithm(this);
+  }
+
+  virtual wavelet_structure<true> compute_bitvector(const void* global_text,
+    const uint64_t size, const uint64_t levels) const = 0;
+}; // class construction_algorithm
+
+
+template <typename Algorithm, bool is_semi_external>
+class concrete_algorithm : public construction_algorithm<is_semi_external> {
 
 public:
   concrete_algorithm(std::string name, std::string description)
-  : construction_algorithm(name, description) { }
+  : construction_algorithm<is_semi_external>(name, description) { }
 
-  inline wavelet_structure<false> compute_bitvector(const void* global_text,
+  inline wavelet_structure<is_semi_external> compute_bitvector(const void* global_text,
     const uint64_t size, const uint64_t levels) const override {
     using text_vec_type =
       std::vector<typename type_for_bytes<Algorithm::word_width>::type>;
     auto const* text = static_cast<text_vec_type const*>(global_text);
     return Algorithm::compute(text->data(), size, levels);
-  }
-
-  inline wavelet_structure<false> compute_bitvector_semi_external(void* file_stream,
-    const uint64_t size, const uint64_t levels) const override {
-    using stream_type =
-      ifile_stream<typename type_for_bytes<Algorithm::word_width>::type>;
-    auto& ifs = *static_cast<stream_type*>(file_stream);
-    return Algorithm::compute(ifs, size, levels);
   }
 
   float median_time(const void* global_text, const uint64_t size,
@@ -155,7 +175,11 @@ public:
 
 #define CONSTRUCTION_REGISTER(algo_name, algo_description, ws) \
   static const auto _cstr_algo_ ## ws ## _register             \
-    = concrete_algorithm<ws>(algo_name, algo_description);
+    = concrete_algorithm<ws, false>(algo_name, algo_description);
+    
+#define CONSTRUCTION_REGISTER_SE(algo_name, algo_description, ws) \
+  static const auto _cstr_algo_ ## ws ## _register             \
+    = concrete_algorithm<ws, true>(algo_name, algo_description);
 
 #endif // ALGORITHM_HEADER
 

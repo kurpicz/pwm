@@ -70,9 +70,13 @@ int32_t main(int32_t argc, char const* argv[]) {
   cmd.add(semi_external_arg);
   cmd.parse( argc, argv );
 
-  auto& algo_list = algorithm_list::get_algorithm_list();
+  auto& algo_list1 = algorithm_list<false>::get_algorithm_list();
+  auto& algo_list2 = algorithm_list<true>::get_algorithm_list();
   if (list_all_algorithms.getValue()) {
-    for (const auto& a : algo_list) {
+    for (const auto& a : algo_list1) {
+      a->print_info();
+    }
+    for (const auto& a : algo_list2) {
       a->print_info();
     }
     return 0;
@@ -162,7 +166,7 @@ int32_t main(int32_t argc, char const* argv[]) {
     std::cout << "Memory peak text: " << malloc_count_peak() << ", MB: "
               << malloc_count_peak() / (1024 * 1024) << std::endl;
 #endif // MALLOC_COUNT
-    for (const auto& a : algo_list) {
+    for (const auto& a : algo_list1) {
       if (filter == "" || (a->name().find(filter) != std::string::npos)) {
         if (a->word_width() == word_width) {
           if (filter_parallel(run_only_parallel, a->is_parallel())) {
@@ -189,6 +193,35 @@ int32_t main(int32_t argc, char const* argv[]) {
         }
       }
     }
+    
+    for (const auto& a : algo_list2) {
+      if (filter == "" || (a->name().find(filter) != std::string::npos)) {
+        if (a->word_width() == word_width) {
+          if (filter_parallel(run_only_parallel, a->is_parallel())) {
+            if (filter_sequential(run_only_sequential, a->is_parallel())) {
+              if (filter_wavelet_type(a->is_tree(), no_trees, no_matrices)) {
+                a->print_info();
+                if (memory) {
+#ifdef MALLOC_COUNT
+                  malloc_count_reset_peak();
+                  a->memory_peak(txt_prt, text_size, levels);
+                  std::cout << malloc_count_peak() << ", MB: "
+                            << malloc_count_peak() / (1024 * 1024) << std::endl;
+#else
+                  std::cout << "Memory measurement is NOT enabled."
+                            << std::endl;
+#endif // MALLOC_COUNT
+                } else {
+                  std::cout << a->median_time(
+                    txt_prt, text_size, levels, nr_runs) << std::endl;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    
     if (semi_external) {
       remove(txt_path.c_str());
     }
