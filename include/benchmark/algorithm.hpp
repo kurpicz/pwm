@@ -56,9 +56,9 @@ public:
     algorithm_list::get_algorithm_list().register_algorithm(this);
   }
 
-  virtual wavelet_structure compute_bitvector(const void* global_text,
+  virtual wavelet_structure<false> compute_bitvector(const void* global_text,
     const uint64_t size, const uint64_t levels) const = 0;
-  virtual wavelet_structure compute_bitvector_semi_external(void* file_stream,
+  virtual wavelet_structure<false> compute_bitvector_semi_external(void* file_stream,
     const uint64_t size, const uint64_t levels) const = 0;
   virtual float median_time(const void* global_text, const uint64_t size,
       const uint64_t levels, size_t runs) const = 0;
@@ -93,7 +93,7 @@ public:
   concrete_algorithm(std::string name, std::string description)
   : construction_algorithm(name, description) { }
 
-  inline wavelet_structure compute_bitvector(const void* global_text,
+  inline wavelet_structure<false> compute_bitvector(const void* global_text,
     const uint64_t size, const uint64_t levels) const override {
     using text_vec_type =
       std::vector<typename type_for_bytes<Algorithm::word_width>::type>;
@@ -101,7 +101,7 @@ public:
     return Algorithm::compute(text->data(), size, levels);
   }
 
-  inline wavelet_structure compute_bitvector_semi_external(void* file_stream,
+  inline wavelet_structure<false> compute_bitvector_semi_external(void* file_stream,
     const uint64_t size, const uint64_t levels) const override {
     using stream_type =
       ifile_stream<typename type_for_bytes<Algorithm::word_width>::type>;

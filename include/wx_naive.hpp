@@ -12,24 +12,25 @@
 
 #include "util/wavelet_structure.hpp"
 
-template <typename AlphabetType, bool is_tree_>
+template <typename AlphabetType, bool is_tree_, bool is_semi_external = false>
 class wx_naive;
 
-template <typename AlphabetType>
-class wx_naive<AlphabetType, true> {
+template <typename AlphabetType, bool is_semi_external>
+class wx_naive<AlphabetType, true, is_semi_external> {
 
 public:
+  using bit_vectors = typename bit_vector_types<is_semi_external>::type;
   static constexpr bool    is_parallel = false;
   static constexpr bool    is_tree     = true;
   static constexpr uint8_t word_width  = sizeof(AlphabetType);
   static constexpr bool    is_huffman_shaped = false;
 
   template <typename InputType>
-  static wavelet_structure compute(const InputType& text, const uint64_t size,
+  static wavelet_structure<is_semi_external> compute(const InputType& text, const uint64_t size,
     const uint64_t levels) {
 
     if(size == 0) {
-      return wavelet_structure();
+      return wavelet_structure<is_semi_external>();
     }
 
     auto _bv = bit_vectors(levels, size);
@@ -72,25 +73,26 @@ public:
         }
       }
     }
-    return wavelet_structure(std::move(_bv));
+    return wavelet_structure<is_semi_external>(std::move(_bv));
   }
 }; // class wt_naive
 
-template <typename AlphabetType>
-class wx_naive<AlphabetType, false> {
+template <typename AlphabetType, bool is_semi_external>
+class wx_naive<AlphabetType, false, is_semi_external> {
 
 public:
+  using bit_vectors = typename bit_vector_types<is_semi_external>::type;
   static constexpr bool    is_parallel = false;
   static constexpr bool    is_tree     = false;
   static constexpr uint8_t word_width  = sizeof(AlphabetType);
   static constexpr bool    is_huffman_shaped = false;
 
   template <typename InputType>
-  static wavelet_structure compute(const InputType& text,
+  static wavelet_structure<is_semi_external> compute(const InputType& text,
     const uint64_t size, const uint64_t levels) {
 
     if(size == 0) {
-      return wavelet_structure();
+      return wavelet_structure<is_semi_external>();
     }
 
     auto _bv = bit_vectors(levels, size);
@@ -145,7 +147,7 @@ public:
       }
       _zeros[level] = text0.size();
     }
-    return wavelet_structure(std::move(_bv), std::move(_zeros));
+    return wavelet_structure<is_semi_external>(std::move(_bv), std::move(_zeros));
   }
 }; // class wx_naive<MATRIX>
 

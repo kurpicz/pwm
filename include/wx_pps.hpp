@@ -14,7 +14,7 @@
 #include "util/ctx_sliced_single_level.hpp"
 #include "util/wavelet_structure.hpp"
 
-template <typename AlphabetType, bool is_tree_>
+template <typename AlphabetType, bool is_tree_, bool is_semi_external = false>
 class wx_pps {
 
 public:
@@ -26,11 +26,11 @@ public:
   using ctx_t = ctx_sliced_single_level<is_tree>;
 
   template <typename InputType>
-  static wavelet_structure compute(const InputType& text, const uint64_t size,
+  static wavelet_structure<is_semi_external> compute(const InputType& text, const uint64_t size,
     const uint64_t levels) {
 
     if (size == 0) {
-      return wavelet_structure();
+      return wavelet_structure<is_semi_external>();
     }
 
     ctx_t ctx;
@@ -176,9 +176,9 @@ public:
       }
     }
     if (ctx_t::compute_zeros) {
-      return wavelet_structure(std::move(ctx.bv()), std::move(ctx.zeros()));
+      return wavelet_structure<is_semi_external>(std::move(ctx.bv()), std::move(ctx.zeros()));
     } else {
-      return wavelet_structure(std::move(ctx.bv()));
+      return wavelet_structure<is_semi_external>(std::move(ctx.bv()));
     }
   }
 };

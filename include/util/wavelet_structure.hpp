@@ -13,9 +13,12 @@
 
 #include "bit_vectors.hpp"
 
+template<bool is_semi_external>
 class wavelet_structure {
 
 public:
+  using bit_vectors = typename bit_vector_types<is_semi_external>::type;
+
   inline wavelet_structure() = default;
 
   inline wavelet_structure(bit_vectors&& bvs, std::vector<uint64_t>&& zeros):

@@ -19,7 +19,7 @@ struct bit_vector_sizes {
   };
 }; // struct bit_vector_sizes
 
-using bit_vectors = flat_two_dim_array<uint64_t, bit_vector_sizes>;
+using internal_bit_vectors = flat_two_dim_array<uint64_t, bit_vector_sizes>;
 using external_bit_vectors =
   external_flat_two_dim_array<uint64_t, bit_vector_sizes>;
 
@@ -28,7 +28,7 @@ struct bit_vector_types { };
 
 template <>
 struct bit_vector_types<false> {
-  using type = bit_vectors;
+  using type = internal_bit_vectors;
 };
 
 template <>

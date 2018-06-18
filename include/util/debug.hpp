@@ -25,6 +25,7 @@ std::string bit_string(bv_t const& bv, uint64_t const size) {
   return s;
 }
 
+template<typename bit_vectors>
 static std::vector<std::vector<uint64_t>> level_sizes(const bit_vectors& bv,
   uint64_t bit_offset, uint64_t bit_length, uint64_t level) {
 
@@ -104,7 +105,8 @@ static void print_bv_zeros(const std::vector<uint64_t*>& bv,
   std::cout << std::endl;;
 }
 
-[[gnu::unused]] // TODO: C++17 [[maybe_unused]] 
+template<typename bit_vectors>
+[[gnu::unused]] // TODO: C++17 [[maybe_unused]]
 static std::string decode_wt(const bit_vectors& bv, uint64_t length) {
   auto ls = level_sizes(bv, 0, length, 0);
 
@@ -142,6 +144,7 @@ static std::string decode_wt(const bit_vectors& bv, uint64_t length) {
   return std::string(r.begin(), r.end());
 }
 
+template<typename bit_vectors>
 [[gnu::unused]] // TODO: C++17 [[maybe_unused]] 
 static std::string decode_wm(const bit_vectors& bv,
   const std::vector<uint64_t>& zeros, const uint64_t length) {

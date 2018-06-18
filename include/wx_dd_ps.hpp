@@ -19,7 +19,7 @@
 #include "util/ps.hpp"
 #include "util/wavelet_structure.hpp"
 
-template <typename AlphabetType, bool is_tree_>
+template <typename AlphabetType, bool is_tree_, bool is_semi_external = false>
 class wx_dd_ps {
 
 public:
@@ -31,10 +31,10 @@ public:
   using ctx_t = ctx_all_levels<is_tree>;
 
   template <typename InputType>
-  static wavelet_structure compute(const InputType& global_text,
+  static wavelet_structure<is_semi_external> compute(const InputType& global_text,
     const uint64_t size, const uint64_t levels) {
 
-    if(size == 0) { return wavelet_structure(); }
+    if(size == 0) { return wavelet_structure<is_semi_external>(); }
 
     const uint64_t shards = omp_get_max_threads();
 
@@ -85,9 +85,9 @@ public:
         }
       }
 
-      return wavelet_structure(std::move(_bv), std::move(_zeros));
+      return wavelet_structure<is_semi_external>(std::move(_bv), std::move(_zeros));
     } else {
-      return wavelet_structure(std::move(_bv));
+      return wavelet_structure<is_semi_external>(std::move(_bv));
     }
   }
 }; // class wx_dd_ps

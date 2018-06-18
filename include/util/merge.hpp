@@ -121,6 +121,8 @@ void copy_bits(WordType* const dst, WordType const* const src,
 template<typename ContextType, typename Rho>
 inline auto merge_bit_vectors(uint64_t size, uint64_t levels, uint64_t shards,
   const std::vector<ContextType>& src_ctxs, const Rho& rho) {
+      
+  using bit_vectors = typename ContextType::bit_vectors;
   assert(shards == src_ctxs.size());
 
   // Allocate data structures centrally

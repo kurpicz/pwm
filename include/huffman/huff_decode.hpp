@@ -10,6 +10,7 @@
 
 #include "util/debug.hpp"
 
+template<typename bit_vectors>
 [[gnu::unused]] // TODO: C++17 [[maybe_unused]] 
 static std::string decode_wt_huff(const bit_vectors& bv, uint64_t length) {
   auto ls = level_sizes(bv, 0, length, 0);
@@ -48,6 +49,7 @@ static std::string decode_wt_huff(const bit_vectors& bv, uint64_t length) {
   return std::string(r.begin(), r.end());
 }
 
+template<typename bit_vectors>
 [[gnu::unused]] // TODO: C++17 [[maybe_unused]] 
 static std::string decode_wm_huff(const bit_vectors& bv,
   const std::vector<uint64_t>& zeros, const uint64_t length) {
