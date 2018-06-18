@@ -23,20 +23,20 @@ using bit_vectors = flat_two_dim_array<uint64_t, bit_vector_sizes>;
 using external_bit_vectors =
   external_flat_two_dim_array<uint64_t, bit_vector_sizes>;
 
-template <bool is_tree>
-struct bit_vectors_switch { };
+template <bool is_semi_external>
+struct bit_vector_types { };
 
 template <>
-struct bit_vectors_switch<true> {
+struct bit_vector_types<false> {
   using type = bit_vectors;
 };
 
 template <>
-struct bit_vectors_switch<false> {
+struct bit_vector_types<true> {
   using type = external_bit_vectors;
 };
 
-template <bool is_tree>
-using bit_vectors_t = typename bit_vectors_switch<is_tree>::type;
+//~ template <bool is_tree>
+//~ using bit_vectors_t = typename bit_vectors_switch<is_tree>::type;
 
 /******************************************************************************/
