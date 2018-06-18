@@ -36,5 +36,19 @@ CONSTRUCTION_REGISTER("wt_pc",
 CONSTRUCTION_REGISTER("wt_pc",
   "Sequential wavelet tree construction with 32-bit alphabet "
   "(using counting).", wt_pc_32)
+  
+using wt_pc_8_se = wx_pc<uint8_t, true, true>;
+using wt_pc_16_se = wx_pc<uint16_t, true, true>;
+using wt_pc_32_se = wx_pc<uint32_t, true, true>;
+
+CONSTRUCTION_REGISTER_SE("wt_pc",
+  "Sequential wavelet tree construction with 8-bit alphabet "
+  "(using counting, semi-external).", wt_pc_8_se)
+CONSTRUCTION_REGISTER_SE("wt_pc",
+  "Sequential wavelet tree construction with 16-bit alphabet "
+  "(using counting, semi-external).", wt_pc_16_se)
+CONSTRUCTION_REGISTER_SE("wt_pc",
+  "Sequential wavelet tree construction with 32-bit alphabet "
+  "(using counting, semi-external).", wt_pc_32_se)
 
 /******************************************************************************/
