@@ -2,6 +2,7 @@
  * include/util/external_flat_two_dim_array.hpp
  *
  * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
+ * Copyright (C) 2018 Jonas Ellert <jonas.ellert@tu-dortmund.de>
  *
  * All rights reserved. Published under the BSD-2 license in the LICENSE file.
  ******************************************************************************/
@@ -11,59 +12,65 @@
 #include <cstring>
 #include <iostream>
 
-#include "util/file_stream.hpp"
+#include <stxxl/vector>
+
+//~ #include <util/file_array.hpp>
 
 template <typename IndexType, class size_function>
 class external_flat_two_dim_array {
+    
+  using stxxlvector = typename stxxl::VECTOR_GENERATOR<IndexType>::result;
+  //~ using filearray = file_array<IndexType>;
+  //~ using defaultarray = std::vector<IndexType>;
+  using em_array_type = stxxlvector;
 
 public:
-  external_flat_two_dim_array() : data_(0) { }
+  external_flat_two_dim_array() { }
 
   template <typename... SizeFunctionArgs>
-  external_flat_two_dim_array(const uint64_t levels,
-    SizeFunctionArgs... size_f_args) : levels_(levels), start_pos_(levels + 1) {
-
+  external_flat_two_dim_array(const uint64_t levels, SizeFunctionArgs... size_f_args)
+  : levels_(levels), level_offsets_(levels), level_sizes_(levels) {
     assert(levels > 0);
-    uint64_t data_size = 0;
+    
+    uint64_t total_elements = 0;
     for (uint64_t level = 0; level < levels; ++level) {
-      data_size += size_function::level_size(level, size_f_args...);
+      uint64_t current_elements = size_function::level_size(level, size_f_args...);
+      level_offsets_[level] = total_elements;
+      level_sizes_[level] = current_elements;
+      total_elements += current_elements;
     }
-    // data_[0] = new IndexType[data_size];
-    // memset(data_[0], 0, data_size * sizeof(IndexType));
-    start_pos_[0] = 0;
-    for (uint64_t level = 1; level < start_pos_.size(); ++level) {
-      start_pos_[level] = start_pos_[level - 1] +
-        size_function::level_size(level - 1, size_f_args...);
-    }
+    
+    raw_data_.resize(total_elements);
   }
 
   external_flat_two_dim_array(external_flat_two_dim_array&& other)
   : levels_(other.levels_),
-    data_(std::forward<std::vector<IndexType*>>(other.data_)) { }
+    raw_data_(std::forward<em_array_type>(other.raw_data_)),
+    level_offsets_(std::forward<std::vector<uint64_t>>(other.level_offsets_)),
+    level_sizes_(std::forward<std::vector<uint64_t>>(other.level_sizes_)) { }
+
 
   external_flat_two_dim_array& operator =(external_flat_two_dim_array&& other) {
     if (*this != other) {
-      if (data_.size() > 0) {
-        delete[] data_[0];
-      }
-      data_ = std::move(other.data_);
+      raw_data_ = std::move(other.raw_data_);
+      level_offsets_ = std::move(other.level_offsets_);
+      level_sizes_ = std::move(other.level_sizes_);
       levels_ = other.levels_;
     }
     return *this;
   }
 
   ~external_flat_two_dim_array() {
-    if (data_.size() > 0) {
-      delete[] data_[0];
-    }
   }
 
   external_flat_two_dim_array(const external_flat_two_dim_array&) = delete;
-  external_flat_two_dim_array& operator =(
-    const external_flat_two_dim_array&) = delete;
+  external_flat_two_dim_array& operator =(const external_flat_two_dim_array&) = delete;
 
   bool operator ==(const external_flat_two_dim_array& other) const {
-    return data_ == other.data_;
+    return 
+      raw_data_ == other.raw_data_ &&
+      level_offsets_ == other.level_offsets_ &&
+      level_sizes_ == other.level_sizes_;
   }
 
   bool operator !=(const external_flat_two_dim_array& other) const {
@@ -75,30 +82,27 @@ public:
   }
 
   inline uint64_t level_size(uint64_t level) const {
-    return start_pos_[level + 1] - start_pos_[level];
+    return level_sizes_[level] * sizeof(IndexType);
   }
 
-  inline const IndexType* operator [](const uint64_t index) const {
-    return data_[index];
+  inline decltype(em_array_type().cbegin()) operator [](const uint64_t index) const {
+    return raw_data_.cbegin() + level_offsets_[index];
   }
 
-  inline IndexType* operator [](const uint64_t index) {
-    return data_[index];
+  inline decltype(em_array_type().begin()) operator [](const uint64_t index) {
+    return raw_data_.begin() + level_offsets_[index];
   }
 
-  inline const ofile_stream<IndexType>& raw_data() const {
-    return data_;
-  }
-
-  inline ofile_stream<IndexType>& raw_data() {
-    return data_;
+  inline auto& raw_data() {
+    return *this;
   }
 
 private:
-  uint64_t levels_;
-  std::vector<uint64_t> start_pos_;
-  ofile_stream<IndexType> data_;
 
+  uint64_t levels_;
+  em_array_type raw_data_;
+  std::vector<uint64_t> level_offsets_;
+  std::vector<uint64_t> level_sizes_;
 }; // class external_flat_two_dim_array
 
 /******************************************************************************/
