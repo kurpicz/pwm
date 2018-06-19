@@ -28,7 +28,7 @@ public:
   static constexpr uint8_t word_width  = sizeof(AlphabetType);
   static constexpr bool  is_huffman_shaped = false;
 
-  using ctx_t = ctx_all_levels<is_tree>;
+  using ctx_t = ctx_all_levels<is_tree, is_semi_external>;
 
   template <typename InputType>
   static wavelet_structure<is_semi_external> compute(const InputType& global_text,
