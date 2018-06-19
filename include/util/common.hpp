@@ -33,8 +33,13 @@ void drop_me(T&& t) {
   std::remove_reference_t<T>(std::move(t));
 }
 
-constexpr uint64_t log2(uint64_t n) {
-  return (n < 2) ? 1 : 1 + log2(n / 2);
+// This is not compatible with STXXL and has been replaced with pwm_log2
+//~ constexpr uint64_t log2(uint64_t n) {
+  //~ return (n < 2) ? 1 : 1 + log2(n / 2);
+//~ }
+
+constexpr uint64_t pwm_log2(uint64_t n) {
+  return (n < 2) ? 1 : 1 + pwm_log2(n / 2);
 }
 
 template<typename WordType = uint64_t, typename bv_t>

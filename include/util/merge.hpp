@@ -22,7 +22,7 @@ void copy_bits(WordType* const dst, WordType const* const src,
 
   WordType constexpr BITS = (sizeof(WordType) * CHAR_BIT);
   WordType constexpr MOD_MASK = BITS - 1;
-  WordType constexpr SHIFT = log2(MOD_MASK);
+  WordType constexpr SHIFT = pwm_log2(MOD_MASK);
 
   uint64_t dst_off = dst_off_ref;
   uint64_t src_off = src_off_ref;
