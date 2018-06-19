@@ -23,11 +23,11 @@ struct helper_array_sizes {
 
 using helper_array =  flat_two_dim_array<uint64_t, helper_array_sizes>;
 
-template <bool is_tree, bool is_semi_external = false>
+template <bool is_tree, bool output_external = false>
 class ctx_sliced_single_level {
 
 public:
-  using bit_vectors = typename bit_vector_types<is_semi_external>::type;
+  using bit_vectors = typename bit_vector_types<output_external>::type;
   
   ctx_sliced_single_level() = default;
 

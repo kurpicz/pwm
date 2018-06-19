@@ -15,13 +15,13 @@ using wm_dd_ps_32 = wx_dd_ps<uint32_t, false>;
 
 CONSTRUCTION_REGISTER("wm_dd_ps",
   "Parallel wavelet matrix construction with 8-bit alphabet "
-  "(using domain decomposition and prefix sorting).", wm_dd_ps_8)
+  "(using domain decomposition and prefix sorting).", wm_dd_ps_8, false, false)
 CONSTRUCTION_REGISTER("wm_dd_ps",
   "Parallel wavelet matrix construction with 16-bit alphabet "
-  "(using domain decomposition and prefix sorting).", wm_dd_ps_16)
+  "(using domain decomposition and prefix sorting).", wm_dd_ps_16, false, false)
 CONSTRUCTION_REGISTER("wm_dd_ps",
   "Parallel wavelet matrix construction with 32-bit alphabet "
-  "(using domain decomposition and prefix sorting).", wm_dd_ps_32)
+  "(using domain decomposition and prefix sorting).", wm_dd_ps_32, false, false)
 
 using wt_dd_ps_8 = wx_dd_ps<uint8_t, true>;
 using wt_dd_ps_16 = wx_dd_ps<uint16_t, true>;
@@ -29,12 +29,12 @@ using wt_dd_ps_32 = wx_dd_ps<uint32_t, true>;
 
 CONSTRUCTION_REGISTER("wt_dd_ps",
   "Parallel wavelet tree construction with 8-bit alphabet "
-  "(using domain decomposition and prefix sorting).", wt_dd_ps_8)
+  "(using domain decomposition and prefix sorting).", wt_dd_ps_8, false, false)
 CONSTRUCTION_REGISTER("wt_dd_ps",
   "Parallel wavelet tree construction with 16-bit alphabet "
-  "(using domain decomposition and prefix sorting).", wt_dd_ps_16)
+  "(using domain decomposition and prefix sorting).", wt_dd_ps_16, false, false)
 CONSTRUCTION_REGISTER("wt_dd_ps",
   "Parallel wavelet tree construction with 32-bit alphabet "
-  "(using domain decomposition and prefix sorting).", wt_dd_ps_32)
+  "(using domain decomposition and prefix sorting).", wt_dd_ps_32, false, false)
 
 /******************************************************************************/

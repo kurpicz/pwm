@@ -14,7 +14,7 @@
 #include "util/wavelet_structure.hpp"
 #include "util/ps.hpp"
 
-template <typename AlphabetType, bool is_tree_, bool is_semi_external = false>
+template <typename AlphabetType, bool is_tree_>
 class wx_ps {
 
 public:
@@ -23,13 +23,13 @@ public:
   static constexpr uint8_t word_width  = sizeof(AlphabetType);
   static constexpr bool  is_huffman_shaped = false;
 
-  using ctx_t = ctx_single_level<is_tree, is_semi_external>;
-
-  template <typename InputType>
-  static wavelet_structure<is_semi_external> compute(const InputType& text, const uint64_t size,
+  template <typename InputType, bool output_external>
+  static wavelet_structure<output_external> compute(const InputType& text, const uint64_t size,
     const uint64_t levels) {
 
-    if(size == 0) { return wavelet_structure<is_semi_external>(); }
+    using ctx_t = ctx_single_level<is_tree, output_external>;
+
+    if(size == 0) { return wavelet_structure<output_external>(); }
 
     auto ctx = ctx_t(size, levels);
 
@@ -37,9 +37,9 @@ public:
     ps(text, size, levels, ctx, sorted_text.data());
 
     if (ctx_t::compute_zeros)  {
-      return wavelet_structure<is_semi_external>(std::move(ctx.bv()), std::move(ctx.zeros()));
+      return wavelet_structure<output_external>(std::move(ctx.bv()), std::move(ctx.zeros()));
     } else {
-      return wavelet_structure<is_semi_external>(std::move(ctx.bv()));
+      return wavelet_structure<output_external>(std::move(ctx.bv()));
     }
   }
 }; // class wx_ps

@@ -23,13 +23,13 @@
 
 class construction_algorithm_base;
 
-template<bool is_semi_external>
+template<bool output_external>
 class construction_algorithm;
 
-template<typename Algorithm, bool is_semi_external>
+template<typename Algorithm, bool input_external, bool output_external>
 class concrete_algorithm;
 
-template<bool is_semi_external>
+template<bool output_external>
 class algorithm_list {
 public:
   algorithm_list(const algorithm_list& other) = delete;
@@ -42,7 +42,7 @@ public:
     return list;
   }
 
-  inline void register_algorithm(construction_algorithm<is_semi_external> const* algo) {
+  inline void register_algorithm(construction_algorithm<output_external> const* algo) {
     algorithms_.push_back(algo);
   }
 
@@ -53,7 +53,7 @@ private:
   algorithm_list() { }
 
   // List of static pointers to the different algorithms
-  std::vector<construction_algorithm<is_semi_external> const*> algorithms_;
+  std::vector<construction_algorithm<output_external> const*> algorithms_;
 }; // class algorithm_list
 
 
@@ -114,19 +114,19 @@ public:
 }; // class construction_algorithm
 
 
-template <typename Algorithm, bool is_semi_external>
-class concrete_algorithm : public construction_algorithm<is_semi_external> {
+template <typename Algorithm, bool input_external, bool output_external>
+class concrete_algorithm : public construction_algorithm<output_external> {
 
 public:
   concrete_algorithm(std::string name, std::string description)
-  : construction_algorithm<is_semi_external>(name, description) { }
+  : construction_algorithm<output_external>(name, description) { }
 
-  inline wavelet_structure<is_semi_external> compute_bitvector(const void* global_text,
+  inline wavelet_structure<output_external> compute_bitvector(const void* global_text,
     const uint64_t size, const uint64_t levels) const override {
     using text_vec_type =
       std::vector<typename type_for_bytes<Algorithm::word_width>::type>;
     auto const* text = static_cast<text_vec_type const*>(global_text);
-    return Algorithm::compute(text->data(), size, levels);
+    return Algorithm::template compute<decltype(text->data()), output_external>(text->data(), size, levels);
   }
 
   float median_time(const void* global_text, const uint64_t size,
@@ -137,7 +137,7 @@ public:
     const auto* text = static_cast<const text_vec_type*>(global_text);
     for (size_t run = 0; run < runs; ++run) {
       auto begin_time = std::chrono::high_resolution_clock::now();
-      Algorithm::compute(text->data(), size, levels);
+      Algorithm::template compute<decltype(text->data()), output_external>(text->data(), size, levels);
       auto end_time = std::chrono::high_resolution_clock::now();
       times.emplace_back(static_cast<float>(
         std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -152,7 +152,7 @@ public:
     using text_vec_type =
       std::vector<typename type_for_bytes<Algorithm::word_width>::type>;
     const auto* text = static_cast<const text_vec_type*>(global_text);
-    Algorithm::compute(text->data(), size, levels);
+    Algorithm::template compute<decltype(text->data()), output_external>(text->data(), size, levels);
   }
 
   bool is_parallel() const override {
@@ -173,13 +173,9 @@ public:
 
 }; // class concrete_algorithm
 
-#define CONSTRUCTION_REGISTER(algo_name, algo_description, ws) \
-  static const auto _cstr_algo_ ## ws ## _register             \
-    = concrete_algorithm<ws, false>(algo_name, algo_description);
-    
-#define CONSTRUCTION_REGISTER_SE(algo_name, algo_description, ws) \
-  static const auto _cstr_algo_ ## ws ## _register             \
-    = concrete_algorithm<ws, true>(algo_name, algo_description);
+#define CONSTRUCTION_REGISTER(algo_name, algo_description, ws, input_external, output_external) \
+  static const auto _cstr_algo_ ## ws ## _inext_ ## input_external ## _outext_ ## output_external ## _register             \
+    = concrete_algorithm<ws, input_external, output_external>(algo_name, algo_description);
 
 #endif // ALGORITHM_HEADER
 

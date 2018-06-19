@@ -16,11 +16,11 @@
 // TODO: WM/WT abstract that selects zeros and rho
 
 /// Keep calculated information for individual levels around
-template<bool is_tree, bool is_semi_external = false>
+template<bool is_tree, bool output_external = false>
 class ctx_all_levels {
   
 public:
-  using bit_vectors = typename bit_vector_types<is_semi_external>::type;
+  using bit_vectors = typename bit_vector_types<output_external>::type;
   using rho_t = typename rho_dispatch<is_tree>::type;
 
   ctx_all_levels() = default;

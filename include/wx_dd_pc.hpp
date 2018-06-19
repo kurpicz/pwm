@@ -18,7 +18,7 @@
 #include "util/pc.hpp"
 #include "util/wavelet_structure.hpp"
 
-template <typename AlphabetType, bool is_tree_, bool is_semi_external = false>
+template <typename AlphabetType, bool is_tree_>
 class wx_dd_pc {
 
 public:
@@ -27,13 +27,13 @@ public:
   static constexpr uint8_t word_width  = sizeof(AlphabetType);
   static constexpr bool  is_huffman_shaped = false;
 
-  using ctx_t = ctx_all_levels<is_tree, is_semi_external>;
-
-  template <typename InputType>
-  static wavelet_structure<is_semi_external> compute(const InputType& global_text,
+  template <typename InputType, bool output_external>
+  static wavelet_structure<output_external> compute(const InputType& global_text,
     const uint64_t size, const uint64_t levels) {
-
-    if(size == 0) { return wavelet_structure<is_semi_external>(); }
+        
+    using ctx_t = ctx_all_levels<is_tree, output_external>;
+    
+    if(size == 0) { return wavelet_structure<output_external>(); }
 
     const uint64_t shards = omp_get_max_threads();
 
@@ -79,9 +79,9 @@ public:
         }
       }
 
-      return wavelet_structure<is_semi_external>(std::move(_bv), std::move(_zeros));
+      return wavelet_structure<output_external>(std::move(_bv), std::move(_zeros));
     } else {
-      return wavelet_structure<is_semi_external>(std::move(_bv));
+      return wavelet_structure<output_external>(std::move(_bv));
     }
   }
 }; // class wx_dd_pc
