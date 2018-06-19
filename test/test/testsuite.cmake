@@ -52,6 +52,7 @@ macro(generic_run_test test_target test_file
   target_link_libraries(${test_target}_testrunner
     ${driver_dep}
     ${TEST_TARGET_DEPS}
+    stxxl
   )
 
   # Runs the test and generates a stamp file on success.

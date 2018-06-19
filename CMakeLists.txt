@@ -7,6 +7,7 @@
 # All rights reserved. Published under the BSD-2 license in the LICENSE file.
 ################################################################################
 
+
 cmake_minimum_required(VERSION 3.0.2 FATAL_ERROR)
 project (pwm)
 
@@ -62,6 +63,13 @@ endif()
 # Add include directory to include searches
 include_directories(external/tclap/include)
 include_directories(include)
+
+
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+include(ExternalProject)
+include(find_or_download_package)
+find_or_download_package(STXXL STXXL stxxl)
+
 
 add_subdirectory(external/googletest)
 add_subdirectory(src)
