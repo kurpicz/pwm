@@ -37,4 +37,32 @@ CONSTRUCTION_REGISTER("wt_pc_ss",
   "Sequential wavelet tree construction with 32-bit alphabet "
   "(using counting and computing all levels at once).", wt_pc_ss_32)
 
+//~ using wm_pc_ss_8_se = wx_pc_ss<uint8_t, false, true>;
+//~ using wm_pc_ss_16_se = wx_pc_ss<uint16_t, false, true>;
+//~ using wm_pc_ss_32_se = wx_pc_ss<uint32_t, false, true>;
+
+//~ CONSTRUCTION_REGISTER_SE("wm_pc_ss_se",
+  //~ "Sequential wavelet matrix construction with 8-bit alphabet "
+  //~ "(using counting and computing all levels at once, semi-external).", wm_pc_ss_8_se)
+//~ CONSTRUCTION_REGISTER_SE("wm_pc_ss_se",
+  //~ "Sequential wavelet matrix construction with 16-bit alphabet "
+  //~ "(using counting and computing all levels at once, semi-external).", wm_pc_ss_16_se)
+//~ CONSTRUCTION_REGISTER_SE("wm_pc_ss_se",
+  //~ "Sequential wavelet matrix construction with 32-bit alphabet "
+  //~ "(using counting and computing all levels at once, semi-external).", wm_pc_ss_32_se)
+
+//~ using wt_pc_ss_8_se = wx_pc_ss<uint8_t, true, true>;
+//~ using wt_pc_ss_16_se = wx_pc_ss<uint16_t, true, true>;
+//~ using wt_pc_ss_32_se = wx_pc_ss<uint32_t, true, true>;
+
+//~ CONSTRUCTION_REGISTER_SE("wt_pc_ss_se",
+  //~ "Sequential wavelet tree construction with 8-bit alphabet "
+  //~ "(using counting and computing all levels at once, semi-external).", wt_pc_ss_8_se)
+//~ CONSTRUCTION_REGISTER_SE("wt_pc_ss_se",
+  //~ "Sequential wavelet tree construction with 16-bit alphabet "
+  //~ "(using counting and computing all levels at once, semi-external).", wt_pc_ss_16_se)
+//~ CONSTRUCTION_REGISTER_SE("wt_pc_ss_se",
+  //~ "Sequential wavelet tree construction with 32-bit alphabet "
+  //~ "(using counting and computing all levels at once, semi-external).", wt_pc_ss_32_se)
+
 /******************************************************************************/

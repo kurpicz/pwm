@@ -37,4 +37,32 @@ CONSTRUCTION_REGISTER("wt_ps",
   "Sequential wavelet tree construction with 32-bit alphabet (using sorting).",
   wt_ps_32)
 
+using wm_ps_8_se = wx_ps<uint8_t, false, true>;
+using wm_ps_16_se = wx_ps<uint16_t, false, true>;
+using wm_ps_32_se = wx_ps<uint32_t, false, true>;
+
+CONSTRUCTION_REGISTER_SE("wm_ps_se",
+  "Sequential wavelet matrix construction with 8-bit alphabet (using sorting, semi-external).",
+  wm_ps_8_se)
+CONSTRUCTION_REGISTER_SE("wm_ps_se",
+  "Sequential wavelet matrix construction with 16-bit alphabet (using sorting, semi-external).",
+  wm_ps_16_se)
+CONSTRUCTION_REGISTER_SE("wm_ps_se",
+  "Sequential wavelet matrix construction with 32-bit alphabet (using sorting, semi-external).",
+  wm_ps_32_se)
+
+using wt_ps_8_se = wx_ps<uint8_t, true, true>;
+using wt_ps_16_se = wx_ps<uint16_t, true, true>;
+using wt_ps_32_se = wx_ps<uint32_t, true, true>;
+
+CONSTRUCTION_REGISTER_SE("wt_ps_se",
+  "Sequential wavelet tree construction with 8-bit alphabet (using sorting, semi-external).",
+  wt_ps_8_se)
+CONSTRUCTION_REGISTER_SE("wt_ps_se",
+  "Sequential wavelet tree construction with 16-bit alphabet (using sorting, semi-external).",
+  wt_ps_16_se)
+CONSTRUCTION_REGISTER_SE("wt_ps_se",
+  "Sequential wavelet tree construction with 32-bit alphabet (using sorting, semi-external).",
+  wt_ps_32_se)
+
 /******************************************************************************/
