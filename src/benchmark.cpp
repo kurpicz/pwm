@@ -9,9 +9,14 @@
 #include <tclap/CmdLine.h>
 #include <vector>
 
+#include <stxxl/vector>
+#include <stxxl/bits/io/linuxaio_file.h>
+
 #include "benchmark/algorithm.hpp"
 #include "util/alphabet_util.hpp"
 #include "util/file_util.hpp"
+#include "util/stxxl_helper.hpp"
+#include "util/memory_types.hpp"
 
 #ifdef MALLOC_COUNT
 #include "benchmark/malloc_count.h"
@@ -70,13 +75,9 @@ int32_t main(int32_t argc, char const* argv[]) {
   cmd.add(semi_external_arg);
   cmd.parse( argc, argv );
 
-  auto& algo_list1 = algorithm_list<false>::get_algorithm_list();
-  auto& algo_list2 = algorithm_list<true>::get_algorithm_list();
+  auto& algo_list = algorithm_list::get_algorithm_list();
   if (list_all_algorithms.getValue()) {
-    for (const auto& a : algo_list1) {
-      a->print_info();
-    }
-    for (const auto& a : algo_list2) {
+    for (const auto& a : algo_list) {
       a->print_info();
     }
     return 0;
@@ -96,6 +97,9 @@ int32_t main(int32_t argc, char const* argv[]) {
   for (const auto& path : file_paths) {
     std::cout << std::endl << "Text: " << path << std::endl;
     void* txt_prt = nullptr;
+    void* txt_prt_ext = nullptr;
+    uint64_t txt_bytes = 0;
+    uint64_t txt_bytes_ext = 0;
     uint64_t text_size = 0;
     uint64_t max_char = 0;
     uint64_t levels = 0;
@@ -104,6 +108,10 @@ int32_t main(int32_t argc, char const* argv[]) {
     std::vector<uint16_t> text_uint16;
     std::vector<uint32_t> text_uint32;
     std::vector<uint64_t> text_uint64;
+    uint8_t * text_uint8_data;
+    uint16_t * text_uint16_data;
+    uint32_t * text_uint32_data;
+    uint64_t * text_uint64_data;
 #ifdef MALLOC_COUNT
     malloc_count_reset_peak();
 #endif
@@ -134,39 +142,65 @@ int32_t main(int32_t argc, char const* argv[]) {
         return -1;
       }
     } else {
+      
+      uint32_t bytes = malloc_count_current();
       if (word_width == 1) {
         text_uint8 = file_to_vector<1>(path);
         text_size = text_uint8.size();
         max_char = reduce_alphabet(text_uint8);
-        txt_prt = &text_uint8;
+        text_uint8_data = text_uint8.data();
+        txt_prt = &text_uint8_data;
       } else if (word_width == 2) {
         text_uint16 = file_to_vector<2>(path);
         text_size = text_uint16.size();
         max_char = reduce_alphabet(text_uint16);
-        txt_prt = &text_uint16;
+        text_uint16_data = text_uint16.data();
+        txt_prt = &text_uint8_data;
       } else if (word_width == 4) {
         text_uint32 = file_to_vector<4>(path);
         text_size = text_uint32.size();
         max_char = reduce_alphabet(text_uint32);
-        txt_prt = &text_uint32;
+        text_uint32_data = text_uint32.data();
+        txt_prt = &text_uint8_data;
       } else if (word_width == 8) {
         text_uint64 = file_to_vector<8>(path);
         text_size = text_uint64.size();
         max_char = reduce_alphabet(text_uint64);
-        txt_prt = &text_uint64;
+        text_uint64_data = text_uint64.data();
+        txt_prt = &text_uint8_data;
       } else {
         std::cerr << "You entered an invalid number of bytes per character "
                      "(parameter 'b')." << std::endl;
         return -1;
       }
+      txt_bytes = malloc_count_current() - bytes;
+     
+      stxxl::linuxaio_file * stxxl_file = 
+        new stxxl::linuxaio_file(path, stxxl::file::open_mode::RDONLY);
+      
+      bytes = malloc_count_current();
+      if (word_width == 1) {
+        txt_prt_ext = new stxxlvector<type_for_bytes<1>>(stxxl_file);        
+      } else if (word_width == 2) {
+        txt_prt_ext = new stxxlvector<type_for_bytes<2>>(stxxl_file);
+      } else if (word_width == 4) {
+        txt_prt_ext = new stxxlvector<type_for_bytes<4>>(stxxl_file);
+      } else if (word_width == 8) {
+        txt_prt_ext = new stxxlvector<type_for_bytes<8>>(stxxl_file);
+      } else {
+        std::cerr << "You entered an invalid number of bytes per character "
+                     "(parameter 'b')." << std::endl;
+        return -1;
+      }
+      txt_bytes_ext = malloc_count_current() - bytes;
     }
     levels = levels_for_max_char(max_char);
     std::cout << "Characters: " << text_size << std::endl;
 #ifdef MALLOC_COUNT
-    std::cout << "Memory peak text: " << malloc_count_peak() << ", MB: "
-              << malloc_count_peak() / (1024 * 1024) << std::endl;
+    std::cout << "Memory peak text: " << malloc_count_peak() - txt_bytes_ext << ", MB: "
+              << (malloc_count_peak() - txt_bytes_ext) / (1024 * 1024) << std::endl;
 #endif // MALLOC_COUNT
-    for (const auto& a : algo_list1) {
+    for (const auto& a : algo_list) {
       if (filter == "" || (a->name().find(filter) != std::string::npos)) {
         if (a->word_width() == word_width) {
           if (filter_parallel(run_only_parallel, a->is_parallel())) {
@@ -176,44 +210,26 @@ int32_t main(int32_t argc, char const* argv[]) {
                 if (memory) {
 #ifdef MALLOC_COUNT
                   malloc_count_reset_peak();
-                  a->memory_peak(txt_prt, text_size, levels);
-                  std::cout << malloc_count_peak() << ", MB: "
-                            << malloc_count_peak() / (1024 * 1024) << std::endl;
+                  if(a->is_input_external()) {
+                    a->memory_peak(txt_prt_ext, text_size, levels);
+                    std::cout << malloc_count_peak() - txt_bytes << ", MB: "
+                            << (malloc_count_peak() - txt_bytes) / (1024 * 1024) << std::endl;
+                  } else {
+                    a->memory_peak(txt_prt, text_size, levels);
+                    std::cout << malloc_count_peak() - txt_bytes_ext << ", MB: "
+                            << (malloc_count_peak() - txt_bytes_ext) / (1024 * 1024) << std::endl;
+                  }
 #else
                   std::cout << "Memory measurement is NOT enabled."
                             << std::endl;
 #endif // MALLOC_COUNT
                 } else {
-                  std::cout << a->median_time(
-                    txt_prt, text_size, levels, nr_runs) << std::endl;
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-    
-    for (const auto& a : algo_list2) {
-      if (filter == "" || (a->name().find(filter) != std::string::npos)) {
-        if (a->word_width() == word_width) {
-          if (filter_parallel(run_only_parallel, a->is_parallel())) {
-            if (filter_sequential(run_only_sequential, a->is_parallel())) {
-              if (filter_wavelet_type(a->is_tree(), no_trees, no_matrices)) {
-                a->print_info();
-                if (memory) {
-#ifdef MALLOC_COUNT
-                  malloc_count_reset_peak();
-                  a->memory_peak(txt_prt, text_size, levels);
-                  std::cout << malloc_count_peak() << ", MB: "
-                            << malloc_count_peak() / (1024 * 1024) << std::endl;
-#else
-                  std::cout << "Memory measurement is NOT enabled."
-                            << std::endl;
-#endif // MALLOC_COUNT
-                } else {
-                  std::cout << a->median_time(
-                    txt_prt, text_size, levels, nr_runs) << std::endl;
+                  if(a->is_input_external())
+                    std::cout << a->median_time(
+                      txt_prt, text_size, levels, nr_runs) << std::endl;
+                  else
+                    std::cout << a->median_time(
+                      txt_prt_ext, text_size, levels, nr_runs) << std::endl;
                 }
               }
             }

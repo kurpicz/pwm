@@ -23,14 +23,14 @@ public:
   static constexpr uint8_t word_width  = sizeof(AlphabetType);
   static constexpr bool  is_huffman_shaped = false;
 
-  template <typename InputType, bool output_external>
-  static wavelet_structure<output_external> compute(const InputType& text, const uint64_t size,
+  template <typename InputType, typename OutputType>
+  static wavelet_structure<OutputType> compute(const InputType& text, const uint64_t size,
     const uint64_t levels) {
 
-    using ctx_t = ctx_single_level<is_tree, output_external>;
+    using ctx_t = ctx_single_level<OutputType, is_tree>;
 
     if(size == 0) {
-      return wavelet_structure<output_external>();
+      return wavelet_structure<OutputType>();
     }
 
     auto ctx = ctx_t(size, levels);
@@ -38,10 +38,10 @@ public:
     pc(text, size, levels, ctx);
 
     if (ctx_t::compute_zeros) {
-      return wavelet_structure<output_external>(
+      return wavelet_structure<OutputType>(
         std::move(ctx.bv()), std::move(ctx.zeros()));
     } else {
-      return wavelet_structure<output_external>(std::move(ctx.bv()));
+      return wavelet_structure<OutputType>(std::move(ctx.bv()));
     }
   }
 }; // class wx_pc

@@ -15,7 +15,9 @@ void pc(const InputType& text, const uint64_t size, const uint64_t levels,
   auto& zeros = ctx.zeros();
   auto& borders = ctx.borders();
   auto& bv = ctx.bv().raw_data();
-
+  
+  //~ std::cout << "First level..." << std::endl;
+  
   // While initializing the histogram, we also compute the first level
   uint64_t cur_pos = 0;
   for (; cur_pos + 64 <= size; cur_pos += 64) {
@@ -38,6 +40,7 @@ void pc(const InputType& text, const uint64_t size, const uint64_t levels,
     bv[0][size >> 6] = word;
   }
 
+  //~ std::cout << "First level done." << std::endl;
 
   // The number of 0s at the last level is the number of "even" characters
   if (ContextType::compute_zeros) {
@@ -46,8 +49,12 @@ void pc(const InputType& text, const uint64_t size, const uint64_t levels,
     }
   }
 
+
   // Now we compute the WM bottom-up, i.e., the last level first
   for (uint64_t level = levels - 1; level > 0; --level) {
+      
+    //~ std::cout << "Level " << level << "..." << std::endl;
+      
     const uint64_t prefix_shift = (levels - level);
     const uint64_t cur_bit_shift = prefix_shift - 1;
 
@@ -85,6 +92,8 @@ void pc(const InputType& text, const uint64_t size, const uint64_t levels,
       bv[level][pos >> 6] |= (((text[i] >> cur_bit_shift) & 1ULL)
         << (63ULL - (pos & 63ULL)));
     }
+    
+    //~ std::cout << "Level " << level << " done." << std::endl;
   }
 
   if (levels > 1) { // TODO check condition

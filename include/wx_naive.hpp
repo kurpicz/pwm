@@ -24,14 +24,14 @@ public:
   static constexpr uint8_t word_width  = sizeof(AlphabetType);
   static constexpr bool    is_huffman_shaped = false;
 
-  template <typename InputType, bool output_external>
-  static wavelet_structure<output_external> compute(const InputType& text, const uint64_t size,
+template <typename InputType, typename OutputType>
+  static wavelet_structure<OutputType> compute(const InputType& text, const uint64_t size,
     const uint64_t levels) {
 
-    using bit_vectors = typename bit_vector_types<output_external>::type;
+    using bit_vectors = OutputType;
 
     if(size == 0) {
-      return wavelet_structure<output_external>();
+      return wavelet_structure<OutputType>();
     }
 
     auto _bv = bit_vectors(levels, size);
@@ -74,7 +74,7 @@ public:
         }
       }
     }
-    return wavelet_structure<output_external>(std::move(_bv));
+    return wavelet_structure<OutputType>(std::move(_bv));
   }
 }; // class wt_naive
 
@@ -87,14 +87,14 @@ public:
   static constexpr uint8_t word_width  = sizeof(AlphabetType);
   static constexpr bool    is_huffman_shaped = false;
 
-  template <typename InputType, bool output_external>
-  static wavelet_structure<output_external> compute(const InputType& text,
+template <typename InputType, typename OutputType>
+  static wavelet_structure<OutputType> compute(const InputType& text,
     const uint64_t size, const uint64_t levels) {
 
-    using bit_vectors = typename bit_vector_types<output_external>::type;
+    using bit_vectors = OutputType;
 
     if(size == 0) {
-      return wavelet_structure<output_external>();
+      return wavelet_structure<OutputType>();
     }
 
     auto _bv = bit_vectors(levels, size);
@@ -149,7 +149,7 @@ public:
       }
       _zeros[level] = text0.size();
     }
-    return wavelet_structure<output_external>(std::move(_bv), std::move(_zeros));
+    return wavelet_structure<OutputType>(std::move(_bv), std::move(_zeros));
   }
 }; // class wx_naive<MATRIX>
 

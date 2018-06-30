@@ -15,11 +15,11 @@
 // TODO: WM/WT abstract that selects zeros and rho
 
 // Overwrite information for each level
-template<bool is_tree, bool output_external = false>
+template<typename OutputType, bool is_tree>
 class ctx_single_level {
   
 public:
-  using bit_vectors = typename bit_vector_types<output_external>::type;
+  using bit_vectors = OutputType;
   
   ctx_single_level(uint64_t const size, uint64_t const levels)
   : hist_(1ULL << levels, 0), borders_(1ULL << levels, 0),

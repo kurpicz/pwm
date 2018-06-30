@@ -16,20 +16,20 @@
 #include <memory>
 #include <vector>
 
+#include <stxxl/vector>
+#include "util/stxxl_helper.hpp"
+
 #include "util/common.hpp"
 #include "util/file_stream.hpp"
 #include "util/type_for_bytes.hpp"
+#include "util/memory_types.hpp"
 #include "util/wavelet_structure.hpp"
 
-class construction_algorithm_base;
-
-template<bool output_external>
 class construction_algorithm;
 
 template<typename Algorithm, bool input_external, bool output_external>
 class concrete_algorithm;
 
-template<bool output_external>
 class algorithm_list {
 public:
   algorithm_list(const algorithm_list& other) = delete;
@@ -42,7 +42,7 @@ public:
     return list;
   }
 
-  inline void register_algorithm(construction_algorithm<output_external> const* algo) {
+  inline void register_algorithm(construction_algorithm const* algo) {
     algorithms_.push_back(algo);
   }
 
@@ -53,15 +53,17 @@ private:
   algorithm_list() { }
 
   // List of static pointers to the different algorithms
-  std::vector<construction_algorithm<output_external> const*> algorithms_;
+  std::vector<construction_algorithm const*> algorithms_;
 }; // class algorithm_list
 
 
-class construction_algorithm_base {
+class construction_algorithm {
 public:
 
-  construction_algorithm_base(std::string name, std::string description)
-    : name_(name), description_(description) {}
+  construction_algorithm(std::string name, std::string description)
+    : name_(name), description_(description) {
+    algorithm_list::get_algorithm_list().register_algorithm(this);
+  }
 
   virtual float median_time(const void* global_text, const uint64_t size,
       const uint64_t levels, size_t runs) const = 0;
@@ -71,6 +73,9 @@ public:
   virtual bool is_tree() const = 0;
   virtual uint8_t word_width() const = 0;
   virtual bool is_huffman_shaped() const = 0;
+  
+  virtual bool is_input_external() const = 0;
+  virtual bool is_output_external() const = 0;
 
   std::string name() const {
     return name_;
@@ -83,61 +88,39 @@ public:
   inline void print_info() const {
     std::cout << name_ << ": " << description_ << std::endl;
   }
+  
+  virtual wavelet_structure_base compute_bitvector(const void * global_text,
+    const uint64_t size, const uint64_t levels) const = 0;
 
 protected:
   std::string name_;
   std::string description_;
 }; // class construction_algorithm
 
-template<>
-class construction_algorithm<false> : public construction_algorithm_base {
-public:
-  construction_algorithm(std::string name, std::string description)
-    : construction_algorithm_base(name, description) {
-    algorithm_list<false>::get_algorithm_list().register_algorithm(this);
-  }
-
-  virtual wavelet_structure<false> compute_bitvector(const void* global_text,
-    const uint64_t size, const uint64_t levels) const = 0;
-}; // class construction_algorithm
-
-template<>
-class construction_algorithm<true> : public construction_algorithm_base {
-public:
-  construction_algorithm(std::string name, std::string description)
-    : construction_algorithm_base(name, description) {
-    algorithm_list<true>::get_algorithm_list().register_algorithm(this);
-  }
-
-  virtual wavelet_structure<true> compute_bitvector(const void* global_text,
-    const uint64_t size, const uint64_t levels) const = 0;
-}; // class construction_algorithm
 
 
 template <typename Algorithm, bool input_external, bool output_external>
-class concrete_algorithm : public construction_algorithm<output_external> {
-
+class concrete_algorithm : public construction_algorithm {
+private:
+  using input_type = typename in_type<input_external, Algorithm::word_width>::type;
+  using output_type = typename out_type<output_external>::type;
 public:
   concrete_algorithm(std::string name, std::string description)
-  : construction_algorithm<output_external>(name, description) { }
+  : construction_algorithm(name, description) { }
 
-  inline wavelet_structure<output_external> compute_bitvector(const void* global_text,
+  inline wavelet_structure_base compute_bitvector(const void* global_text,
     const uint64_t size, const uint64_t levels) const override {
-    using text_vec_type =
-      std::vector<typename type_for_bytes<Algorithm::word_width>::type>;
-    auto const* text = static_cast<text_vec_type const*>(global_text);
-    return Algorithm::template compute<decltype(text->data()), output_external>(text->data(), size, levels);
+    auto const &input = * static_cast<input_type const *>(global_text);
+    return Algorithm::template compute<input_type, output_type>(input, size, levels);
   }
 
   float median_time(const void* global_text, const uint64_t size,
       const uint64_t levels, size_t runs) const override {
     std::vector<float> times;
-    using text_vec_type =
-      std::vector<typename type_for_bytes<Algorithm::word_width>::type>;
-    const auto* text = static_cast<const text_vec_type*>(global_text);
+    const input_type &input = *static_cast<input_type const *>(global_text);
     for (size_t run = 0; run < runs; ++run) {
       auto begin_time = std::chrono::high_resolution_clock::now();
-      Algorithm::template compute<decltype(text->data()), output_external>(text->data(), size, levels);
+      Algorithm::template compute<input_type, output_type>(input, size, levels);
       auto end_time = std::chrono::high_resolution_clock::now();
       times.emplace_back(static_cast<float>(
         std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -149,10 +132,7 @@ public:
 
   void memory_peak(const void* global_text, const uint64_t size,
     const uint64_t levels) const override {
-    using text_vec_type =
-      std::vector<typename type_for_bytes<Algorithm::word_width>::type>;
-    const auto* text = static_cast<const text_vec_type*>(global_text);
-    Algorithm::template compute<decltype(text->data()), output_external>(text->data(), size, levels);
+    compute_bitvector(global_text, size, levels);
   }
 
   bool is_parallel() const override {
@@ -169,6 +149,14 @@ public:
 
   bool is_huffman_shaped() const override {
     return Algorithm::is_huffman_shaped;
+  }
+  
+  bool is_input_external() const override {
+    return input_external;
+  }
+  
+  bool is_output_external() const override {
+    return output_external;
   }
 
 }; // class concrete_algorithm

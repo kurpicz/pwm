@@ -13,11 +13,13 @@
 
 #include "bit_vectors.hpp"
 
-template<bool is_semi_external>
-class wavelet_structure {
+class wavelet_structure_base {};
+
+template<typename OutputType>
+class wavelet_structure : public wavelet_structure_base {
 
 public:
-  using bit_vectors = typename bit_vector_types<is_semi_external>::type;
+  using bit_vectors = OutputType;
 
   inline wavelet_structure() = default;
 

@@ -27,13 +27,13 @@ public:
   static constexpr uint8_t word_width  = sizeof(AlphabetType);
   static constexpr bool  is_huffman_shaped = false;
 
-  template <typename InputType, bool output_external>
-  static wavelet_structure<output_external> compute(const InputType& global_text,
+  template <typename InputType, typename OutputType>
+  static wavelet_structure<OutputType> compute(const InputType& global_text,
     const uint64_t size, const uint64_t levels) {
         
-    using ctx_t = ctx_all_levels<is_tree, output_external>;
+    using ctx_t = ctx_all_levels<OutputType, is_tree>;
     
-    if(size == 0) { return wavelet_structure<output_external>(); }
+    if(size == 0) { return wavelet_structure<OutputType>(); }
 
     const uint64_t shards = omp_get_max_threads();
 
@@ -79,9 +79,9 @@ public:
         }
       }
 
-      return wavelet_structure<output_external>(std::move(_bv), std::move(_zeros));
+      return wavelet_structure<OutputType>(std::move(_bv), std::move(_zeros));
     } else {
-      return wavelet_structure<output_external>(std::move(_bv));
+      return wavelet_structure<OutputType>(std::move(_bv));
     }
   }
 }; // class wx_dd_pc

@@ -13,6 +13,11 @@ using wm_ps_8 = wx_ps<uint8_t, false>;
 using wm_ps_16 = wx_ps<uint16_t, false>;
 using wm_ps_32 = wx_ps<uint32_t, false>;
 
+using wt_ps_8 = wx_ps<uint8_t, true>;
+using wt_ps_16 = wx_ps<uint16_t, true>;
+using wt_ps_32 = wx_ps<uint32_t, true>;
+
+
 CONSTRUCTION_REGISTER("wm_ps",
   "Sequential wavelet matrix construction with 8-bit alphabet (using sorting).",
   wm_ps_8, false, false)
@@ -22,10 +27,6 @@ CONSTRUCTION_REGISTER("wm_ps",
 CONSTRUCTION_REGISTER("wm_ps",
   "Sequential wavelet matrix construction with 32-bit alphabet (using sorting).",
   wm_ps_32, false, false)
-
-using wt_ps_8 = wx_ps<uint8_t, true>;
-using wt_ps_16 = wx_ps<uint16_t, true>;
-using wt_ps_32 = wx_ps<uint32_t, true>;
 
 CONSTRUCTION_REGISTER("wt_ps",
   "Sequential wavelet tree construction with 8-bit alphabet (using sorting).",
@@ -41,23 +42,23 @@ CONSTRUCTION_REGISTER("wt_ps",
 // external output
 
 CONSTRUCTION_REGISTER("wm_ps_se",
-  "Sequential wavelet matrix construction with 8-bit alphabet (using sorting, semi-external).",
+  "Sequential wavelet matrix construction with 8-bit alphabet (using sorting, external output).",
   wm_ps_8, false, true)
 CONSTRUCTION_REGISTER("wm_ps_se",
-  "Sequential wavelet matrix construction with 16-bit alphabet (using sorting, semi-external).",
+  "Sequential wavelet matrix construction with 16-bit alphabet (using sorting, external output).",
   wm_ps_16, false, true)
 CONSTRUCTION_REGISTER("wm_ps_se",
-  "Sequential wavelet matrix construction with 32-bit alphabet (using sorting, semi-external).",
+  "Sequential wavelet matrix construction with 32-bit alphabet (using sorting, external output).",
   wm_ps_32, false, true)
 
 CONSTRUCTION_REGISTER("wt_ps_se",
-  "Sequential wavelet tree construction with 8-bit alphabet (using sorting, semi-external).",
+  "Sequential wavelet tree construction with 8-bit alphabet (using sorting, external output).",
   wt_ps_8, false, true)
 CONSTRUCTION_REGISTER("wt_ps_se",
-  "Sequential wavelet tree construction with 16-bit alphabet (using sorting, semi-external).",
+  "Sequential wavelet tree construction with 16-bit alphabet (using sorting, external output).",
   wt_ps_16, false, true)
 CONSTRUCTION_REGISTER("wt_ps_se",
-  "Sequential wavelet tree construction with 32-bit alphabet (using sorting, semi-external).",
+  "Sequential wavelet tree construction with 32-bit alphabet (using sorting, external output).",
   wt_ps_32, false, true)
 
 /******************************************************************************/
