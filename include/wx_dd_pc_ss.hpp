@@ -17,14 +17,16 @@
 #include "util/merge.hpp"
 #include "util/pc_ss.hpp"
 #include "util/wavelet_structure.hpp"
+#include "util/memory_types.hpp"
 
-template <typename AlphabetType, bool is_tree_>
+template <typename AlphabetType, bool is_tree_, memory_mode mem_mode_>
 class wx_dd_pc_ss {
 public:
   static constexpr bool  is_parallel = true;
   static constexpr bool  is_tree   = is_tree_;
   static constexpr uint8_t word_width  = sizeof(AlphabetType);
   static constexpr bool  is_huffman_shaped = false;
+  static constexpr memory_mode mem_mode = mem_mode_;
 
   template <typename InputType, typename OutputType>
   static wavelet_structure<OutputType> compute(

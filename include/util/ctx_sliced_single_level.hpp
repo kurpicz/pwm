@@ -12,6 +12,7 @@
 #include "bit_vectors.hpp"
 #include "flat_two_dim_array.hpp"
 #include "permutation.hpp"
+#include "util/memory_types.hpp"
 
 // TODO: WM/WT abstract that selects zeros and rho
 
@@ -27,6 +28,8 @@ template<typename OutputType, bool is_tree>
 class ctx_sliced_single_level {
 
 public:
+  static constexpr bool is_external = std::is_same<OutputType,out_type<true>>::value;
+  
   using bit_vectors = OutputType;
   
   ctx_sliced_single_level() = default;

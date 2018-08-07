@@ -48,5 +48,6 @@ struct out_type<true> {
   using type = external_bit_vectors;
 };
 
+enum memory_mode { internal, external_input, external_output, external };
 
 /******************************************************************************/

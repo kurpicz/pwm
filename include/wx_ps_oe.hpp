@@ -9,16 +9,14 @@
 #pragma once
 
 #include <vector>
-#include <cmath>
 #include "wx_base.hpp"
 #include "util/ctx_single_level.hpp"
 #include "util/wavelet_structure.hpp"
 #include "util/ps.hpp"
 #include "util/memory_types.hpp"
 
-
 template <typename AlphabetType, bool is_tree_, memory_mode mem_mode_>
-class wx_ps {
+class wx_ps_oe {
 public:
 
   WX_BASE(AlphabetType, is_tree_, false, false, mem_mode_)
@@ -34,13 +32,15 @@ public:
     auto ctx = ctx_t(size, levels);
 
     auto sorted_text = std::vector<AlphabetType>(size);
-    ps(text, size, levels, ctx, sorted_text.data());
+    ps_out_external(text, size, levels, ctx, sorted_text.data());
 
-    if (ctx_t::compute_zeros)  {
-      return wavelet_structure<OutputType>(std::move(ctx.bv()), std::move(ctx.zeros()));
-    } else {
-      return wavelet_structure<OutputType>(std::move(ctx.bv()));
-    }
+    //~ if (ctx_t::compute_zeros)  {
+      //~ return wavelet_structure<OutputType>(std::move(ctx.bv()), std::move(ctx.zeros()));
+    //~ } else {
+      //~ return wavelet_structure<OutputType>(std::move(ctx.bv()));
+    //~ }
+    
+    return wavelet_structure<OutputType>();
   }
 }; // class wx_ps
 

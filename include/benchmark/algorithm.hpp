@@ -27,7 +27,7 @@
 
 class construction_algorithm;
 
-template<typename Algorithm, bool input_external, bool output_external>
+template<typename Algorithm>
 class concrete_algorithm;
 
 class algorithm_list {
@@ -76,6 +76,8 @@ public:
   
   virtual bool is_input_external() const = 0;
   virtual bool is_output_external() const = 0;
+  
+  virtual memory_mode mem_mode() const = 0;
 
   std::string name() const {
     return name_;
@@ -99,9 +101,18 @@ protected:
 
 
 
-template <typename Algorithm, bool input_external, bool output_external>
+template <typename Algorithm>
 class concrete_algorithm : public construction_algorithm {
 private:
+
+  static constexpr bool input_external = 
+    Algorithm::mem_mode == memory_mode::external ||
+    Algorithm::mem_mode == memory_mode::external_input;
+    
+  static constexpr bool output_external = 
+    Algorithm::mem_mode == memory_mode::external ||
+    Algorithm::mem_mode == memory_mode::external_output;
+
   using input_type = typename in_type<input_external, Algorithm::word_width>::type;
   using output_type = typename out_type<output_external>::type;
 public:
@@ -158,12 +169,17 @@ public:
   bool is_output_external() const override {
     return output_external;
   }
+  
+  memory_mode mem_mode() const override {
+    return Algorithm::mem_mode;
+  }
 
 }; // class concrete_algorithm
 
-#define CONSTRUCTION_REGISTER(algo_name, algo_description, ws, input_external, output_external) \
-  static const auto _cstr_algo_ ## ws ## _inext_ ## input_external ## _outext_ ## output_external ## _register             \
-    = concrete_algorithm<ws, input_external, output_external>(algo_name, algo_description);
+
+#define CONSTRUCTION_REGISTER(algo_name, algo_description, ws) \
+  static const auto _cstr_algo_ ## ws ## _register             \
+    = concrete_algorithm<ws>(algo_name, algo_description);
 
 #endif // ALGORITHM_HEADER
 

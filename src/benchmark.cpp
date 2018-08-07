@@ -180,13 +180,15 @@ int32_t main(int32_t argc, char const* argv[]) {
       
       bytes = malloc_count_current();
       if (word_width == 1) {
-        txt_prt_ext = new stxxlvector<type_for_bytes<1>>(stxxl_file);        
+        stxxlvector<type_for_bytes<1>::type> * vec = new stxxlvector<type_for_bytes<1>::type>(); 
+        for(const auto symbol : text_uint8) { (*vec).push_back(symbol); }
+        txt_prt_ext = vec;        
       } else if (word_width == 2) {
-        txt_prt_ext = new stxxlvector<type_for_bytes<2>>(stxxl_file);
+        txt_prt_ext = new stxxlvector<type_for_bytes<2>::type>(stxxl_file);
       } else if (word_width == 4) {
-        txt_prt_ext = new stxxlvector<type_for_bytes<4>>(stxxl_file);
+        txt_prt_ext = new stxxlvector<type_for_bytes<4>::type>(stxxl_file);
       } else if (word_width == 8) {
-        txt_prt_ext = new stxxlvector<type_for_bytes<8>>(stxxl_file);
+        txt_prt_ext = new stxxlvector<type_for_bytes<8>::type>(stxxl_file);
       } else {
         std::cerr << "You entered an invalid number of bytes per character "
                      "(parameter 'b')." << std::endl;
@@ -214,6 +216,8 @@ int32_t main(int32_t argc, char const* argv[]) {
                     a->memory_peak(txt_prt_ext, text_size, levels);
                     std::cout << malloc_count_peak() - txt_bytes << ", MB: "
                             << (malloc_count_peak() - txt_bytes) / (1024 * 1024) << std::endl;
+                    std::cout << malloc_count_peak() << ", MB: "
+                            << (malloc_count_peak()) / (1024 * 1024) << std::endl;
                   } else {
                     a->memory_peak(txt_prt, text_size, levels);
                     std::cout << malloc_count_peak() - txt_bytes_ext << ", MB: "
@@ -226,10 +230,10 @@ int32_t main(int32_t argc, char const* argv[]) {
                 } else {
                   if(a->is_input_external())
                     std::cout << a->median_time(
-                      txt_prt, text_size, levels, nr_runs) << std::endl;
+                      txt_prt_ext, text_size, levels, nr_runs) << std::endl;
                   else
                     std::cout << a->median_time(
-                      txt_prt_ext, text_size, levels, nr_runs) << std::endl;
+                      txt_prt, text_size, levels, nr_runs) << std::endl;
                 }
               }
             }

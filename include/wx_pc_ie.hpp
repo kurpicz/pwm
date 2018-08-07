@@ -1,5 +1,5 @@
 /*******************************************************************************
- * include/wx_ps.hpp
+ * include/wx_pc.hpp
  *
  * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
  *
@@ -9,39 +9,43 @@
 #pragma once
 
 #include <vector>
-#include <cmath>
-#include "wx_base.hpp"
+
 #include "util/ctx_single_level.hpp"
+#include "util/pc.hpp"
 #include "util/wavelet_structure.hpp"
-#include "util/ps.hpp"
 #include "util/memory_types.hpp"
 
-
 template <typename AlphabetType, bool is_tree_, memory_mode mem_mode_>
-class wx_ps {
-public:
+class wx_pc_ie {
 
-  WX_BASE(AlphabetType, is_tree_, false, false, mem_mode_)
+public:
+  static constexpr bool  is_parallel = false;
+  static constexpr bool  is_tree   = is_tree_;
+  static constexpr uint8_t word_width  = sizeof(AlphabetType);
+  static constexpr bool  is_huffman_shaped = false;
+  static constexpr memory_mode mem_mode = mem_mode_;
 
   template <typename InputType, typename OutputType>
   static wavelet_structure<OutputType> compute(const InputType& text, const uint64_t size,
     const uint64_t levels) {
 
-    using ctx_t = ctx_single_level<OutputType, wx_base<AlphabetType, is_tree_, false, false, mem_mode_>::is_tree>;
+    using ctx_t = ctx_single_level<OutputType, is_tree>;
 
-    if(size == 0) { return wavelet_structure<OutputType>(); }
+    if(size == 0) {
+      return wavelet_structure<OutputType>();
+    }
 
     auto ctx = ctx_t(size, levels);
 
-    auto sorted_text = std::vector<AlphabetType>(size);
-    ps(text, size, levels, ctx, sorted_text.data());
+    pc_in_external(text, size, levels, ctx);
 
-    if (ctx_t::compute_zeros)  {
-      return wavelet_structure<OutputType>(std::move(ctx.bv()), std::move(ctx.zeros()));
+    if (ctx_t::compute_zeros) {
+      return wavelet_structure<OutputType>(
+        std::move(ctx.bv()), std::move(ctx.zeros()));
     } else {
       return wavelet_structure<OutputType>(std::move(ctx.bv()));
     }
   }
-}; // class wx_ps
+}; // class wx_pc
 
 /******************************************************************************/

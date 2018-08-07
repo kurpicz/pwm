@@ -11,6 +11,7 @@
 
 #include "bit_vectors.hpp"
 #include "permutation.hpp"
+#include "util/memory_types.hpp"
 
 // TODO: WM/WT abstract that selects zeros and rho
 
@@ -19,6 +20,8 @@ template<typename OutputType, bool is_tree>
 class ctx_single_level {
   
 public:
+  static constexpr bool is_external = std::is_same<OutputType,out_type<true>>::value;
+  
   using bit_vectors = OutputType;
   
   ctx_single_level(uint64_t const size, uint64_t const levels)

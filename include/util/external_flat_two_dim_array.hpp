@@ -94,7 +94,11 @@ public:
   }
 
   inline auto& raw_data() {
-    return *this;
+    return raw_data_;
+  }
+  
+  inline auto& level_offsets() {
+    return level_offsets_;
   }
 
 private:

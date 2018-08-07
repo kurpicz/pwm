@@ -10,6 +10,7 @@
 
 #include "bit_vectors.hpp"
 #include "border_hist_array.hpp"
+#include "util/memory_types.hpp"
 
 // TODO: WM/WT abstract that selects zeros and rho
 
@@ -18,6 +19,8 @@ template<typename OutputType, bool is_tree>
 class ctx_compute_borders {
 
 public:
+  static constexpr bool is_external = std::is_same<OutputType,out_type<true>>::value;
+  
   using bit_vectors = OutputType;
   using rho_t = typename rho_dispatch<is_tree>::type;
 
