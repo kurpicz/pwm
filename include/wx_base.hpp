@@ -26,7 +26,6 @@ public:
   static constexpr memory_mode mem_mode = mem_mode_;
 }; // class wx_ps
 
-
 #define WX_BASE(AlphabetType, is_tree_, is_parallel_, is_huffman_shaped_, mem_mode_) \
   static constexpr bool  is_parallel = is_parallel_; \
   static constexpr bool  is_tree   = is_tree_; \

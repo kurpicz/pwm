@@ -25,7 +25,7 @@ public:
   static wavelet_structure<OutputType> compute(const InputType& text, const uint64_t size,
     const uint64_t levels) {
 
-    using ctx_t = ctx_single_level<OutputType, wx_base<AlphabetType, is_tree_, false, false, memory_mode::external>::is_tree>;
+    using ctx_t = ctx_single_level<OutputType, wx_base<AlphabetType, is_tree_, false, false, mem_mode>::is_tree>;
 
     if(size == 0) { return wavelet_structure<OutputType>(); }
 

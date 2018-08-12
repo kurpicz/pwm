@@ -15,7 +15,7 @@
 #include "util/wavelet_structure.hpp"
 #include "util/memory_types.hpp"
 
-template <typename AlphabetType, bool is_tree_, memory_mode mem_mode_>
+template <typename AlphabetType, bool is_tree_>
 class wx_pps {
 
 public:
@@ -23,7 +23,7 @@ public:
   static constexpr bool    is_tree     = is_tree_;
   static constexpr uint8_t word_width  = sizeof(AlphabetType);
   static constexpr bool  is_huffman_shaped = false;
-  static constexpr memory_mode mem_mode = mem_mode_;
+  static constexpr memory_mode mem_mode = memory_mode::internal;
 
   template <typename InputType, typename OutputType>
   static wavelet_structure<OutputType> compute(const InputType& text, const uint64_t size,

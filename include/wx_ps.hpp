@@ -17,17 +17,17 @@
 #include "util/memory_types.hpp"
 
 
-template <typename AlphabetType, bool is_tree_, memory_mode mem_mode_>
+template <typename AlphabetType, bool is_tree_>
 class wx_ps {
 public:
 
-  WX_BASE(AlphabetType, is_tree_, false, false, mem_mode_)
+  WX_BASE(AlphabetType, is_tree_, false, false, memory_mode::internal)
 
   template <typename InputType, typename OutputType>
   static wavelet_structure<OutputType> compute(const InputType& text, const uint64_t size,
     const uint64_t levels) {
 
-    using ctx_t = ctx_single_level<OutputType, wx_base<AlphabetType, is_tree_, false, false, mem_mode_>::is_tree>;
+    using ctx_t = ctx_single_level<OutputType, wx_base<AlphabetType, is_tree_, false, false, mem_mode>::is_tree>;
 
     if(size == 0) { return wavelet_structure<OutputType>(); }
 

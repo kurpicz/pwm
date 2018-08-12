@@ -9,9 +9,9 @@
 #include "benchmark/algorithm.hpp"
 #include "wx_ppc_ss.hpp"
 
-using wm_ppc_ss_8 = wx_ppc_ss<uint8_t, false, memory_mode::internal>;
-using wm_ppc_ss_16 = wx_ppc_ss<uint16_t, false, memory_mode::internal>;
-using wm_ppc_ss_32 = wx_ppc_ss<uint32_t, false, memory_mode::internal>;
+using wm_ppc_ss_8 = wx_ppc_ss<uint8_t, false>;
+using wm_ppc_ss_16 = wx_ppc_ss<uint16_t, false>;
+using wm_ppc_ss_32 = wx_ppc_ss<uint32_t, false>;
 
 CONSTRUCTION_REGISTER("wm_ppc_ss",
   "Parallel wavelet matrix construction with 8-bit alphabet "
@@ -23,9 +23,9 @@ CONSTRUCTION_REGISTER("wm_ppc_ss",
   "Parallel wavelet matrix construction with 32-bit alphabet "
   "(using counting and computing all levels at once).", wm_ppc_ss_32)
 
-using wt_ppc_ss_8 = wx_ppc_ss<uint8_t, true, memory_mode::internal>;
-using wt_ppc_ss_16 = wx_ppc_ss<uint16_t, true, memory_mode::internal>;
-using wt_ppc_ss_32 = wx_ppc_ss<uint32_t, true, memory_mode::internal>;
+using wt_ppc_ss_8 = wx_ppc_ss<uint8_t, true>;
+using wt_ppc_ss_16 = wx_ppc_ss<uint16_t, true>;
+using wt_ppc_ss_32 = wx_ppc_ss<uint32_t, true>;
 
 CONSTRUCTION_REGISTER("wt_ppc_ss",
   "Parallel wavelet tree construction with 8-bit alphabet "
