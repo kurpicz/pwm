@@ -14,6 +14,12 @@
 template <typename value_type>
 using stxxlvector = typename stxxl::VECTOR_GENERATOR<value_type>::result;
 
+template <typename value_type>
+using stxxlreader = typename stxxl::VECTOR_GENERATOR<value_type>::result::bufreader_type;
+
+template <typename value_type>
+using stxxlwriter = typename stxxl::VECTOR_GENERATOR<value_type>::result::bufwriter_type;
+
 template <int word_width>
 using external_vector = stxxlvector<typename type_for_bytes<word_width>::type>;
 

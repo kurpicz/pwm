@@ -2,6 +2,7 @@
  * include/util/alphabet_util.hpp
  *
  * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
+ * Copyright (C) 2018 Jonas Ellert <jonas.ellert@tu-dortmund.de>
  *
  * All rights reserved. Published under the BSD-2 license in the LICENSE file.
  ******************************************************************************/
@@ -14,6 +15,7 @@
 #include <vector>
 
 #include "util/file_stream.hpp"
+#include "util/stxxl_helper.hpp"
 
 template <typename AlphabetType>
 static uint64_t reduce_alphabet(std::vector<AlphabetType>& text) {
@@ -41,6 +43,40 @@ static uint64_t reduce_alphabet(std::vector<AlphabetType>& text) {
       text[i] = static_cast<AlphabetType>(word_list.find(text[i])->second);
     }
   }
+  return max_char;
+}
+
+
+template <typename AlphabetType>
+static uint64_t reduce_alphabet(const stxxlvector<AlphabetType>& text, stxxlvector<AlphabetType>& result) {
+  uint64_t max_char = uint64_t(0);
+  result.resize(0);
+  result.reserve(text.size());
+  stxxlreader<AlphabetType> reader(text);
+  stxxlwriter<AlphabetType> writer(result);
+  
+  if (std::is_same<AlphabetType, uint8_t>::value) { // TODO: C++17 if constexpr
+    std::array<uint64_t, std::numeric_limits<uint8_t>::max()> occ;
+    occ.fill(0);
+    for(const auto &c : reader) {
+      if (occ[c] == 0) {
+        occ[c] = ++max_char;
+      }
+      writer << occ[c] - 1;
+    }
+    --max_char;
+  } else {
+    std::unordered_map<AlphabetType, uint64_t> word_list;
+    for(const auto &c : reader) {
+      auto result = word_list.find(c);
+      if (result == word_list.end()) {
+        word_list.emplace(c, max_char++);
+      }
+      writer << static_cast<AlphabetType>(word_list.find(c)->second);
+    }
+    --max_char;
+  }
+  writer.finish();
   return max_char;
 }
 
