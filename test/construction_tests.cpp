@@ -3,9 +3,12 @@
  *
  * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
  * Copyright (C) 2017 Marvin Löbel <loebel.marvin@gmail.com>
- *
+ * Copyright (C) 2018 Jonas Ellert <jonas.ellert@tu-dortmund.de>
+ * 
  * All rights reserved. Published under the BSD-2 license in the LICENSE file.
  ******************************************************************************/
+
+#include <bitset>
 
 #include <gtest/gtest.h>
 
@@ -20,7 +23,7 @@
 #include "util/file_util.hpp"
 
 template <typename list_type>
-void construction_smoketest(list_type& algo_list) {
+void internal_construction_smoketest(list_type& algo_list) {
   for (const auto& a : algo_list) {
     if (a->word_width() == 1 && !a->is_huffman_shaped()) {
       a->print_info();
@@ -40,40 +43,51 @@ void construction_smoketest(list_type& algo_list) {
   }
 }
 
-TEST(wavelet_construction, smoketest) {
-  auto& algo_list1 = algorithm_list<true>::get_algorithm_list();
-  auto& algo_list2 = algorithm_list<false>::get_algorithm_list();
-  
-  construction_smoketest(algo_list1);
-  construction_smoketest(algo_list2);
+TEST(internal_wavelet_construction, smoketest) {
+  auto& algo_list = 
+    algorithm_list<memory_mode::internal>::get_algorithm_list();
+  internal_construction_smoketest(algo_list);
 }
 
-//~ TEST(semi_external_wavelet_construction, smoketest) {
-  //~ auto& algo_list = algorithm_list::get_algorithm_list();
-  //~ for (const auto& a : algo_list) {
-    //~ if (a->word_width() == 1 && !a->is_huffman_shaped()) {
-      //~ a->print_info();
-      //~ test::roundtrip_batch([&](const std::string& s){
-        //~ auto vec = std::vector<uint8_t>(s.begin(), s.end());
-        //~ const std::string file_name = "test_string";
-        //~ uint64_t levels = levels_for_max_char(no_reduction_alphabet(vec));
-        //~ vector_to_file(vec, file_name);
-        //~ ifile_stream<uint8_t> ifs(file_name);
-        //~ auto bvz = a->compute_bitvector_semi_external(
-          //~ &ifs, vec.size() , levels);
-        //~ ASSERT_TRUE(remove(file_name.c_str()) == 0) <<
-          //~ "Could not remove file, something went wrong";
-        //~ if (a->is_tree()) {
-          //~ auto decoded_s = decode_wt(bvz.bvs(), vec.size());
-          //~ ASSERT_EQ(s, decoded_s) << "Failure (Algorithm): " << a->name();
-        //~ } else {
-          //~ auto decoded_s = decode_wm(bvz.bvs(), bvz.zeros(), vec.size());
-          //~ ASSERT_EQ(s, decoded_s) << "Failure (Algorithm): " << a->name();
-        //~ }
-      //~ });
-    //~ }
-  //~ }
-//~ }
+template <typename list_type>
+void external_output_construction_smoketest(list_type& algo_list) {
+  for (const auto& a : algo_list) {
+    if (a->word_width() == 1 && !a->is_huffman_shaped()) {
+      a->print_info();
+      test::roundtrip_batch([&](const std::string& s){
+        auto vec = std::vector<uint8_t>(s.begin(), s.end());
+        uint64_t levels = levels_for_max_char(no_reduction_alphabet(vec));
+        auto bvz = a->compute_bitvector(&vec, vec.size(), levels);
+        
+        if(vec.size() == 0) {
+          ASSERT_EQ(bvz.levels(), uint64_t(0)) << "Failure (Algorithm): " << a->name();
+        } else {
+          internal_bit_vectors bvz_internal(levels, vec.size());
+          for(uint64_t level = 0; level < levels; ++level) {
+            for(uint64_t entry = 0; entry < (vec.size() + 63) / 64; ++entry) {
+              bvz_internal[level][entry] = bvz[level][entry];
+            }
+          }
+          if (a->is_tree()) {
+            auto decoded_s = decode_wt(bvz_internal, vec.size());
+            ASSERT_EQ(s, decoded_s) << "Failure (Algorithm): " << a->name();
+          } else {
+            if(s.size() > 1 || true) {
+              auto decoded_s = decode_wm(bvz_internal, bvz.zeros(), vec.size());
+              ASSERT_EQ(s, decoded_s) << "Failure (Algorithm): " << a->name();
+            }
+          }
+        }
+      });
+    }
+  }
+}
+
+TEST(external_output_wavelet_construction, smoketest) {
+  auto& algo_list = 
+    algorithm_list<memory_mode::external_output>::get_algorithm_list();
+  external_output_construction_smoketest(algo_list);
+}
 
 template <typename list_type>
 void huffman_shaped_wavelet_construction_smoketest(list_type& algo_list) {
@@ -97,11 +111,8 @@ void huffman_shaped_wavelet_construction_smoketest(list_type& algo_list) {
 }
 
 TEST(huffman_shaped_wavelet_construction, smoketest) {
-  auto& algo_list1 = algorithm_list<true>::get_algorithm_list();
-  auto& algo_list2 = algorithm_list<false>::get_algorithm_list();
-  
+  auto& algo_list1 = algorithm_list<memory_mode::internal>::get_algorithm_list();
   huffman_shaped_wavelet_construction_smoketest(algo_list1);
-  huffman_shaped_wavelet_construction_smoketest(algo_list2);
 }
 
 /******************************************************************************/

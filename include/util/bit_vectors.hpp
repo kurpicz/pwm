@@ -11,7 +11,7 @@
 
 #include "util/common.hpp"
 #include "util/flat_two_dim_array.hpp"
-#include "util/external_flat_two_dim_array.hpp"
+#include "util/flat_two_dim_array_external.hpp"
 
 struct bit_vector_sizes {
   static uint64_t level_size(const uint64_t, const uint64_t size) {
@@ -19,22 +19,9 @@ struct bit_vector_sizes {
   };
 }; // struct bit_vector_sizes
 
-using internal_bit_vectors = flat_two_dim_array<uint64_t, bit_vector_sizes>;
+using internal_bit_vectors = 
+  flat_two_dim_array<uint64_t, bit_vector_sizes>;
 using external_bit_vectors =
-  external_flat_two_dim_array<uint64_t, bit_vector_sizes>;
-
-template <bool output_external>
-struct bit_vector_types { };
-
-template <>
-struct bit_vector_types<false> {
-  using type = internal_bit_vectors;
-};
-
-template <>
-struct bit_vector_types<true> {
-  using type = external_bit_vectors;
-};
-
+  flat_two_dim_array_external<uint64_t, bit_vector_sizes>;
 
 /******************************************************************************/

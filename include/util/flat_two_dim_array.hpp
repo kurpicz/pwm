@@ -11,6 +11,7 @@
 
 #include <cstring>
 #include <iostream>
+#include "util/flat_two_dim_array_external.hpp"
 
 template <typename IndexType, class size_function>
 class flat_two_dim_array {
@@ -31,6 +32,29 @@ public:
     for (uint64_t level = 1; level < data_.size(); ++level) {
       data_[level] = data_[level - 1] +
         size_function::level_size(level - 1, size_f_args...);
+    }
+  }
+  
+  template <typename... SizeFunctionArgs>
+  flat_two_dim_array(flat_two_dim_array_external<IndexType, size_function> &external_array, const uint64_t levels, SizeFunctionArgs... size_f_args)
+  : levels_(levels), data_(levels + 1) {
+    assert(levels > 0);
+    uint64_t data_size = 0;
+    for (uint64_t level = 0; level < levels; ++level) {
+      data_size += size_function::level_size(level, size_f_args...);
+    }
+    data_[0] = new IndexType[data_size];
+    memset(data_[0], 0, data_size * sizeof(IndexType));
+    for (uint64_t level = 1; level < data_.size(); ++level) {
+      data_[level] = data_[level - 1] +
+        size_function::level_size(level - 1, size_f_args...);
+    }
+    
+    for(uint64_t level = 0; level < levels; ++level) {
+      for(uint64_t index = 0; index < external_array.level_sizes()[level]; ++index) {
+        std::cout << level << " " << index << " ... ";
+        data_[level][index] = external_array[level][index];
+      }
     }
   }
 

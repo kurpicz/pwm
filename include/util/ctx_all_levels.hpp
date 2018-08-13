@@ -17,13 +17,11 @@
 // TODO: WM/WT abstract that selects zeros and rho
 
 /// Keep calculated information for individual levels around
-template<typename OutputType, bool is_tree>
+template<bool is_tree>
 class ctx_all_levels {
   
 public:
-  static constexpr bool is_external = std::is_same<OutputType,out_type<true>>::value;
-
-  using bit_vectors = OutputType;
+  using bit_vectors = internal_bit_vectors;
   using rho_t = typename rho_dispatch<is_tree>::type;
 
   ctx_all_levels() = default;

@@ -29,13 +29,13 @@ public:
   static constexpr bool  is_huffman_shaped = false;
   static constexpr memory_mode mem_mode = memory_mode::internal;
 
-  template <typename InputType, typename OutputType>
-  static wavelet_structure<OutputType> compute(const InputType& global_text,
+  template <typename InputType>
+  static wavelet_structure compute(const InputType& global_text,
     const uint64_t size, const uint64_t levels) {
         
-    using ctx_t = ctx_all_levels<OutputType, is_tree>;
+    using ctx_t = ctx_all_levels<is_tree>;
     
-    if(size == 0) { return wavelet_structure<OutputType>(); }
+    if(size == 0) { return wavelet_structure(); }
 
     const uint64_t shards = omp_get_max_threads();
 
@@ -81,9 +81,9 @@ public:
         }
       }
 
-      return wavelet_structure<OutputType>(std::move(_bv), std::move(_zeros));
+      return wavelet_structure(std::move(_bv), std::move(_zeros));
     } else {
-      return wavelet_structure<OutputType>(std::move(_bv));
+      return wavelet_structure(std::move(_bv));
     }
   }
 }; // class wx_dd_pc

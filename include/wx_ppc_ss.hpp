@@ -23,14 +23,14 @@ public:
   static constexpr bool  is_huffman_shaped = false;
   static constexpr memory_mode mem_mode = memory_mode::internal;
 
-  template <typename InputType, typename OutputType>
-  static wavelet_structure<OutputType> compute(const InputType& text, const uint64_t size,
+  template <typename InputType>
+  static wavelet_structure compute(const InputType& text, const uint64_t size,
     const uint64_t levels) {
 
-    using ctx_t = ctx_compute_borders<OutputType, is_tree>;
+    using ctx_t = ctx_compute_borders<is_tree>;
 
     if (size == 0) {
-      return wavelet_structure<OutputType>();
+      return wavelet_structure();
     }
 
     const auto rho = rho_dispatch<is_tree>::create(levels);
@@ -76,9 +76,9 @@ public:
     }
 
     if (ctx_t::compute_zeros) {
-      return wavelet_structure<OutputType>(std::move(ctx.bv()), std::move(ctx.zeros()));
+      return wavelet_structure(std::move(ctx.bv()), std::move(ctx.zeros()));
     } else {
-      return wavelet_structure<OutputType>(std::move(ctx.bv()));
+      return wavelet_structure(std::move(ctx.bv()));
     }
   }
 }; // class wx_ppc_ss

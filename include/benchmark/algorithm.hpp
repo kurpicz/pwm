@@ -2,6 +2,7 @@
  * include/algorithm.hpp
  *
  * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
+ * Copyright (C) 2018 Jonas Ellert <jonas.ellert@tu-dortmund.de>
  *
  * All rights reserved. Published under the BSD-2 license in the LICENSE file.
  ******************************************************************************/
@@ -16,20 +17,20 @@
 #include <memory>
 #include <vector>
 
-#include <stxxl/vector>
-#include "util/stxxl_helper.hpp"
-
 #include "util/common.hpp"
 #include "util/file_stream.hpp"
 #include "util/type_for_bytes.hpp"
 #include "util/memory_types.hpp"
 #include "util/wavelet_structure.hpp"
+#include "util/stxxl_helper.hpp"
 
+template<memory_mode mem_mode>
 class construction_algorithm;
 
 template<typename Algorithm>
 class concrete_algorithm;
 
+template<memory_mode mem_mode>
 class algorithm_list {
 public:
   algorithm_list(const algorithm_list& other) = delete;
@@ -42,7 +43,7 @@ public:
     return list;
   }
 
-  inline void register_algorithm(construction_algorithm const* algo) {
+  inline void register_algorithm(construction_algorithm<mem_mode> const* algo) {
     algorithms_.push_back(algo);
   }
 
@@ -53,16 +54,29 @@ private:
   algorithm_list() { }
 
   // List of static pointers to the different algorithms
-  std::vector<construction_algorithm const*> algorithms_;
+  std::vector<construction_algorithm<mem_mode> const*> algorithms_;
 }; // class algorithm_list
 
 
+template<memory_mode mem_mode>
 class construction_algorithm {
+protected:
+  std::string name_;
+  std::string description_;
+
+  static constexpr bool is_input_external_ = 
+      mem_mode == memory_mode::external || 
+      mem_mode == memory_mode::external_input;
+  
+  static constexpr bool is_output_external_ =
+      mem_mode == memory_mode::external || 
+      mem_mode == memory_mode::external_output;
+      
 public:
 
   construction_algorithm(std::string name, std::string description)
     : name_(name), description_(description) {
-    algorithm_list::get_algorithm_list().register_algorithm(this);
+    algorithm_list<mem_mode>::get_algorithm_list().register_algorithm(this);
   }
 
   virtual float median_time(const void* global_text, const uint64_t size,
@@ -74,10 +88,21 @@ public:
   virtual uint8_t word_width() const = 0;
   virtual bool is_huffman_shaped() const = 0;
   
-  virtual bool is_input_external() const = 0;
-  virtual bool is_output_external() const = 0;
+  constexpr bool is_input_external() const {
+    return 
+      mem_mode == memory_mode::external || 
+      mem_mode == memory_mode::external_input;
+  }
   
-  virtual memory_mode mem_mode() const = 0;
+  constexpr bool is_output_external() const {
+    return 
+      mem_mode == memory_mode::external || 
+      mem_mode == memory_mode::external_output;
+  }
+  
+  memory_mode mmode() {
+    return mem_mode;
+  }
 
   std::string name() const {
     return name_;
@@ -91,38 +116,36 @@ public:
     std::cout << name_ << ": " << description_ << std::endl;
   }
   
-  virtual wavelet_structure_base compute_bitvector(const void * global_text,
+  virtual typename out_type<is_output_external_>::type compute_bitvector(const void * global_text,
     const uint64_t size, const uint64_t levels) const = 0;
 
-protected:
-  std::string name_;
-  std::string description_;
 }; // class construction_algorithm
 
 
 
 template <typename Algorithm>
-class concrete_algorithm : public construction_algorithm {
+class concrete_algorithm : public construction_algorithm<Algorithm::mem_mode>{
 private:
-
-  static constexpr bool input_external = 
-    Algorithm::mem_mode == memory_mode::external ||
-    Algorithm::mem_mode == memory_mode::external_input;
+  
+  using input_type = 
+    typename in_type<construction_algorithm<
+      Algorithm::mem_mode>::is_input_external_, 
+      Algorithm::word_width
+    >::type;
     
-  static constexpr bool output_external = 
-    Algorithm::mem_mode == memory_mode::external ||
-    Algorithm::mem_mode == memory_mode::external_output;
-
-  using input_type = typename in_type<input_external, Algorithm::word_width>::type;
-  using output_type = typename out_type<output_external>::type;
+  using output_type = 
+    typename out_type<construction_algorithm<
+      Algorithm::mem_mode>::is_output_external_
+    >::type;
+  
 public:
   concrete_algorithm(std::string name, std::string description)
-  : construction_algorithm(name, description) { }
+  : construction_algorithm<Algorithm::mem_mode>(name, description) { }
 
-  inline wavelet_structure_base compute_bitvector(const void* global_text,
+  inline output_type compute_bitvector(const void* global_text,
     const uint64_t size, const uint64_t levels) const override {
     auto const &input = * static_cast<input_type const *>(global_text);
-    return Algorithm::template compute<input_type, output_type>(input, size, levels);
+    return Algorithm::template compute<input_type>(input, size, levels);
   }
 
   float median_time(const void* global_text, const uint64_t size,
@@ -131,7 +154,7 @@ public:
     const input_type &input = *static_cast<input_type const *>(global_text);
     for (size_t run = 0; run < runs; ++run) {
       auto begin_time = std::chrono::high_resolution_clock::now();
-      Algorithm::template compute<input_type, output_type>(input, size, levels);
+      Algorithm::template compute<input_type>(input, size, levels);
       auto end_time = std::chrono::high_resolution_clock::now();
       times.emplace_back(static_cast<float>(
         std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -160,18 +183,6 @@ public:
 
   bool is_huffman_shaped() const override {
     return Algorithm::is_huffman_shaped;
-  }
-  
-  bool is_input_external() const override {
-    return input_external;
-  }
-  
-  bool is_output_external() const override {
-    return output_external;
-  }
-  
-  memory_mode mem_mode() const override {
-    return Algorithm::mem_mode;
   }
 
 }; // class concrete_algorithm

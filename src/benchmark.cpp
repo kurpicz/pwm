@@ -2,6 +2,7 @@
  * src/benchmark.cpp
  *
  * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
+ * Copyright (C) 2018 Jonas Ellert <jonas.ellert@tu-dortmund.de>
  *
  * All rights reserved. Published under the BSD-2 license in the LICENSE file.
  ******************************************************************************/
@@ -70,16 +71,32 @@ int32_t main(int32_t argc, char const* argv[]) {
   TCLAP::SwitchArg memory_arg("", "memory",
     "Compute peak memory during construction.", false);
   cmd.add(memory_arg);
-  TCLAP::SwitchArg semi_external_arg("e", "semi_external",
-    "Stream the input and output instead of keeping it in RAM.", false);
-  cmd.add(semi_external_arg);
+  TCLAP::SwitchArg external_input_arg("ie", "external_input",
+    "Run only algorithms that stream the input instead of keeping it in RAM.", false);
+  cmd.add(external_input_arg);
+  TCLAP::SwitchArg external_output_arg("oe", "external_output",
+    "Run only algorithms that stream the output instead of keeping it in RAM.", false);
+  cmd.add(external_output_arg);
+  TCLAP::SwitchArg external_both_arg("e", "external",
+    "Run only algorithms that use external memory", false);
+  cmd.add(external_both_arg);
+  
   cmd.parse( argc, argv );
 
-  auto& algo_list = algorithm_list::get_algorithm_list();
+  auto& algo_list_int = 
+    algorithm_list<memory_mode::internal>::get_algorithm_list();
+  auto& algo_list_ext_in = 
+    algorithm_list<memory_mode::external_input>::get_algorithm_list();
+  auto& algo_list_ext_out = 
+    algorithm_list<memory_mode::external_output>::get_algorithm_list();
+  auto& algo_list_ext_both = 
+    algorithm_list<memory_mode::external>::get_algorithm_list();
+    
   if (list_all_algorithms.getValue()) {
-    for (const auto& a : algo_list) {
-      a->print_info();
-    }
+    for (const auto& a : algo_list_int) a->print_info();
+    for (const auto& a : algo_list_ext_in) a->print_info();
+    for (const auto& a : algo_list_ext_out) a->print_info();
+    for (const auto& a : algo_list_ext_both) a->print_info();
     return 0;
   }
 
@@ -92,7 +109,16 @@ int32_t main(int32_t argc, char const* argv[]) {
   const bool no_trees = no_trees_arg.getValue();
   const bool no_matrices = no_matrices_arg.getValue();
   const bool memory = memory_arg.getValue();
-  const bool semi_external = semi_external_arg.getValue();
+  
+  memory_mode mem_mode = memory_mode::internal;  
+  if(external_input_arg.getValue()) 
+    mem_mode = memory_mode::external_input;
+  if(external_output_arg.getValue()) 
+    mem_mode = memory_mode::external_output;
+  if(external_input_arg.getValue() && external_output_arg.getValue()) 
+    mem_mode = memory_mode::external;
+  if(external_both_arg.getValue()) 
+    mem_mode = memory_mode::external;
 
   for (const auto& path : file_paths) {
     std::cout << std::endl << "Text: " << path << std::endl;
@@ -115,7 +141,7 @@ int32_t main(int32_t argc, char const* argv[]) {
 #ifdef MALLOC_COUNT
     malloc_count_reset_peak();
 #endif
-    if (semi_external) {
+    if (false) {
       if (word_width == 1) {
         auto reduced_result = reduce_alphabet_stream<uint8_t>(path);
         txt_path = reduced_result.file_name;
@@ -202,7 +228,7 @@ int32_t main(int32_t argc, char const* argv[]) {
     std::cout << "Memory peak text: " << malloc_count_peak() - txt_bytes_ext << ", MB: "
               << (malloc_count_peak() - txt_bytes_ext) / (1024 * 1024) << std::endl;
 #endif // MALLOC_COUNT
-    for (const auto& a : algo_list) {
+    for (const auto& a : algo_list_int) {
       if (filter == "" || (a->name().find(filter) != std::string::npos)) {
         if (a->word_width() == word_width) {
           if (filter_parallel(run_only_parallel, a->is_parallel())) {
@@ -242,7 +268,7 @@ int32_t main(int32_t argc, char const* argv[]) {
       }
     }
     
-    if (semi_external) {
+    if (false) {
       remove(txt_path.c_str());
     }
   }

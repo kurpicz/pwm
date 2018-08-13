@@ -9,7 +9,7 @@
 
 #include "wx_ps.hpp"
 #include "wx_ps_oe.hpp"
-#include "wx_ps_fe.hpp"
+//~ #include "wx_ps_fe.hpp"
 #include "benchmark/algorithm.hpp"
 
 using wm_ps_8 = wx_ps<uint8_t, false>;
@@ -72,18 +72,18 @@ CONSTRUCTION_REGISTER("wt_ps_oe",
 
 // external
 
-using wt_ps_8_fe = wx_ps_fe<uint8_t, true>;
-using wt_ps_16_fe = wx_ps_fe<uint16_t, true>;
-using wt_ps_32_fe = wx_ps_fe<uint32_t, true>;
+//~ using wt_ps_8_fe = wx_ps_fe<uint8_t, true>;
+//~ using wt_ps_16_fe = wx_ps_fe<uint16_t, true>;
+//~ using wt_ps_32_fe = wx_ps_fe<uint32_t, true>;
 
-CONSTRUCTION_REGISTER("wt_ps_fe",
-  "Sequential wavelet tree construction with 8-bit alphabet (using sorting, fully external).",
-  wt_ps_8_fe)
-CONSTRUCTION_REGISTER("wt_ps_fe",
-  "Sequential wavelet tree construction with 16-bit alphabet (using sorting, fully external).",
-  wt_ps_16_fe)
-CONSTRUCTION_REGISTER("wt_ps_fe",
-  "Sequential wavelet tree construction with 32-bit alphabet (using sorting, fully external).",
-  wt_ps_32_fe)
+//~ CONSTRUCTION_REGISTER("wt_ps_fe",
+  //~ "Sequential wavelet tree construction with 8-bit alphabet (using sorting, fully external).",
+  //~ wt_ps_8_fe)
+//~ CONSTRUCTION_REGISTER("wt_ps_fe",
+  //~ "Sequential wavelet tree construction with 16-bit alphabet (using sorting, fully external).",
+  //~ wt_ps_16_fe)
+//~ CONSTRUCTION_REGISTER("wt_ps_fe",
+  //~ "Sequential wavelet tree construction with 32-bit alphabet (using sorting, fully external).",
+  //~ wt_ps_32_fe)
 
 /******************************************************************************/

@@ -11,22 +11,17 @@
 #include <vector>
 #include <type_traits>
 
-#include "bit_vectors.hpp"
+#include "util/bit_vectors.hpp"
 
-class wavelet_structure_base {};
-
-template<typename OutputType>
-class wavelet_structure : public wavelet_structure_base {
+class wavelet_structure {
 
 public:
-  using bit_vectors = OutputType;
-
   inline wavelet_structure() = default;
 
-  inline wavelet_structure(bit_vectors&& bvs, std::vector<uint64_t>&& zeros):
+  inline wavelet_structure(internal_bit_vectors&& bvs, std::vector<uint64_t>&& zeros):
     bvs_(std::move(bvs)), zeros_(std::move(zeros)) {}
 
-  inline wavelet_structure(bit_vectors&& bvs) :
+  inline wavelet_structure(internal_bit_vectors&& bvs) :
     bvs_(std::move(bvs)) {}
 
   // Prevent accidental copies
@@ -41,7 +36,7 @@ public:
     return bvs_.levels();
   }
 
-  inline bit_vectors const& bvs() const {
+  inline internal_bit_vectors const& bvs() const {
     return bvs_;
   }
 
@@ -49,7 +44,7 @@ public:
     return zeros_;
   }
 private:
-  bit_vectors bvs_;
+  internal_bit_vectors bvs_;
   std::vector<uint64_t> zeros_;
 }; // class wavelet_structure
 

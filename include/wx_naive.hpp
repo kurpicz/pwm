@@ -26,14 +26,14 @@ public:
   static constexpr bool    is_huffman_shaped = false;
   static constexpr memory_mode mem_mode = memory_mode::internal;
 
-  template <typename InputType, typename OutputType>
-  static wavelet_structure<OutputType> compute(const InputType& text, const uint64_t size,
+  template <typename InputType>
+  static wavelet_structure compute(const InputType& text, const uint64_t size,
     const uint64_t levels) {
 
-    using bit_vectors = OutputType;
+    using bit_vectors = internal_bit_vectors;
 
     if(size == 0) {
-      return wavelet_structure<OutputType>();
+      return wavelet_structure();
     }
 
     auto _bv = bit_vectors(levels, size);
@@ -76,7 +76,7 @@ public:
         }
       }
     }
-    return wavelet_structure<OutputType>(std::move(_bv));
+    return wavelet_structure(std::move(_bv));
   }
 }; // class wt_naive
 
@@ -90,14 +90,14 @@ public:
   static constexpr bool    is_huffman_shaped = false;
   static constexpr memory_mode mem_mode = memory_mode::internal;
 
-  template <typename InputType, typename OutputType>
-  static wavelet_structure<OutputType> compute(const InputType& text,
+  template <typename InputType>
+  static wavelet_structure compute(const InputType& text,
     const uint64_t size, const uint64_t levels) {
 
-    using bit_vectors = OutputType;
+    using bit_vectors = internal_bit_vectors;
 
     if(size == 0) {
-      return wavelet_structure<OutputType>();
+      return wavelet_structure();
     }
 
     auto _bv = bit_vectors(levels, size);
@@ -152,7 +152,7 @@ public:
       }
       _zeros[level] = text0.size();
     }
-    return wavelet_structure<OutputType>(std::move(_bv), std::move(_zeros));
+    return wavelet_structure(std::move(_bv), std::move(_zeros));
   }
 }; // class wx_naive<MATRIX>
 

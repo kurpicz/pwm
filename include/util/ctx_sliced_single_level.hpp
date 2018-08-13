@@ -24,13 +24,11 @@ struct helper_array_sizes {
 
 using helper_array =  flat_two_dim_array<uint64_t, helper_array_sizes>;
 
-template<typename OutputType, bool is_tree>
+template<bool is_tree>
 class ctx_sliced_single_level {
 
-public:
-  static constexpr bool is_external = std::is_same<OutputType,out_type<true>>::value;
-  
-  using bit_vectors = OutputType;
+public:  
+  using bit_vectors = internal_bit_vectors;
   
   ctx_sliced_single_level() = default;
 
