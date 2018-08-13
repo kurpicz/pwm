@@ -49,6 +49,42 @@ TEST(internal_wavelet_construction, smoketest) {
   internal_construction_smoketest(algo_list);
 }
 
+
+template <typename list_type>
+void external_input_construction_smoketest(list_type& algo_list) {
+  for (const auto& a : algo_list) {
+    if (a->word_width() == 1 && !a->is_huffman_shaped()) {
+      a->print_info();
+      test::roundtrip_batch([&](const std::string& s){
+        auto vec = std::vector<uint8_t>(s.begin(), s.end());
+        uint64_t levels = levels_for_max_char(no_reduction_alphabet(vec));
+        
+        stxxlvector<type_for_bytes<1>::type> * vec_external = 
+          new stxxlvector<type_for_bytes<1>::type>();
+        for(const auto symbol : vec) 
+          (*vec_external).push_back(symbol);
+        
+        auto bvz = a->compute_bitvector(vec_external, vec.size() , levels);
+        delete vec_external;        
+        
+        if (a->is_tree()) {
+          auto decoded_s = decode_wt(bvz.bvs(), vec.size());
+          ASSERT_EQ(s, decoded_s) << "Failure (Algorithm): " << a->name();
+        } else {
+          auto decoded_s = decode_wm(bvz.bvs(), bvz.zeros(), vec.size());
+          ASSERT_EQ(s, decoded_s) << "Failure (Algorithm): " << a->name();
+        }
+      });
+    }
+  }
+}
+
+TEST(external_input_wavelet_construction, smoketest) {
+  auto& algo_list = 
+    algorithm_list<memory_mode::external_input>::get_algorithm_list();
+  external_input_construction_smoketest(algo_list);
+}
+
 template <typename list_type>
 void external_output_construction_smoketest(list_type& algo_list) {
   for (const auto& a : algo_list) {
