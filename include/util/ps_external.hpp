@@ -406,16 +406,18 @@ void split(
 }
 
 template <typename AlphabetType, typename ContextType, typename InputType>
-void ps_fully_external(const InputType& text, uint64_t const size, const uint64_t levels,
+external_bit_vectors ps_fully_external(const InputType& text, uint64_t const size, const uint64_t levels,
   ContextType& ctx) {
+      
+  external_bit_vectors result(levels, size);
 
   using in_vector_type = InputType;
   using reader_type = typename in_vector_type::bufreader_type;
   using writer_type = typename in_vector_type::bufwriter_type;
   
-  using out_vector_type = typename std::remove_reference<decltype(ctx.bv().raw_data())>::type;
+  using out_vector_type = typename std::remove_reference<decltype(result.raw_data())>::type;
   using result_writer_type = typename out_vector_type::bufwriter_type;
-  out_vector_type& bv = ctx.bv().raw_data();
+  out_vector_type& bv = result.raw_data();
 
   std::vector<std::vector<uint64_t>> hist(levels + 1);
   for(unsigned i = 0; i <= levels; i++)
@@ -579,6 +581,8 @@ void ps_fully_external(const InputType& text, uint64_t const size, const uint64_
     //~ tesla++;
   //~ }
   //~ std::cout << std::endl << std::endl << std::endl;
+  
+  return result;
 }
 
 

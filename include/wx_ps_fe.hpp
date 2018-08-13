@@ -12,7 +12,7 @@
 #include "wx_base.hpp"
 #include "util/ctx_single_level.hpp"
 #include "util/wavelet_structure.hpp"
-#include "util/ps.hpp"
+#include "util/ps_external.hpp"
 #include "util/memory_types.hpp"
 
 template <typename AlphabetType, bool is_tree_>
@@ -22,23 +22,15 @@ public:
   WX_BASE(AlphabetType, is_tree_, false, false, memory_mode::external)
 
   template <typename InputType>
-  static wavelet_structure compute(const InputType& text, const uint64_t size,
+  static external_bit_vectors compute(const InputType& text, const uint64_t size,
     const uint64_t levels) {
 
-    using ctx_t = ctx_single_level<OutputType, wx_base<AlphabetType, is_tree_, false, false, mem_mode>::is_tree>;
+    using ctx_t = ctx_single_level<is_tree_>;
 
-    if(size == 0) { return wavelet_structure(); }
+    if(size == 0) { return external_bit_vectors(); }
 
     auto ctx = ctx_t(size, levels);
-    ps_fully_external<AlphabetType>(text, size, levels, ctx);
-
-    //~ if (ctx_t::compute_zeros)  {
-      //~ return wavelet_structure(std::move(ctx.bv()), std::move(ctx.zeros()));
-    //~ } else {
-      //~ return wavelet_structure(std::move(ctx.bv()));
-    //~ }
-    
-    return wavelet_structure();
+    return ps_fully_external<AlphabetType>(text, size, levels, ctx);
   }
 }; // class wx_ps
 
