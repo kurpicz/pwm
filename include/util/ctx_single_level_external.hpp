@@ -23,7 +23,7 @@ class ctx_single_level_external {
 public:  
   using bit_vectors = internal_bit_vectors;
   
-  ctx_single_level_external(uint64_t const size, uint64_t const levels)
+  ctx_single_level_external(uint64_t const /*size*/, uint64_t const levels)
   : hist_(1ULL << levels, 0), borders_(1ULL << levels, 0),
     zeros_(levels, 0), bit_reverse_(is_tree ?
      std::vector<uint64_t>(0) :  bit_reverse_permutation(levels - 1)) { }

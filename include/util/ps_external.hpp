@@ -407,7 +407,7 @@ void split(
 
 template <typename AlphabetType, typename ContextType, typename InputType>
 external_bit_vectors ps_fully_external(const InputType& text, uint64_t const size, const uint64_t levels,
-  ContextType& ctx) {
+  ContextType& /*ctx*/) {
       
   external_bit_vectors result(levels, size);
 
