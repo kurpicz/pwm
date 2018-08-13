@@ -87,14 +87,13 @@ int32_t main(int32_t argc, char const* argv[]) {
 
   if(external_both_arg.getValue()) 
     return run<memory_mode::external>();
-  if(external_input_arg.getValue() && external_output_arg.getValue()) 
+  else if(external_input_arg.getValue() && external_output_arg.getValue()) 
     return run<memory_mode::external>();
-  if(external_input_arg.getValue()) 
+  else if(external_input_arg.getValue()) 
     return run<memory_mode::external_input>();
-  if(external_output_arg.getValue()) 
+  else if(external_output_arg.getValue()) 
     return run<memory_mode::external_output>();
-    
-  return run<memory_mode::internal>();
+  else return run<memory_mode::internal>();
 }
 
 template <memory_mode mem_mode>
@@ -255,8 +254,8 @@ int32_t run() {
                   #ifdef MALLOC_COUNT
                     malloc_count_reset_peak();
                     a->memory_peak(txt_prt, text_size, levels);
-                    std::cout << malloc_count_peak() - all_bytes << ", MB: "
-                              << (malloc_count_peak() - all_bytes) / (1024 * 1024) << std::endl;
+                    std::cout << malloc_count_peak() << ", MB: "
+                              << malloc_count_peak() / (1024 * 1024) << std::endl;
                   #else
                     std::cout << "Memory measurement is NOT enabled."
                               << std::endl;
