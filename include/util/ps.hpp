@@ -8,8 +8,6 @@
 
 #pragma once
 
-#include <bitset>
-
 template <typename AlphabetType, typename ContextType, typename InputType>
 void ps(const InputType& text, uint64_t const size, const uint64_t levels,
   ContextType& ctx, AlphabetType* const sorted_text) {
