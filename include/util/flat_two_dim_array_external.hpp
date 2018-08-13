@@ -36,11 +36,14 @@ public:
     data_size_ = data_size;
     data_.resize(data_size);
   }
-  
-  // TODO
-  //~ flat_two_dim_array_external(flat_two_dim_array_external&& other)
-  //~ : levels_(other.levels_),
-    //~ data_(std::forward<std::vector<IndexType*>>(other.data_)) { }
+
+  flat_two_dim_array_external(flat_two_dim_array_external&& other)
+  : levels_(other.levels_), data_size_(other.data_size_) { 
+    level_sizes_.swap(other.level_sizes_);
+    level_offsets_.swap(other.level_offsets_);
+    zeros_.swap(other.zeros_);
+    data_.swap(other.data_);
+  }
 
   //~ flat_two_dim_array_external& operator =(flat_two_dim_array_external&& other) {
     //~ if (*this != other) {
@@ -53,8 +56,8 @@ public:
     //~ return *this;
   //~ }
 
-  //~ flat_two_dim_array_external(const flat_two_dim_array_external&) = delete;
-  //~ flat_two_dim_array_external& operator =(const flat_two_dim_array_external&) = delete;
+  flat_two_dim_array_external(const flat_two_dim_array_external&) = delete;
+  flat_two_dim_array_external& operator =(const flat_two_dim_array_external&) = delete;
 
   inline uint64_t levels() const {
     return levels_;
