@@ -126,6 +126,53 @@ TEST(external_output_wavelet_construction, smoketest) {
 }
 
 template <typename list_type>
+void external_construction_smoketest(list_type& algo_list) {
+  for (const auto& a : algo_list) {
+    if (a->word_width() == 1 && !a->is_huffman_shaped()) {
+      a->print_info();
+      test::roundtrip_batch([&](const std::string& s){
+        auto vec = std::vector<uint8_t>(s.begin(), s.end());
+        uint64_t levels = levels_for_max_char(no_reduction_alphabet(vec));
+        
+        stxxlvector<type_for_bytes<1>::type> * vec_external = 
+          new stxxlvector<type_for_bytes<1>::type>();
+        for(const auto symbol : vec) 
+          (*vec_external).push_back(symbol);
+        
+        auto bvz = a->compute_bitvector(vec_external, vec.size() , levels);
+        
+        if(vec.size() == 0) {
+          ASSERT_EQ(bvz.levels(), uint64_t(0)) << "Failure (Algorithm): " << a->name();
+        } else {
+          internal_bit_vectors bvz_internal(levels, vec.size());
+          for(uint64_t level = 0; level < levels; ++level) {
+            for(uint64_t entry = 0; entry < (vec.size() + 63) / 64; ++entry) {
+              bvz_internal[level][entry] = bvz[level][entry];
+            }
+          }
+          if (a->is_tree()) {
+            auto decoded_s = decode_wt(bvz_internal, vec.size());
+            ASSERT_EQ(s, decoded_s) << "Failure (Algorithm): " << a->name();
+          } else {
+            if(s.size() > 1 || true) {
+              auto decoded_s = decode_wm(bvz_internal, bvz.zeros(), vec.size());
+              ASSERT_EQ(s, decoded_s) << "Failure (Algorithm): " << a->name();
+            }
+          }
+        }
+      });
+    }
+  }
+}
+
+TEST(external_wavelet_construction, smoketest) {
+  auto& algo_list = 
+    algorithm_list<memory_mode::external>::get_algorithm_list();
+  external_construction_smoketest(algo_list);
+}
+
+
+template <typename list_type>
 void huffman_shaped_wavelet_construction_smoketest(list_type& algo_list) {
   for (const auto& a : algo_list) {
     if (a->word_width() == 1 && a->is_huffman_shaped()) {
