@@ -10,7 +10,7 @@
 
 #include <vector>
 #include "wx_base.hpp"
-#include "util/ctx_single_level.hpp"
+#include "util/ctx_single_level_external.hpp"
 #include "util/wavelet_structure.hpp"
 #include "util/ps_external.hpp"
 #include "util/memory_types.hpp"
@@ -25,7 +25,7 @@ public:
   static external_bit_vectors compute(const InputType& text, const uint64_t size,
     const uint64_t levels) {
 
-    using ctx_t = ctx_single_level<is_tree_>;
+    using ctx_t = ctx_single_level_external<is_tree_>;
 
     if(size == 0) { return external_bit_vectors(); }
 
