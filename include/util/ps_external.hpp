@@ -10,7 +10,10 @@
 
 template <typename AlphabetType, typename ContextType, typename InputType>
 external_bit_vectors ps_out_external(const InputType& text, uint64_t const size, const uint64_t levels,
-  ContextType& ctx, AlphabetType* const sorted_text) {
+  ContextType& ctx) {
+  
+  auto sorted_text_vec = std::vector<AlphabetType>(size);
+  AlphabetType* const sorted_text = sorted_text_vec.data();
   
   external_bit_vectors result(levels, size);
   

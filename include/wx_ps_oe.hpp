@@ -32,8 +32,7 @@ public:
 
     auto ctx = ctx_t(size, levels);
 
-    auto sorted_text = std::vector<AlphabetType>(size);
-    return ps_out_external(text, size, levels, ctx, sorted_text.data());
+    return ps_out_external<AlphabetType>(text, size, levels, ctx);
   }
 }; // class wx_ps
 
