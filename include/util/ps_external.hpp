@@ -408,7 +408,8 @@ void split(
 template <typename AlphabetType, typename ContextType, typename InputType>
 external_bit_vectors ps_fully_external(const InputType& text, uint64_t const size, const uint64_t levels,
   ContextType& /*ctx*/) {
-      
+  
+  //~ std::cout << "PS external" << std::endl;
   external_bit_vectors result(levels, size);
 
   using in_vector_type = InputType;
@@ -429,6 +430,11 @@ external_bit_vectors ps_fully_external(const InputType& text, uint64_t const siz
   in_vector_type * leftCur = new in_vector_type();
   in_vector_type * rightCur = new in_vector_type();
   
+  leftPrev->reserve(size);
+  rightPrev->reserve(size);
+  leftCur->reserve(size);
+  rightCur->reserve(size);
+  
   reader_type * leftReader;
   reader_type * rightReader;
   writer_type * leftWriter;
@@ -436,6 +442,7 @@ external_bit_vectors ps_fully_external(const InputType& text, uint64_t const siz
     
   result_writer_type result_writer(bv);
   
+  //~ std::cout << "Level 1 of " << levels << " (initial scan)... " << std::endl;
   // Initial Scan:
   {
     leftReader = new reader_type(text);
@@ -489,7 +496,7 @@ external_bit_vectors ps_fully_external(const InputType& text, uint64_t const siz
   
   // scans (top down WT construction in left-right-buffers)
   for(unsigned i = 1; i < levels; i++) {
-    
+    //~ std::cout << "Level " << i + 1 << " of " << levels << "... " << std::endl;
     if(i > 1) {
       leftReader = new reader_type(*leftPrev);
       rightReader = new reader_type(*rightPrev);
@@ -507,14 +514,11 @@ external_bit_vectors ps_fully_external(const InputType& text, uint64_t const siz
       delete rightWriter;
     }
     
-    delete leftPrev;
-    delete rightPrev;
+    std::swap(leftCur, leftPrev);
+    std::swap(rightCur, rightPrev);
     
-    leftPrev = leftCur;
-    rightPrev = rightCur;
-    
-    leftCur = new in_vector_type();
-    rightCur = new in_vector_type();
+    leftCur->clear();
+    rightCur->clear();
     
     leftReader = new reader_type(*leftPrev);
     rightReader = new reader_type(*rightPrev);
@@ -570,7 +574,15 @@ external_bit_vectors ps_fully_external(const InputType& text, uint64_t const siz
     delete rightReader;
     
   }
+  
+  delete leftCur;
+  delete rightCur;
+  delete leftPrev;
+  delete rightPrev;
+  
   result_writer.finish();
+  
+  //~ std::cout << "Done." << std::endl << std::endl;
   
   //~ std::cout << "RESULT IS: " << bv.size() << ", SHOULD BE: " << levels * ((size + 63) / 64) << ", SIZE: " << size << ", LEVELS: " << levels << std::endl << std::endl;
   //~ uint64_t words = (size + 63) / 64;
