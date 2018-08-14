@@ -10,9 +10,6 @@
 #include <tclap/CmdLine.h>
 #include <vector>
 
-#include <stxxl/vector>
-#include <stxxl/bits/io/linuxaio_file.h>
-
 #include "benchmark/algorithm.hpp"
 #include "util/alphabet_util.hpp"
 #include "util/file_util.hpp"
@@ -195,7 +192,8 @@ int32_t run() {
       }
     } else {
       // EXTERNAL MEMORY INPUT
-      stxxl::linuxaio_file stxxl_file(path, stxxl::file::open_mode::RDONLY);
+      //~ stxxl::linuxaio_file stxxl_file(path, stxxl::file::open_mode::RDONLY);
+      stxxl::syscall_file stxxl_file(path, stxxl::file::open_mode::RDONLY);
       if (word_width == 1) {
         const stxxlvector<type_for_bytes<1>::type> unreduced_vector(&stxxl_file);
         text_size = unreduced_vector.size();

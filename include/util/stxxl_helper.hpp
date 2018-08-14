@@ -9,6 +9,8 @@
 #pragma once
 
 #include <stxxl/vector>
+#include <stxxl/bits/io/linuxaio_file.h>
+#include <stxxl/bits/io/syscall_file.h>
 #include "util/type_for_bytes.hpp"
 
 template <typename value_type>
@@ -22,6 +24,16 @@ using stxxlwriter = typename stxxl::VECTOR_GENERATOR<value_type>::result::bufwri
 
 template <int word_width>
 using external_vector = stxxlvector<typename type_for_bytes<word_width>::type>;
+
+
+//~ class stxxlvector_factory {
+//~ public:
+  //~ template <typename value_type>
+  //~ static stxxlvector<value_type> createOnDisk() {
+    //~ // TODO: Implement factory method to create vector on specific device
+    //~ return stxxlvector<value_type>()
+  //~ }
+//~ };
 
 // simple accessor to simulate 2D array on 1D stxxlvector
 // [for testing only, as [] operator is very expensive]
