@@ -133,6 +133,7 @@ int32_t run() {
   
   for (const auto& path : file_paths) {
     std::cout << std::endl << "Text: " << path << std::endl;
+
     void * txt_prt = nullptr;
     
     uint64_t txt_bytes = 0;
@@ -156,8 +157,10 @@ int32_t run() {
     stxxlvector<type_for_bytes<4>::type> * text_uint32_ext = nullptr;
     stxxlvector<type_for_bytes<8>::type> * text_uint64_ext = nullptr;
 
-    malloc_count_reset_peak();
-    uint64_t non_text_bytes = malloc_count_current();
+    #ifdef MALLOC_COUNT
+      malloc_count_reset_peak();
+      uint64_t non_text_bytes = malloc_count_current();
+    #endif // MALLOC_COUNT
     
     if(!ext_input) {
       // INTERNAL MEMORY INPUT
