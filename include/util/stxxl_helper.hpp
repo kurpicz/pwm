@@ -35,6 +35,56 @@ using external_vector = stxxlvector<typename type_for_bytes<word_width>::type>;
   //~ }
 //~ };
 
+
+class stxxl_files {
+private:
+  static constexpr int mode =
+      stxxl::file::open_mode::RDWR |
+      stxxl::file::open_mode::CREAT |
+      stxxl::file::open_mode::TRUNC;
+
+  unsigned instance_next_id = 0;
+  std::vector<stxxl::syscall_file *> instance_files;
+
+  static stxxl_files& getInstance() {
+    static stxxl_files instance;
+    return instance;
+  }
+
+  static auto &next_id() {
+    return getInstance().instance_next_id;
+  }
+
+  static auto &files() {
+    return getInstance().instance_files;
+  }
+
+  stxxl_files() {};
+
+  ~stxxl_files() {
+    for(auto ptr : instance_files) {
+      delete ptr;
+    }
+  }
+
+public:
+  stxxl_files(const stxxl_files &) = delete;
+  void operator=(const stxxl_files &) = delete;
+
+  static void addFile(const std::string &path) {
+    files().push_back(new stxxl::syscall_file(path, mode));
+  }
+
+  template <typename value_type>
+  static stxxlvector<value_type>& nextVector() {
+    if(next_id() < files().size()) {
+      return stxxlvector<value_type>(files()[next_id()++]);
+    } else {
+      return stxxlvector<value_type>();
+    }
+  }
+};
+
 // simple accessor to simulate 2D array on 1D stxxlvector
 // [for testing only, as [] operator is very expensive]
 template <typename value_type>
