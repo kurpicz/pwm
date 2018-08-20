@@ -423,12 +423,18 @@ external_bit_vectors ps_fully_external(const InputType& text, uint64_t const siz
   std::vector<std::vector<uint64_t>> hist(levels + 1);
   for(unsigned i = 0; i <= levels; i++)
     hist[i].resize(pow(2, i));
+
+  stxxl_files::resetCounter();
+  in_vector_type v1 = stxxl_files::nextVector<in_vector_type>();
+  in_vector_type v2 = stxxl_files::nextVector<in_vector_type>();
+  in_vector_type v3 = stxxl_files::nextVector<in_vector_type>();
+  in_vector_type v4 = stxxl_files::nextVector<in_vector_type>();
   
-  in_vector_type * leftPrev = new in_vector_type();
-  in_vector_type * rightPrev = new in_vector_type();
+  in_vector_type * leftPrev = &v1;
+  in_vector_type * rightPrev = &v2;
   
-  in_vector_type * leftCur = new in_vector_type();
-  in_vector_type * rightCur = new in_vector_type();
+  in_vector_type * leftCur = &v3;
+  in_vector_type * rightCur = &v4;
   
   leftPrev->reserve(size);
   rightPrev->reserve(size);
@@ -575,10 +581,10 @@ external_bit_vectors ps_fully_external(const InputType& text, uint64_t const siz
     
   }
   
-  delete leftCur;
-  delete rightCur;
-  delete leftPrev;
-  delete rightPrev;
+//  delete leftCur;
+//  delete rightCur;
+//  delete leftPrev;
+//  delete rightPrev;
   
   result_writer.finish();
   
