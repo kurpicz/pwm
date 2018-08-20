@@ -61,6 +61,25 @@ static TCLAP::SwitchArg external_output_arg("o", "external_output",
 static TCLAP::SwitchArg external_both_arg("e", "external",
     "Run only algorithms that use external memory", false);
 
+static TCLAP::ValueArg<std::string> file1_arg("u", "file1",
+    "Use specified file as a dedicated external memory file (erases all content if file already exists)",
+    false, "", "string");
+static TCLAP::ValueArg<std::string> file2_arg("v", "file2",
+    "Use specified file as a dedicated external memory file (erases all content if file already exists)",
+    false, "", "string");
+static TCLAP::ValueArg<std::string> file3_arg("w", "file3",
+    "Use specified file as a dedicated external memory file (erases all content if file already exists)",
+    false, "", "string");
+static TCLAP::ValueArg<std::string> file4_arg("x", "file4",
+    "Use specified file as a dedicated external memory file (erases all content if file already exists)",
+    false, "", "string");
+static TCLAP::ValueArg<std::string> file5_arg("y", "file5",
+    "Use specified file as a dedicated external memory file (erases all content if file already exists)",
+    false, "", "string");
+static TCLAP::ValueArg<std::string> file6_arg("z", "file6",
+    "Use specified file as a dedicated external memory file (erases all content if file already exists)",
+    false, "", "string");
+
 template <memory_mode mem_mode>
 int32_t run();
 
@@ -80,6 +99,12 @@ int32_t main(int32_t argc, char const* argv[]) {
   cmd.add(external_input_arg);
   cmd.add(external_output_arg);
   cmd.add(external_both_arg);
+  cmd.add(file1_arg);
+  cmd.add(file2_arg);
+  cmd.add(file3_arg);
+  cmd.add(file4_arg);
+  cmd.add(file5_arg);
+  cmd.add(file6_arg);
   cmd.parse( argc, argv );
 
   if(external_both_arg.getValue()) 
@@ -130,6 +155,28 @@ int32_t run() {
   constexpr bool ext_output = 
     mem_mode == memory_mode::external || 
     mem_mode == memory_mode::external_output;
+
+  std::vector<std::string> em_files;
+  if(!file1_arg.getValue().empty())
+    em_files.push_back(file1_arg.getValue());
+  if(!file2_arg.getValue().empty())
+    em_files.push_back(file2_arg.getValue());
+  if(!file3_arg.getValue().empty())
+    em_files.push_back(file3_arg.getValue());
+  if(!file4_arg.getValue().empty())
+    em_files.push_back(file4_arg.getValue());
+  if(!file5_arg.getValue().empty())
+    em_files.push_back(file5_arg.getValue());
+  if(!file6_arg.getValue().empty())
+    em_files.push_back(file6_arg.getValue());
+
+  if(em_files.size() > 0) {
+    std::cout << "Setting up external memory..." << std::endl;
+    for(unsigned i = 0; i < em_files.size(); ++i) {
+      std::cout << "File " << (i + 1) << ": " << em_files[i] << std::endl;
+      stxxl_files::addFile(em_files[i]);
+    }
+  }
   
   for (const auto& path : file_paths) {
     std::cout << std::endl << "Text: " << path << std::endl;
