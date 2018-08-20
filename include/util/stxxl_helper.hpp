@@ -75,13 +75,18 @@ public:
     files().push_back(new stxxl::syscall_file(path, mode));
   }
 
-  template <typename value_type>
-  static stxxlvector<value_type>& nextVector() {
+  template <typename vector_type>
+  static vector_type nextVector() {
     if(next_id() < files().size()) {
-      return stxxlvector<value_type>(files()[next_id()++]);
+      return vector_type(files()[next_id()++]);
     } else {
-      return stxxlvector<value_type>();
+      return vector_type();
     }
+  }
+
+  // only reset counter, if all vectors created by nextVector() have been destroyed
+  static void resetCounter() {
+    next_id() = 0;
   }
 };
 
