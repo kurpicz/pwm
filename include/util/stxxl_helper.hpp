@@ -76,6 +76,7 @@ public:
     used().push_back(false);
   }
 
+  // may return a non empty vector
   template <typename vector_type>
   static vector_type getVector(unsigned id) {
     bool exists = id < files().size();

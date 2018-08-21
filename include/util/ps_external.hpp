@@ -409,7 +409,7 @@ template <typename AlphabetType, typename ContextType, typename InputType>
 external_bit_vectors ps_fully_external(const InputType& text, uint64_t const size, const uint64_t levels,
   ContextType& /*ctx*/) {
   
-  //~ std::cout << "PS external" << std::endl;
+  std::cout << "PS external" << std::endl;
   external_bit_vectors result(levels, size, 0);
 
   using in_vector_type = InputType;
@@ -429,15 +429,18 @@ external_bit_vectors ps_fully_external(const InputType& text, uint64_t const siz
   in_vector_type v2 = stxxl_files::getVector<in_vector_type>(2);
   in_vector_type v3 = stxxl_files::getVector<in_vector_type>(3);
   in_vector_type v4 = stxxl_files::getVector<in_vector_type>(4);
+
+  v1.clear();
+  v2.clear();
+  v3.clear();
+  v4.clear();
   
   in_vector_type * leftPrev = &v1;
   in_vector_type * rightPrev = &v2;
   
   in_vector_type * leftCur = &v3;
   in_vector_type * rightCur = &v4;
-  
-  leftPrev->reserve(size);
-  rightPrev->reserve(size);
+
   leftCur->reserve(size);
   rightCur->reserve(size);
   
@@ -448,7 +451,7 @@ external_bit_vectors ps_fully_external(const InputType& text, uint64_t const siz
     
   result_writer_type result_writer(bv);
   
-  //~ std::cout << "Level 1 of " << levels << " (initial scan)... " << std::endl;
+  std::cout << "Level 1 of " << levels << " (initial scan)... " << std::endl;
   // Initial Scan:
   {
     leftReader = new reader_type(text);
@@ -502,8 +505,11 @@ external_bit_vectors ps_fully_external(const InputType& text, uint64_t const siz
   
   // scans (top down WT construction in left-right-buffers)
   for(unsigned i = 1; i < levels; i++) {
-    //~ std::cout << "Level " << i + 1 << " of " << levels << "... " << std::endl;
+    std::cout << "Level " << i + 1 << " of " << levels << "... " << std::endl;
     if(i > 1) {
+      leftCur->reserve(size);
+      rightCur->reserve(size);
+
       leftReader = new reader_type(*leftPrev);
       rightReader = new reader_type(*rightPrev);
       leftWriter = new writer_type(*leftCur);
@@ -588,7 +594,7 @@ external_bit_vectors ps_fully_external(const InputType& text, uint64_t const siz
   
   result_writer.finish();
   
-  //~ std::cout << "Done." << std::endl << std::endl;
+  std::cout << "Done." << std::endl << std::endl;
   
   //~ std::cout << "RESULT IS: " << bv.size() << ", SHOULD BE: " << levels * ((size + 63) / 64) << ", SIZE: " << size << ", LEVELS: " << levels << std::endl << std::endl;
   //~ uint64_t words = (size + 63) / 64;
