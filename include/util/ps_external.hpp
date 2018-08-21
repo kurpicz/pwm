@@ -389,7 +389,7 @@ external_bit_vectors ps_out_external(const InputType& text, uint64_t const size,
 
 
 template <typename ReaderType, typename WriterType>
-void split(
+inline void split(
     ReaderType &reader, 
     WriterType &leftWriter, 
     WriterType &rightWriter,
