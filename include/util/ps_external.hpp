@@ -410,7 +410,7 @@ external_bit_vectors ps_fully_external(const InputType& text, uint64_t const siz
   ContextType& /*ctx*/) {
   
   //~ std::cout << "PS external" << std::endl;
-  external_bit_vectors result(levels, size);
+  external_bit_vectors result(levels, size, 0);
 
   using in_vector_type = InputType;
   using reader_type = typename in_vector_type::bufreader_type;
@@ -424,11 +424,11 @@ external_bit_vectors ps_fully_external(const InputType& text, uint64_t const siz
   for(unsigned i = 0; i <= levels; i++)
     hist[i].resize(pow(2, i));
 
-  stxxl_files::resetCounter();
-  in_vector_type v1 = stxxl_files::nextVector<in_vector_type>();
-  in_vector_type v2 = stxxl_files::nextVector<in_vector_type>();
-  in_vector_type v3 = stxxl_files::nextVector<in_vector_type>();
-  in_vector_type v4 = stxxl_files::nextVector<in_vector_type>();
+  stxxl_files::reset_usage();
+  in_vector_type v1 = stxxl_files::getVector<in_vector_type>(1);
+  in_vector_type v2 = stxxl_files::getVector<in_vector_type>(2);
+  in_vector_type v3 = stxxl_files::getVector<in_vector_type>(3);
+  in_vector_type v4 = stxxl_files::getVector<in_vector_type>(4);
   
   in_vector_type * leftPrev = &v1;
   in_vector_type * rightPrev = &v2;

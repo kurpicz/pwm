@@ -43,20 +43,20 @@ private:
       stxxl::file::open_mode::CREAT |
       stxxl::file::open_mode::TRUNC;
 
-  unsigned instance_next_id = 0;
   std::vector<stxxl::syscall_file *> instance_files;
+  std::vector<bool> instance_file_status;
 
   static stxxl_files& getInstance() {
     static stxxl_files instance;
     return instance;
   }
 
-  static auto &next_id() {
-    return getInstance().instance_next_id;
-  }
-
   static auto &files() {
     return getInstance().instance_files;
+  }
+
+  static auto &used() {
+    return getInstance().instance_file_status;
   }
 
   stxxl_files() {};
@@ -73,20 +73,26 @@ public:
 
   static void addFile(const std::string &path) {
     files().push_back(new stxxl::syscall_file(path, mode));
+    used().push_back(false);
   }
 
   template <typename vector_type>
-  static vector_type nextVector() {
-    if(next_id() < files().size()) {
-      return vector_type(files()[next_id()++]);
+  static vector_type getVector(unsigned id) {
+    bool exists = id < files().size();
+    if(exists && !used()[id]) {
+      return vector_type(files()[id]);
     } else {
+      std::cerr << "Trying to use EM file with ID \"" << id << "\", ";
+      if(!exists) std::cerr << "which has not been specified." << std::endl;
+      else std::cerr << "which is already in use." << std::endl;
       return vector_type();
     }
   }
 
   // only reset counter, if all vectors created by nextVector() have been destroyed
-  static void resetCounter() {
-    next_id() = 0;
+  static void reset_usage() {
+    for(unsigned i = 0; i < used().size(); ++i)
+      used()[i] = false;
   }
 };
 
