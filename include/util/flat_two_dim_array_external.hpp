@@ -18,15 +18,16 @@ class flat_two_dim_array_external {
 public:
   flat_two_dim_array_external() {}
 
-  template <typename... SizeFunctionArgs>
-  flat_two_dim_array_external(const uint64_t levels, SizeFunctionArgs... size_f_args)
-  : levels_(levels), data_(levels + 1) {
+  flat_two_dim_array_external(const uint64_t levels, const uint64_t size, const int fileid = -1)
+  : levels_(levels) {
     assert(levels > 0);
+    if(fileid > -1)
+      data_ = stxxl_files::getVector<stxxlvector<IndexType>>(fileid);
     level_sizes_.reserve(levels + 1);
     level_offsets_.reserve(levels + 1);
     uint64_t data_size = 0;
     for (uint64_t level = 0; level < levels; ++level) {
-      uint64_t level_size = size_function::level_size(level, size_f_args...);
+      uint64_t level_size = size_function::level_size(level, size);
       level_sizes_.push_back(level_size);
       level_offsets_.push_back(data_size);
       data_size += level_size;
