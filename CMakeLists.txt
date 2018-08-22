@@ -45,7 +45,7 @@ endif()
 # More warnings and debug info
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ansi")
 set(CMAKE_CXX_FLAGS
-  "${CMAKE_CXX_FLAGS} -std=c++14 -fopenmp -ffast-math -Wall -Wextra -Wpedantic")
+  "${CMAKE_CXX_FLAGS} -std=c++14 -fopenmp -Wall -Wextra -Wpedantic")
 set(CMAKE_CXX_FLAGS_RELEASE
   "${CMAKE_CXX_FLAGS_RELEASE} -O3 -funroll-loops -march=native")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -ggdb ")
