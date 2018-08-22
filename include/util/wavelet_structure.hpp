@@ -17,15 +17,15 @@
 class wavelet_structure {
 
 public:
-  inline wavelet_structure() = default;
+  wavelet_structure() = default;
 
-  inline wavelet_structure(bit_vectors&& bvs, std::vector<uint64_t>&& zeros)
+  wavelet_structure(bit_vectors&& bvs, std::vector<uint64_t>&& zeros)
   : bvs_(std::move(bvs)), zeros_(std::move(zeros)) { }
 
   wavelet_structure(huff_bit_vectors&& bvs, std::vector<uint64_t>&& zeros)
   : huff_bvs_(std::move(bvs)), zeros_(std::move(zeros)) { }
 
-  inline wavelet_structure(bit_vectors&& bvs) : bvs_(std::move(bvs)) {}
+  wavelet_structure(bit_vectors&& bvs) : bvs_(std::move(bvs)) { }
 
   wavelet_structure(huff_bit_vectors&& bvs) : huff_bvs_(std::move(bvs)) { }
 
@@ -34,8 +34,8 @@ public:
   wavelet_structure& operator =(wavelet_structure const&) = delete;
 
   // Allow moving
-  inline wavelet_structure(wavelet_structure&& other) = default;
-  inline wavelet_structure& operator =(wavelet_structure&& other) = default;
+  wavelet_structure(wavelet_structure&& other) = default;
+  wavelet_structure& operator =(wavelet_structure&& other) = default;
 
   inline uint64_t levels() const {
     return bvs_.levels();
