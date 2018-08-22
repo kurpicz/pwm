@@ -31,22 +31,22 @@ public:
       // If its a bit vector, we still want to knwo how many bits there are
       // actually stored in each level, not just
       if (size_function::is_bit_vector) { // TODO: C++17 if constexpr
-        level_bit_sizes_[level] = level_size;
+        level_bit_sizes_.at(level) = level_size;
         data_size += word_size(level_size);
       } else {
-        level_bit_sizes_[level] = level_size * (sizeof(IndexType) >> 3);
+        level_bit_sizes_.at(level) = level_size * (sizeof(IndexType) >> 3);
         data_size += level_size;
       }
     }
-    data_[0] = new IndexType[data_size];
-    memset(data_[0], 0, data_size * sizeof(IndexType));
+    data_.at(0) = new IndexType[data_size];
+    memset(data_.at(0), 0, data_size * sizeof(IndexType));
     for (uint64_t level = 1; level < data_.size(); ++level) {
       const uint64_t level_size =
         size_function::level_size(level - 1, size_f_args...);
       if (size_function::is_bit_vector) { // TODO: C++17 if constexpr
-        data_[level] = data_[level - 1] + word_size(level_size);
+        data_.at(level) = data_.at(level - 1) + word_size(level_size);
       } else {
-        data_[level] = data_[level - 1] + level_size;
+        data_.at(level) = data_.at(level - 1) + level_size;
       }
     }
   }
@@ -56,7 +56,7 @@ public:
   flat_two_dim_array& operator =(flat_two_dim_array&& other) {
     if (*this != other) {
       if (data_.size() > 0) {
-        delete[] data_[0];
+        delete[] data_.at(0);
       }
       data_ = std::move(other.data_);
       levels_ = other.levels_;
@@ -66,7 +66,7 @@ public:
 
   ~flat_two_dim_array() {
     if (data_.size() > 0) {
-      delete[] data_[0];
+      delete[] data_.at(0);
     }
   }
 
@@ -80,7 +80,7 @@ public:
     }
     // Here we know that either both have length 0 or both have length > 0.
     return ((data_.size() == 0 && other.data_.size() == 0) ||
-      data_[0] == other.data_[0]);
+      data_.at(0) == other.data_.at(0));
   }
 
   bool operator !=(const flat_two_dim_array& other) const {
@@ -92,19 +92,19 @@ public:
   }
 
   inline uint64_t level_size(uint64_t level) const {
-    return data_[level + 1] - data_[level];
+    return data_.at(level + 1) - data_.at(level);
   }
 
   inline uint64_t level_bit_size(uint64_t level) const {
-    return level_bit_sizes_[level];
+    return level_bit_sizes_.at(level);
   }
 
   inline const IndexType* operator [](const uint64_t index) const {
-    return data_[index];
+    return data_.at(index);
   }
 
   inline IndexType* operator [](const uint64_t index) {
-    return data_[index];
+    return data_.at(index);
   }
 
   inline const std::vector<IndexType*>& raw_data() const {

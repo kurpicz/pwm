@@ -93,7 +93,9 @@ static void print_bv_zeros(const bit_vectors& bv,
       std::cout << uint64_t(bit_at(bv[i], j)) << "";
     }
     std::cout << "]";
-    std::cout << " zeros[" << i << "] = " << zeros[i];
+    if (i < zeros.size()) {
+        std::cout << " zeros[" << i << "] = " << zeros.at(i);
+    }
     std::cout << std::endl;;
   }
   std::cout << std::endl;;
