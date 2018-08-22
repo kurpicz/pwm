@@ -35,7 +35,7 @@ public:
 
     if (std::is_same<AlphabetType, uint8_t>::value) {
       const uint64_t max_char = std::max(
-        static_cast<decltype(reduced_sigma)>(
+        static_cast<std::remove_cv_t<decltype(reduced_sigma)>>(
           std::numeric_limits<uint8_t>::max() + 1), reduced_sigma);
       std::vector<uint64_t> hist(max_char, 0);
       for (uint64_t pos = 0; pos < size; ++pos) {
