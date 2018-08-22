@@ -166,15 +166,12 @@ int32_t main(int32_t argc, char const* argv[]) {
                 }
                 if (debug_print || check) {
                     auto structure = a->compute_bitvector(txt_prt, text_size, levels);
-                    if (debug_print && !a->is_huffman_shaped()) {
+                    if (debug_print) {
                         if(a->is_tree())  {
-                            print_bv(structure.bvs(), text_size);
+                            print_bv(structure.bvs());
                         } else {
-                            print_bv_zeros(structure.bvs(), structure.zeros(), text_size);
+                            print_bv_zeros(structure.bvs(), structure.zeros());
                         }
-                    }
-                    if (debug_print && a->is_huffman_shaped()) {
-
                     }
                 }
               }
