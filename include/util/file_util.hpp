@@ -17,6 +17,12 @@ template <uint8_t BytesPerWord>
 static std::vector<typename type_for_bytes<BytesPerWord>::type> file_to_vector(
   const std::string& file_name) {
   std::ifstream stream(file_name.c_str(), std::ios::in | std::ios::binary);
+
+  if (!stream) {
+    std::cerr << "File " << file_name << " not found\n";
+    exit(1);
+  }
+
   stream.seekg(0, std::ios::end);
   uint64_t size = stream.tellg() / BytesPerWord;
   stream.seekg(0);
