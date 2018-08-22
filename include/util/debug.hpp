@@ -68,22 +68,8 @@ static std::vector<std::vector<uint64_t>> level_sizes(const bit_vectors& bv,
   return r;
 }
 
-static void print_bv(const bit_vectors& bv) {
-  for (uint64_t i = 0; i < bv.levels(); i++) {
-    std::cout << "   bv["<<i<<"]";
-
-    std::cout << "[";
-    for (uint64_t j = 0; j < bv.level_bit_size(i); j++) {
-      std::cout << uint64_t(bit_at(bv[i], j)) << "";
-    }
-    std::cout << "]";
-
-    std::cout << "\n";
-  }
-  std::cout << "\n";
-}
-
-static void print_bv_zeros(const bit_vectors& bv,
+template<typename size_function>
+static void print_bv_zeros(const flat_two_dim_array<uint64_t, size_function>& bv,
                            const std::vector<uint64_t>& zeros) {
   for (uint64_t i = 0; i < bv.levels(); i++) {
     std::cout << "   bv["<<i<<"]";
