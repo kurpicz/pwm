@@ -68,12 +68,12 @@ static std::vector<std::vector<uint64_t>> level_sizes(const bit_vectors& bv,
   return r;
 }
 
-static void print_bv(const bit_vectors& bv, uint64_t length) {
-  for (uint64_t i = 0; i < bv.size(); i++) {
+static void print_bv(const bit_vectors& bv) {
+  for (uint64_t i = 0; i < bv.levels(); i++) {
     std::cout << "   bv["<<i<<"]";
 
     std::cout << "[";
-    for (uint64_t j = 0; j < length; j++) {
+    for (uint64_t j = 0; j < bv.level_bit_size(i); j++) {
       std::cout << uint64_t(bit_at(bv[i], j)) << "";
     }
     std::cout << "]";
@@ -84,12 +84,12 @@ static void print_bv(const bit_vectors& bv, uint64_t length) {
 }
 
 static void print_bv_zeros(const bit_vectors& bv,
-  const std::vector<uint64_t>& zeros, uint64_t length) {
-  for (uint64_t i = 0; i < bv.size(); i++) {
+                           const std::vector<uint64_t>& zeros) {
+  for (uint64_t i = 0; i < bv.levels(); i++) {
     std::cout << "   bv["<<i<<"]";
 
     std::cout << "[";
-    for (uint64_t j = 0; j < length; j++) {
+    for (uint64_t j = 0; j < bv.level_bit_size(i); j++) {
       std::cout << uint64_t(bit_at(bv[i], j)) << "";
     }
     std::cout << "]";

@@ -115,10 +115,6 @@ public:
     return data_;
   }
 
-  inline size_t size() const {
-    return data_.size();
-  }
-
 private:
   uint64_t levels_;
   std::vector<IndexType*> data_;
