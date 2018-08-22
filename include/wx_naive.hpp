@@ -130,7 +130,7 @@ public:
       std::vector<AlphabetType> text1;
       text1.reserve(size);
       // Scan the text and separate characters that inserted 0s and 1s
-      for (uint64_t i = 0; i < local_text.size(); ++i) {
+      for (uint64_t i = 0; i < size; ++i) {
         if ((local_text[i] >> (levels - (level + 1))) & 1ULL) {
           text1.push_back(local_text[i]);
         } else {
