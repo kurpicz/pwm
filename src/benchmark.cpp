@@ -143,7 +143,8 @@ int32_t main(int32_t argc, char const* argv[]) {
 #ifdef MALLOC_COUNT
                   malloc_count_reset_peak();
                   a->memory_peak(txt_prt, text_size, levels);
-                  std::cout << malloc_count_peak() << ", MB: "
+                  std::cout << "B: "
+                            << malloc_count_peak() << ", MB: "
                             << malloc_count_peak() / (1024 * 1024) << std::endl;
 #else
                   std::cout << "Memory measurement is NOT enabled."
