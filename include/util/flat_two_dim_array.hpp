@@ -60,6 +60,7 @@ public:
       }
       data_ = std::move(other.data_);
       levels_ = other.levels_;
+      level_bit_sizes_ = std::move(other.level_bit_sizes_);
     }
     return *this;
   }
