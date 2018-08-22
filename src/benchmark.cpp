@@ -12,6 +12,7 @@
 #include "benchmark/algorithm.hpp"
 #include "util/alphabet_util.hpp"
 #include "util/file_util.hpp"
+#include "util/debug.hpp"
 
 #ifdef MALLOC_COUNT
 #include "benchmark/malloc_count.h"
@@ -91,6 +92,8 @@ int32_t main(int32_t argc, char const* argv[]) {
   const bool no_trees = no_trees_arg.getValue();
   const bool no_matrices = no_matrices_arg.getValue();
   const bool memory = memory_arg.getValue();
+  const bool debug_print = print_arg.getValue();
+  const bool check = check_arg.getValue();
 
   for (const auto& path : file_paths) {
     std::cout << std::endl << "Text: " << path << std::endl;
@@ -160,6 +163,16 @@ int32_t main(int32_t argc, char const* argv[]) {
                 } else {
                   std::cout << a->median_time(
                     txt_prt, text_size, levels, nr_runs) << std::endl;
+                }
+                if (debug_print || check) {
+                    auto structure = a->compute_bitvector(txt_prt, text_size, levels);
+                    if (debug_print && !a->is_huffman_shaped()) {
+                        if(a->is_tree())  {
+                            print_bv(structure.bvs(), text_size);
+                        } else {
+                            print_bv_zeros(structure.bvs(), structure.zeros(), text_size);
+                        }
+                    }
                 }
               }
             }

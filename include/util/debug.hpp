@@ -68,8 +68,7 @@ static std::vector<std::vector<uint64_t>> level_sizes(const bit_vectors& bv,
   return r;
 }
 
-[[gnu::unused]] // TODO: C++17 [[maybe_unused]] 
-static void print_bv(const std::vector<uint64_t*>& bv, uint64_t length) {
+static void print_bv(const bit_vectors& bv, uint64_t length) {
   for (uint64_t i = 0; i < bv.size(); i++) {
     std::cout << "   bv["<<i<<"]";
 
@@ -84,8 +83,7 @@ static void print_bv(const std::vector<uint64_t*>& bv, uint64_t length) {
   std::cout << "\n";
 }
 
-[[gnu::unused]] // TODO: C++17 [[maybe_unused]] 
-static void print_bv_zeros(const std::vector<uint64_t*>& bv,
+static void print_bv_zeros(const bit_vectors& bv,
   const std::vector<uint64_t>& zeros, uint64_t length) {
   for (uint64_t i = 0; i < bv.size(); i++) {
     std::cout << "   bv["<<i<<"]";
@@ -101,7 +99,7 @@ static void print_bv_zeros(const std::vector<uint64_t*>& bv,
   std::cout << std::endl;;
 }
 
-[[gnu::unused]] // TODO: C++17 [[maybe_unused]] 
+[[gnu::unused]] // TODO: C++17 [[maybe_unused]]
 static std::string decode_wt(const bit_vectors& bv, uint64_t length) {
   auto ls = level_sizes(bv, 0, length, 0);
 
@@ -139,7 +137,7 @@ static std::string decode_wt(const bit_vectors& bv, uint64_t length) {
   return std::string(r.begin(), r.end());
 }
 
-[[gnu::unused]] // TODO: C++17 [[maybe_unused]] 
+[[gnu::unused]] // TODO: C++17 [[maybe_unused]]
 static std::string decode_wm(const bit_vectors& bv,
   const std::vector<uint64_t>& zeros, const uint64_t length) {
 
