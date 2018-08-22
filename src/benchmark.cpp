@@ -65,6 +65,13 @@ int32_t main(int32_t argc, char const* argv[]) {
   TCLAP::SwitchArg memory_arg("", "memory",
     "Compute peak memory during construction.", false);
   cmd.add(memory_arg);
+  TCLAP::SwitchArg check_arg("c", "check",
+    "Check the constructed wavelet structure for validity.", false);
+  cmd.add(check_arg);
+  TCLAP::SwitchArg print_arg("d", "debug_print",
+    "Output the bit vectors in a human readable format to stdout.", false);
+  cmd.add(print_arg);
+
   cmd.parse( argc, argv );
 
   auto& algo_list = algorithm_list::get_algorithm_list();
