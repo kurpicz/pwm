@@ -14,9 +14,10 @@
 #include "huffman/huff_codes.hpp"
 #include "util/border_hist_array.hpp"
 #include "util/debug.hpp"
+#include "util/wavelet_structure.hpp"
 
 [[gnu::unused]]
-static std::string decode_wt_huff(const huff_bit_vectors& bv,
+static std::string decode_wt_huff(const base_bit_vectors& bv,
   const canonical_huff_codes<uint8_t, true>& codes) {
 
   if (bv.levels() == 0) {
@@ -66,7 +67,7 @@ static std::string decode_wt_huff(const huff_bit_vectors& bv,
 }
 
 [[gnu::unused]]
-static std::string decode_wm_huff(const huff_bit_vectors& bv,
+static std::string decode_wm_huff(const base_bit_vectors& bv,
   const canonical_huff_codes<uint8_t, false>& codes) {
 
   if (bv.levels() == 0) {

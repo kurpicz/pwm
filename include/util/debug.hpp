@@ -11,7 +11,7 @@
 #include <iostream>
 #include <string>
 
-#include "util/bit_vectors.hpp"
+#include "util/wavelet_structure.hpp"
 
 template<typename WordType, typename bv_t>
 std::string bit_string(bv_t const& bv, uint64_t const size) {
@@ -25,7 +25,7 @@ std::string bit_string(bv_t const& bv, uint64_t const size) {
   return s;
 }
 
-static std::vector<std::vector<uint64_t>> level_sizes(const bit_vectors& bv,
+static std::vector<std::vector<uint64_t>> level_sizes(const base_bit_vectors& bv,
   uint64_t bit_offset, uint64_t bit_length, uint64_t level) {
 
   if (level == bv.levels()) {
@@ -68,8 +68,8 @@ static std::vector<std::vector<uint64_t>> level_sizes(const bit_vectors& bv,
   return r;
 }
 
-template<typename size_function>
-static void print_bv_zeros(const flat_two_dim_array<uint64_t, size_function>& bv,
+[[gnu::unused]] // TODO: C++17 [[maybe_unused]]
+static void print_bv_zeros(const base_bit_vectors& bv,
                            const std::vector<uint64_t>& zeros) {
   for (uint64_t i = 0; i < bv.levels(); i++) {
     std::cout << "   bv["<<i<<"]";
@@ -88,7 +88,7 @@ static void print_bv_zeros(const flat_two_dim_array<uint64_t, size_function>& bv
 }
 
 [[gnu::unused]] // TODO: C++17 [[maybe_unused]]
-static std::string decode_wt(const bit_vectors& bv, uint64_t length) {
+static std::string decode_wt(const base_bit_vectors& bv, uint64_t length) {
   auto ls = level_sizes(bv, 0, length, 0);
 
   for (auto& v : ls) {
@@ -126,7 +126,7 @@ static std::string decode_wt(const bit_vectors& bv, uint64_t length) {
 }
 
 [[gnu::unused]] // TODO: C++17 [[maybe_unused]]
-static std::string decode_wm(const bit_vectors& bv,
+static std::string decode_wm(const base_bit_vectors& bv,
   const std::vector<uint64_t>& zeros, const uint64_t length) {
 
   if (bv.levels() == 0) {

@@ -52,12 +52,12 @@ TEST(huffman_shaped_wavelet_construction, smoketest) {
         if (a->is_tree()) {
           const auto codes =
             canonical_huff_codes<uint8_t, true>(vec.data(), vec.size());
-          auto decoded_s = decode_wt_huff(bvz.huff_bvs(), codes);
+          auto decoded_s = decode_wt_huff(bvz.bvs(), codes);
           ASSERT_EQ(s, decoded_s) << "Failure (Algorithm): " << a->name();
         } else {
           const auto codes =
             canonical_huff_codes<uint8_t, false>(vec.data(), vec.size());
-          auto decoded_s = decode_wm_huff(bvz.huff_bvs(), codes);
+          auto decoded_s = decode_wm_huff(bvz.bvs(), codes);
           ASSERT_EQ(s, decoded_s) << "Failure (Algorithm): " << a->name();
         }
       });

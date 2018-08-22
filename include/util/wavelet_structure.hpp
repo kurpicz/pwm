@@ -11,23 +11,19 @@
 #include <vector>
 #include <type_traits>
 
-#include "bit_vectors.hpp"
-#include "huffman/huff_bit_vectors.hpp"
+#include "flat_two_dim_array.hpp"
+
+using base_bit_vectors = base_flat_two_dim_array<uint64_t>;
 
 class wavelet_structure {
 
 public:
   wavelet_structure() = default;
 
-  wavelet_structure(bit_vectors&& bvs, std::vector<uint64_t>&& zeros)
+  wavelet_structure(base_bit_vectors&& bvs, std::vector<uint64_t>&& zeros)
   : bvs_(std::move(bvs)), zeros_(std::move(zeros)) { }
 
-  wavelet_structure(huff_bit_vectors&& bvs, std::vector<uint64_t>&& zeros)
-  : huff_bvs_(std::move(bvs)), zeros_(std::move(zeros)) { }
-
-  wavelet_structure(bit_vectors&& bvs) : bvs_(std::move(bvs)) { }
-
-  wavelet_structure(huff_bit_vectors&& bvs) : huff_bvs_(std::move(bvs)) { }
+  wavelet_structure(base_bit_vectors&& bvs) : bvs_(std::move(bvs)) { }
 
   // Prevent accidental copies
   wavelet_structure(wavelet_structure const&) = delete;
@@ -41,20 +37,15 @@ public:
     return bvs_.levels();
   }
 
-  inline bit_vectors const& bvs() const {
+  inline base_bit_vectors const& bvs() const {
     return bvs_;
-  }
-
-  huff_bit_vectors const& huff_bvs() const {
-    return huff_bvs_;
   }
 
   inline std::vector<uint64_t> const& zeros() const {
     return zeros_;
   }
 private:
-  bit_vectors bvs_;
-  huff_bit_vectors huff_bvs_;
+  base_bit_vectors bvs_;
   std::vector<uint64_t> zeros_;
 }; // class wavelet_structure
 

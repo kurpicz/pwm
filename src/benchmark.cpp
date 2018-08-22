@@ -175,9 +175,9 @@ int32_t main(int32_t argc, char const* argv[]) {
                     }
                     if (debug_print && a->is_huffman_shaped()) {
                         if(a->is_tree())  {
-                            print_bv_zeros(structure.huff_bvs(), structure.zeros());
+                            print_bv_zeros(structure.bvs(), structure.zeros());
                         } else {
-                            print_bv_zeros(structure.huff_bvs(), structure.zeros());
+                            print_bv_zeros(structure.bvs(), structure.zeros());
                         }
                     }
                 }
