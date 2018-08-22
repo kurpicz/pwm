@@ -54,7 +54,7 @@ option(ENABLE_MALLOC_COUNT "Enable memory measurement." OFF)
 
 
 if( NOT EXISTS "${CMAKE_SOURCE_DIR}/external/googletest/.git" )
-  execute_process(COMMAND  git submodule update --init 
+  execute_process(COMMAND  git submodule update --init
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/external/googletest/"
 )
 endif()
@@ -63,6 +63,8 @@ endif()
 include_directories(external/tclap/include)
 include_directories(include)
 
+set(BUILD_GMOCK OFF CACHE BOOL "")
+set(BUILD_GTEST ON CACHE BOOL "")
 add_subdirectory(external/googletest)
 add_subdirectory(src)
 add_subdirectory(test)
