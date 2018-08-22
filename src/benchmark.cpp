@@ -173,6 +173,9 @@ int32_t main(int32_t argc, char const* argv[]) {
                             print_bv_zeros(structure.bvs(), structure.zeros(), text_size);
                         }
                     }
+                    if (debug_print && a->is_huffman_shaped()) {
+
+                    }
                 }
               }
             }
