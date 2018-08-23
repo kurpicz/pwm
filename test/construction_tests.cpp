@@ -27,7 +27,7 @@ TEST(wavelet_construction, smoketest) {
       test::roundtrip_batch([&](const std::string& s){
         auto vec = std::vector<uint8_t>(s.begin(), s.end());
         uint64_t levels = no_reduction_alphabet(vec);
-        auto bvz = a->compute_bitvector(&vec, vec.size() , levels);
+        wavelet_structure bvz = a->compute_bitvector(&vec, vec.size() , levels);
         if (a->is_tree()) {
           auto decoded_s = decode_wt(bvz.bvs(), vec.size());
           ASSERT_EQ(s, decoded_s) << "Failure (Algorithm): " << a->name();

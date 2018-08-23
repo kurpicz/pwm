@@ -33,7 +33,13 @@ public:
   static wavelet_structure compute(const InputType& global_text,
     const uint64_t size, const uint64_t levels) {
 
-    if(size == 0) { return wavelet_structure(); }
+    if(size == 0) {
+      if (ctx_t::compute_zeros) {
+        return wavelet_structure_matrix();
+      } else {
+        return wavelet_structure_tree();
+      }
+    }
 
     const uint64_t shards = omp_get_max_threads();
 
@@ -79,9 +85,9 @@ public:
         }
       }
 
-      return wavelet_structure(std::move(_bv), std::move(_zeros), false);
+      return wavelet_structure_matrix(std::move(_bv), std::move(_zeros));
     } else {
-      return wavelet_structure(std::move(_bv), false);
+      return wavelet_structure_tree(std::move(_bv));
     }
   }
 }; // class wx_dd_pc

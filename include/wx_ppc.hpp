@@ -29,8 +29,12 @@ public:
   static wavelet_structure compute(const InputType& text, const uint64_t size,
     const uint64_t levels) {
 
-    if (size == 0) {
-      return wavelet_structure();
+    if(size == 0) {
+      if (ctx_t::compute_zeros) {
+        return wavelet_structure_matrix();
+      } else {
+        return wavelet_structure_tree();
+      }
     }
 
     const auto rho = rho_dispatch<is_tree>::create(levels);
@@ -136,9 +140,9 @@ public:
       }
     }
     if (ctx_t::compute_zeros) {
-      return wavelet_structure(std::move(ctx.bv()), std::move(zeros), false);
+      return wavelet_structure_matrix(std::move(ctx.bv()), std::move(zeros));
     } else {
-      return wavelet_structure(std::move(ctx.bv()), false);
+      return wavelet_structure_tree(std::move(ctx.bv()));
     }
   }
 }; // class wx_ppc

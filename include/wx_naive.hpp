@@ -29,7 +29,7 @@ public:
     const uint64_t size, const uint64_t levels) {
 
     if(size == 0) {
-      return wavelet_structure();
+      return wavelet_structure_tree();
     }
 
     auto _bv = bit_vectors(levels, size);
@@ -74,7 +74,7 @@ public:
         }
       }
     }
-    return wavelet_structure(std::move(_bv), false);
+    return wavelet_structure_tree(std::move(_bv));
   }
 }; // class wt_naive
 
@@ -91,7 +91,7 @@ public:
     const uint64_t size, const uint64_t levels) {
 
     if(size == 0) {
-      return wavelet_structure();
+      return wavelet_structure_matrix();
     }
 
     auto _bv = bit_vectors(levels, size);
@@ -149,7 +149,7 @@ public:
         }
       }
     }
-    return wavelet_structure(std::move(_bv), std::move(_zeros), false);
+    return wavelet_structure_matrix(std::move(_bv), std::move(_zeros));
   }
 }; // class wx_naive<MATRIX>
 

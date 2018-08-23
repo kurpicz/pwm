@@ -17,7 +17,7 @@
 template <typename IndexType>
 class base_flat_two_dim_array {
 public:
-  base_flat_two_dim_array() : data_(0) { }
+  base_flat_two_dim_array() = default;
 
   base_flat_two_dim_array(const uint64_t levels)
   : levels_(levels), data_(levels + 1), level_bit_sizes_(levels) {
@@ -86,7 +86,7 @@ public:
   }
 
 protected:
-  uint64_t levels_;
+  uint64_t levels_ = 0;
   std::vector<IndexType*> data_;
   std::vector<uint64_t> level_bit_sizes_;
 

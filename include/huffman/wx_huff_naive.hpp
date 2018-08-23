@@ -30,7 +30,7 @@ public:
     const uint64_t size, const uint64_t /*levels*/) {
 
     if(size == 0) {
-      return wavelet_structure();
+      return wavelet_structure_tree_huffman();
     }
 
     canonical_huff_codes<AlphabetType, is_tree> codes(text, size);
@@ -78,7 +78,7 @@ public:
       }
       local_text.swap(buckets[0]);
     }
-    return wavelet_structure(std::move(_bv), true);
+    return wavelet_structure_tree_huffman(std::move(_bv));
   }
 }; // class wt_huff_naive
 
@@ -95,7 +95,7 @@ public:
     const uint64_t size, const uint64_t /*levels*/) {
 
     if(size == 0) {
-      return wavelet_structure();
+      return wavelet_structure_matrix_huffman();
     }
 
     canonical_huff_codes<AlphabetType, is_tree> codes(text, size);
@@ -150,7 +150,7 @@ public:
       std::move(text1.begin(), text1.end(), std::back_inserter(text0));
       local_text.swap(text0);
     }
-    return wavelet_structure(std::move(_bv), std::move(_zeros), true);
+    return wavelet_structure_matrix_huffman(std::move(_bv), std::move(_zeros));
   }
 }; // class wx_huff_naive<MATRIX>
 
