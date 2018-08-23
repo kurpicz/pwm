@@ -16,9 +16,9 @@
 #include "util/debug.hpp"
 #include "util/wavelet_structure.hpp"
 
-[[gnu::unused]]
-static std::string decode_wt_huff(const base_bit_vectors& bv,
-  const canonical_huff_codes<uint8_t, true>& codes) {
+template<typename AlphabetType>
+std::string decode_wt_huff(const base_bit_vectors& bv,
+  const canonical_huff_codes<AlphabetType, true>& codes) {
 
   if (bv.levels() == 0) {
     return { };
@@ -66,9 +66,9 @@ static std::string decode_wt_huff(const base_bit_vectors& bv,
   return result;
 }
 
-[[gnu::unused]]
-static std::string decode_wm_huff(const base_bit_vectors& bv,
-  const canonical_huff_codes<uint8_t, false>& codes) {
+template<typename AlphabetType>
+std::string decode_wm_huff(const base_bit_vectors& bv,
+  const canonical_huff_codes<AlphabetType, false>& codes) {
 
   if (bv.levels() == 0) {
     return { };
