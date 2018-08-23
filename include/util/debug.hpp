@@ -69,22 +69,23 @@ static std::vector<std::vector<uint64_t>> level_sizes(const base_bit_vectors& bv
 }
 
 [[gnu::unused]] // TODO: C++17 [[maybe_unused]]
-static void print_bv_zeros(const base_bit_vectors& bv,
-                           const std::vector<uint64_t>& zeros) {
+static void print_structure(std::ostream& out, wavelet_structure const& structure) {
+  const base_bit_vectors& bv = structure.bvs();
+  const std::vector<uint64_t>& zeros = structure.zeros();
   for (uint64_t i = 0; i < bv.levels(); i++) {
-    std::cout << "   bv["<<i<<"]";
+    out << "   bv["<<i<<"]";
 
-    std::cout << "[";
+    out << "[";
     for (uint64_t j = 0; j < bv.level_bit_size(i); j++) {
-      std::cout << uint64_t(bit_at(bv[i], j)) << "";
+      out << uint64_t(bit_at(bv[i], j)) << "";
     }
-    std::cout << "]";
+    out << "]";
     if (i < zeros.size()) {
-        std::cout << " zeros[" << i << "] = " << zeros.at(i);
+        out << " zeros[" << i << "] = " << zeros.at(i);
     }
-    std::cout << std::endl;;
+    out << std::endl;
   }
-  std::cout << std::endl;;
+  out << std::endl;
 }
 
 [[gnu::unused]] // TODO: C++17 [[maybe_unused]]
