@@ -26,9 +26,11 @@ static std::string decode_structure(const wavelet_structure& structure) {
     }  else {
         // TODO
         if (structure.is_tree()) {
-            //return decode_wt_huff(structure.bvs());
+            auto& codes = structure.codes<uint8_t, true>();
+            return decode_wt_huff<uint8_t>(structure.bvs(), codes);
         } else {
-            //return decode_wm_huff(structure.bvs(), structure.zeros());
+            auto& codes = structure.codes<uint8_t, false>();
+            return decode_wm_huff<uint8_t>(structure.bvs(), codes);
         }
         return "";
     }
