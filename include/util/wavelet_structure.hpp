@@ -77,13 +77,16 @@ public:
     }
 };
 
-//template<typename AlphabetSize>
+template<typename AlphabetType>
 class wavelet_structure_tree_huffman: public base_wavelet_structure {
+    canonical_huff_codes<AlphabetType, true> codes_;
 public:
-    wavelet_structure_tree_huffman()
-    : wavelet_structure_tree_huffman(base_bit_vectors()) {}
-    wavelet_structure_tree_huffman(base_bit_vectors&& bvs)
-    : base_wavelet_structure(std::move(bvs), true, true) { }
+    wavelet_structure_tree_huffman(canonical_huff_codes<AlphabetType, true>&& codes)
+    : wavelet_structure_tree_huffman(base_bit_vectors(), std::move(codes)) { }
+    wavelet_structure_tree_huffman(base_bit_vectors&& bvs,
+                                   canonical_huff_codes<AlphabetType, true>&& codes)
+    : base_wavelet_structure(std::move(bvs), true, true)
+    , codes_(std::move(codes)) { }
 
     inline virtual std::vector<uint64_t> const& zeros() const {
         static std::vector<uint64_t> empty;
@@ -91,15 +94,18 @@ public:
     }
 };
 
-//template<typename AlphabetSize>
+template<typename AlphabetType>
 class wavelet_structure_matrix_huffman: public base_wavelet_structure {
+    canonical_huff_codes<AlphabetType, false> codes_;
     std::vector<uint64_t> zeros_;
 public:
-    wavelet_structure_matrix_huffman()
-    : wavelet_structure_matrix_huffman(base_bit_vectors(), {}) {}
+    wavelet_structure_matrix_huffman(canonical_huff_codes<AlphabetType, false>&& codes)
+    : wavelet_structure_matrix_huffman(base_bit_vectors(), {}, std::move(codes)) { }
     wavelet_structure_matrix_huffman(base_bit_vectors&& bvs,
-                                     std::vector<uint64_t>&& zeros)
+                                     std::vector<uint64_t>&& zeros,
+                                     canonical_huff_codes<AlphabetType, false>&& codes)
     : base_wavelet_structure(std::move(bvs), false, true)
+    , codes_(std::move(codes))
     , zeros_(std::move(zeros)) { }
 
     inline virtual std::vector<uint64_t> const& zeros() const {
