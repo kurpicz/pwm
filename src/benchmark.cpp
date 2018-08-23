@@ -166,21 +166,36 @@ int32_t main(int32_t argc, char const* argv[]) {
                     txt_prt, text_size, levels, nr_runs) << std::endl;
                 }
                 if (debug_print || check) {
-                    auto structure = a->compute_bitvector(txt_prt, text_size, levels);
-                    if (debug_print && !a->is_huffman_shaped()) {
-                        if(a->is_tree())  {
-                            print_structure(std::cout, structure);
-                        } else {
-                            print_structure(std::cout, structure);
+                  auto structure = a->compute_bitvector(txt_prt, text_size, levels);
+                  if (debug_print) {
+                    print_structure(std::cout, structure);
+                  }
+                  if (check) {
+                    if (word_width != 1) {
+                      std::cerr << "WARNING: Can only check texts over 1-byte alphabets\n";
+                    } else {
+                      auto pvec = [](auto const& v) {
+                        std::cout << "[";
+                        for (auto e : v) {
+                            std::cout << uint64_t(e) << ", ";
                         }
+                        std::cout << "]\n";
+                      };
+
+                      std::string decoded = decode_structure(structure);
+
+                      if (std::equal(text_uint8.begin(), text_uint8.end(),
+                                     decoded.begin(), decoded.end())) {
+                        std::cout << "Input decoded OK\n";
+                      } else {
+                        std::cout << "ERROR: Decoded output not equal to input!\n";
+                        std::cout << "Input:\n";
+                        pvec(text_uint8);
+                        std::cout << "Decoded:\n";
+                        pvec(decoded);
+                      }
                     }
-                    if (debug_print && a->is_huffman_shaped()) {
-                        if(a->is_tree())  {
-                            print_structure(std::cout, structure);
-                        } else {
-                            print_structure(std::cout, structure);
-                        }
-                    }
+                  }
                 }
               }
             }

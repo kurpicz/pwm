@@ -77,7 +77,7 @@ public:
     , zeros_(std::move(zeros)) { }
 private:
     std::vector<uint64_t> zeros_;
-    inline virtual std::vector<uint64_t> const& zeros() const {
+    inline virtual std::vector<uint64_t> const& zeros() const override {
         return zeros_;
     }
 };
@@ -93,7 +93,7 @@ public:
     , codes_(std::move(codes)) { }
 private:
     canonical_huff_codes<AlphabetType, true> codes_;
-    inline virtual void const* codes(std::type_info const& type_info) const {
+    inline virtual void const* codes(std::type_info const& type_info) const override {
         assert(type_info == typeid(canonical_huff_codes<AlphabetType, true>));
         return &codes_;
     }
@@ -114,11 +114,11 @@ private:
     canonical_huff_codes<AlphabetType, false> codes_;
     std::vector<uint64_t> zeros_;
 
-    inline virtual std::vector<uint64_t> const& zeros() const {
+    inline virtual std::vector<uint64_t> const& zeros() const override {
         return zeros_;
     }
 
-    inline virtual void const* codes(std::type_info const& type_info) const {
+    inline virtual void const* codes(std::type_info const& type_info) const override {
         assert(type_info == typeid(canonical_huff_codes<AlphabetType, false>));
         return &codes_;
     }
