@@ -12,7 +12,8 @@
 #include "benchmark/algorithm.hpp"
 #include "util/alphabet_util.hpp"
 #include "util/file_util.hpp"
-#include "util/debug.hpp"
+#include "util/print.hpp"
+#include "util/structure_decode.hpp"
 
 #ifdef MALLOC_COUNT
 #include "benchmark/malloc_count.h"

@@ -16,7 +16,7 @@
 #include "huffman/huff_decode.hpp"
 #include "util/alphabet_util.hpp"
 #include "util/common.hpp"
-#include "util/debug.hpp"
+#include "util/decode.hpp"
 #include "util/file_util.hpp"
 
 TEST(wavelet_construction, smoketest) {

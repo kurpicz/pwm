@@ -26,13 +26,17 @@ public:
   : bvs_(std::move(bvs))
   , zeros_(std::move(zeros))
   , is_tree_(false)
-  , is_huffman_shaped_(is_huffman_shaped) { }
+  , is_huffman_shaped_(is_huffman_shaped) {
+    if (bvs_.levels() > 0) { text_size_ = bvs_.level_bit_size(0); }
+  }
 
   wavelet_structure(base_bit_vectors&& bvs,
                     bool is_huffman_shaped)
   : bvs_(std::move(bvs))
   , is_tree_(true)
-  , is_huffman_shaped_(is_huffman_shaped) { }
+  , is_huffman_shaped_(is_huffman_shaped) {
+    if (bvs_.levels() > 0) { text_size_ = bvs_.level_bit_size(0); }
+  }
 
   // Prevent accidental copies
   wavelet_structure(wavelet_structure const&) = delete;
@@ -54,13 +58,23 @@ public:
     return zeros_;
   }
 
-  inline bool is_tree() const { return is_tree_; }
-  inline bool is_huffman_shaped() const { return is_huffman_shaped_; }
+  inline bool is_tree() const {
+    return is_tree_;
+  }
+
+  inline bool is_huffman_shaped() const {
+    return is_huffman_shaped_;
+  }
+
+  inline size_t text_size() const {
+    return text_size_;
+  }
 private:
   base_bit_vectors bvs_;
   std::vector<uint64_t> zeros_;
-  bool is_tree_;
-  bool is_huffman_shaped_;
+  bool is_tree_ = true;
+  bool is_huffman_shaped_ = false;
+  size_t text_size_ = 0;
 }; // class wavelet_structure
 
 /******************************************************************************/

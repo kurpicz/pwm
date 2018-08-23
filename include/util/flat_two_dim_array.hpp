@@ -65,10 +65,6 @@ public:
     return levels_;
   }
 
-  inline uint64_t level_size(uint64_t level) const {
-    return data_.at(level + 1) - data_.at(level);
-  }
-
   inline uint64_t level_bit_size(uint64_t level) const {
     return level_bit_sizes_.at(level);
   }
