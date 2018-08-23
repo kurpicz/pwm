@@ -140,8 +140,8 @@ int32_t main(int32_t argc, char const* argv[]) {
     }
     std::cout << "Characters: " << text_size << std::endl;
 #ifdef MALLOC_COUNT
-    std::cout << "Memory peak text: " << malloc_count_peak() << ", MB: "
-              << malloc_count_peak() / (1024 * 1024) << std::endl;
+    std::cout << "Memory peak text: " << malloc_count_peak() << " B, "
+              << malloc_count_peak() / (1024 * 1024) << " MiB" << std::endl;
 #endif // MALLOC_COUNT
     for (const auto& a : algo_list) {
       if (filter == "" || (a->name().find(filter) != std::string::npos)) {
@@ -154,9 +154,11 @@ int32_t main(int32_t argc, char const* argv[]) {
 #ifdef MALLOC_COUNT
                   malloc_count_reset_peak();
                   a->memory_peak(txt_prt, text_size, levels);
-                  std::cout << "B: "
-                            << malloc_count_peak() << ", MB: "
-                            << malloc_count_peak() / (1024 * 1024) << std::endl;
+                  std::cout << "Memory peak algo: "
+                            << malloc_count_peak() << " B, "
+                            << malloc_count_peak() / (1024 * 1024)
+                            << " MiB"
+                            << std::endl;
 #else
                   std::cout << "Memory measurement is NOT enabled."
                             << std::endl;
@@ -172,8 +174,32 @@ int32_t main(int32_t argc, char const* argv[]) {
                   }
                   if (check) {
                     if (word_width != 1) {
-                      std::cerr << "WARNING: Can only check texts over 1-byte alphabets\n";
+                      std::cout << "WARNING: Can only check texts over 1-byte alphabets\n";
                     } else {
+                      construction_algorithm const* naive = nullptr;
+                      if (a->is_tree() && !a->is_huffman_shaped()) {
+                        naive = algo_list.filtered([](auto e) {
+                            return e->name() == "wt_naive";
+                        }).at(0);
+                      }
+                      if (!a->is_tree() && !a->is_huffman_shaped()) {
+                        naive = algo_list.filtered([](auto e) {
+                            return e->name() == "wm_naive";
+                        }).at(0);
+                      }
+                      if (a->is_tree() && a->is_huffman_shaped()) {
+                        naive = algo_list.filtered([](auto e) {
+                            return e->name() == "huff_wt_naive";
+                        }).at(0);
+                      }
+                      if (!a->is_tree() && a->is_huffman_shaped()) {
+                        naive = algo_list.filtered([](auto e) {
+                            return e->name() == "huff_wm_naive";
+                        }).at(0);
+                      }
+                      assert(naive != nullptr);
+                      auto naive_structure = naive->compute_bitvector(txt_prt, text_size, levels);
+
                       auto pvec = [](auto const& v) {
                         std::cout << "[";
                         for (auto e : v) {
@@ -183,7 +209,6 @@ int32_t main(int32_t argc, char const* argv[]) {
                       };
 
                       std::string decoded = decode_structure(structure);
-
                       if (std::equal(text_uint8.begin(), text_uint8.end(),
                                      decoded.begin(), decoded.end())) {
                         std::cout << "Input decoded OK\n";
