@@ -207,13 +207,34 @@ int32_t main(int32_t argc, char const* argv[]) {
                           std::cout << "ERROR: " << msg << "\n";
                           err_trigger = true;
                         }
+                        return cond;
                       };
 
-                      check_err(structure.levels() == naive_structure.levels(),
-                                "structures have different level sizes");
-                      if (!a->is_tree()) {
-                        check_err(structure.zeros() == naive_structure.zeros(),
-                                  "zeros arrays differ");
+                      if (check_err(structure.levels() == naive_structure.levels(),
+                                    "structures have different level sizes")) {
+                        if (!a->is_tree()) {
+                          check_err(structure.zeros() == naive_structure.zeros(),
+                                    "zeros arrays differ");
+                        }
+                        auto& sbvs = structure.bvs();
+                        auto& nbvs = naive_structure.bvs();
+                        for (size_t l = 0; l < structure.levels(); l++) {
+                          auto sbs = sbvs.level_bit_size(l);
+                          auto nbs = nbvs.level_bit_size(l);
+                          if(check_err(sbs == nbs,
+                                       std::string("bit size differs on level ")
+                                       + std::to_string(l))) {
+                            for (uint64_t bi = 0; bi < sbs; bi++) {
+                              if(!check_err(bit_at(sbvs[l], bi) == bit_at(nbvs[l], bi),
+                                 std::string("bit ")
+                                 + std::to_string(bi)
+                                 + " differs on level "
+                                 + std::to_string(l))) {
+                                break;
+                              }
+                            }
+                          }
+                        }
                       }
 
                       if (err_trigger) {
