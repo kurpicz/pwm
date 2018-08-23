@@ -76,6 +76,8 @@ int32_t main(int32_t argc, char const* argv[]) {
 
   cmd.parse( argc, argv );
 
+  int returncode = 0;
+
   auto& algo_list = algorithm_list::get_algorithm_list();
   if (list_all_algorithms.getValue()) {
     for (const auto& a : algo_list) {
@@ -177,28 +179,57 @@ int32_t main(int32_t argc, char const* argv[]) {
                       std::cout << "WARNING: Can only check texts over 1-byte alphabets\n";
                     } else {
                       construction_algorithm const* naive = nullptr;
-                      if (a->is_tree() && !a->is_huffman_shaped()) {
+                      if ((a->is_tree()) && !(a->is_huffman_shaped())) {
                         naive = algo_list.filtered([](auto e) {
                             return e->name() == "wt_naive";
                         }).at(0);
                       }
-                      if (!a->is_tree() && !a->is_huffman_shaped()) {
+                      if (!(a->is_tree()) && !(a->is_huffman_shaped())) {
                         naive = algo_list.filtered([](auto e) {
                             return e->name() == "wm_naive";
                         }).at(0);
                       }
-                      if (a->is_tree() && a->is_huffman_shaped()) {
+                      if ((a->is_tree()) && (a->is_huffman_shaped())) {
                         naive = algo_list.filtered([](auto e) {
                             return e->name() == "huff_wt_naive";
                         }).at(0);
                       }
-                      if (!a->is_tree() && a->is_huffman_shaped()) {
+                      if (!(a->is_tree()) && (a->is_huffman_shaped())) {
                         naive = algo_list.filtered([](auto e) {
                             return e->name() == "huff_wm_naive";
                         }).at(0);
                       }
                       assert(naive != nullptr);
                       auto naive_structure = naive->compute_bitvector(txt_prt, text_size, levels);
+                      bool err_trigger = false;
+                      auto check_err = [&](bool cond, auto const& msg) {
+                        if (!cond) {
+                          std::cout << "ERROR: " << msg << "\n";
+                          err_trigger = true;
+                        }
+                      };
+
+                      check_err(structure.levels() == naive_structure.levels(),
+                                "structures have different level sizes");
+                      if (!a->is_tree()) {
+                        check_err(structure.zeros() == naive_structure.zeros(),
+                                  "zeros arrays differ");
+                      }
+
+                      if (err_trigger) {
+                        returncode = -2;
+                      } else {
+                        // std::cout << "Output structurally OK\n";
+                      }
+
+                      if (err_trigger) {
+                        if (!debug_print) {
+                          std::cout << "Output:\n";
+                          print_structure(std::cout, structure);
+                        }
+                        std::cout << "Naive result as comparison:\n";
+                        print_structure(std::cout, naive_structure);
+                      }
 
                       auto pvec = [](auto const& v) {
                         std::cout << "[";
@@ -211,7 +242,7 @@ int32_t main(int32_t argc, char const* argv[]) {
                       std::string decoded = decode_structure(structure);
                       if (std::equal(text_uint8.begin(), text_uint8.end(),
                                      decoded.begin(), decoded.end())) {
-                        std::cout << "Input decoded OK\n";
+                        // std::cout << "Output decoded OK\n";
                       } else {
                         std::cout << "ERROR: Decoded output not equal to input!\n";
                         std::cout << "Input:\n";
@@ -220,6 +251,7 @@ int32_t main(int32_t argc, char const* argv[]) {
                         pvec(decoded);
                       }
                     }
+                    std::cout << "\n";
                   }
                 }
               }
@@ -229,7 +261,7 @@ int32_t main(int32_t argc, char const* argv[]) {
       }
     }
   }
-  return 0;
+  return returncode;
 }
 
 /******************************************************************************/
