@@ -47,7 +47,7 @@ public:
       const uint64_t omp_size = uint64_t(omp_get_num_threads());
       const uint64_t max_char = (1 << levels);
 
-      auto* const initial_hist_ptr = 
+      auto* const initial_hist_ptr =
         initial_hist.data() + (max_char * omp_rank);
 
       #pragma omp for
@@ -136,9 +136,9 @@ public:
       }
     }
     if (ctx_t::compute_zeros) {
-      return wavelet_structure(std::move(ctx.bv()), std::move(zeros));
+      return wavelet_structure(std::move(ctx.bv()), std::move(zeros), false);
     } else {
-      return wavelet_structure(std::move(ctx.bv()));
+      return wavelet_structure(std::move(ctx.bv()), false);
     }
   }
 }; // class wx_ppc

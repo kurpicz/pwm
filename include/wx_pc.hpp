@@ -39,9 +39,9 @@ public:
 
     if (ctx_t::compute_zeros) {
       return wavelet_structure(
-        std::move(ctx.bv()), std::move(ctx.zeros()));
+        std::move(ctx.bv()), std::move(ctx.zeros()), false);
     } else {
-      return wavelet_structure(std::move(ctx.bv()));
+      return wavelet_structure(std::move(ctx.bv()), false);
     }
   }
 }; // class wx_pc

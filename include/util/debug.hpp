@@ -80,7 +80,7 @@ static void print_structure(std::ostream& out, wavelet_structure const& structur
       out << uint64_t(bit_at(bv[i], j)) << "";
     }
     out << "]";
-    if (i < zeros.size()) {
+    if (!structure.is_tree()) {
         out << " zeros[" << i << "] = " << zeros.at(i);
     }
     out << std::endl;

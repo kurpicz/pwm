@@ -72,7 +72,7 @@ public:
       ctx.discard_non_merge_data();
     }
     drop_me(std::move(global_sorted_text));
-    
+
     auto _bv = merge_bit_vectors(size, levels, shards, ctxs, rho);
 
     if (ctx_t::compute_zeros) {
@@ -85,9 +85,9 @@ public:
         }
       }
 
-      return wavelet_structure(std::move(_bv), std::move(_zeros));
+      return wavelet_structure(std::move(_bv), std::move(_zeros), false);
     } else {
-      return wavelet_structure(std::move(_bv));
+      return wavelet_structure(std::move(_bv), false);
     }
   }
 }; // class wx_dd_ps

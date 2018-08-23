@@ -78,7 +78,7 @@ public:
       }
       local_text.swap(buckets[0]);
     }
-    return wavelet_structure(std::move(_bv));
+    return wavelet_structure(std::move(_bv), true);
   }
 }; // class wt_huff_naive
 
@@ -150,7 +150,7 @@ public:
       std::move(text1.begin(), text1.end(), std::back_inserter(text0));
       local_text.swap(text0);
     }
-    return wavelet_structure(std::move(_bv), std::move(_zeros));
+    return wavelet_structure(std::move(_bv), std::move(_zeros), true);
   }
 }; // class wx_huff_naive<MATRIX>
 

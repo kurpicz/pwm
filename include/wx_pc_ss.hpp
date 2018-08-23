@@ -33,13 +33,13 @@ public:
 
     const auto rho = rho_dispatch<is_tree>::create(levels);
     auto ctx = ctx_t(size, levels, rho);
-    
+
     pc_ss(text, size, levels, ctx);
 
     if (ctx_t::compute_zeros) {
-      return wavelet_structure(std::move(ctx.bv()), std::move(ctx.zeros()));
+      return wavelet_structure(std::move(ctx.bv()), std::move(ctx.zeros()), false);
     } else {
-      return wavelet_structure(std::move(ctx.bv()));
+      return wavelet_structure(std::move(ctx.bv()), false);
     }
   }
 }; // class wc_pc_ss

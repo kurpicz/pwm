@@ -74,7 +74,7 @@ public:
         }
       }
     }
-    return wavelet_structure(std::move(_bv));
+    return wavelet_structure(std::move(_bv), false);
   }
 }; // class wt_naive
 
@@ -149,7 +149,7 @@ public:
         }
       }
     }
-    return wavelet_structure(std::move(_bv), std::move(_zeros));
+    return wavelet_structure(std::move(_bv), std::move(_zeros), false);
   }
 }; // class wx_naive<MATRIX>
 

@@ -79,9 +79,9 @@ public:
         }
       }
 
-      return wavelet_structure(std::move(_bv), std::move(_zeros));
+      return wavelet_structure(std::move(_bv), std::move(_zeros), false);
     } else {
-      return wavelet_structure(std::move(_bv));
+      return wavelet_structure(std::move(_bv), false);
     }
   }
 }; // class wx_dd_pc
