@@ -78,7 +78,8 @@ public:
       }
       local_text.swap(buckets[0]);
     }
-    return wavelet_structure_tree_huffman<AlphabetType>(std::move(_bv), std::move(codes));
+    return wavelet_structure_tree_huffman<AlphabetType>(
+      std::move(_bv), std::move(codes));
   }
 }; // class wt_huff_naive
 
@@ -107,50 +108,51 @@ public:
     auto _zeros = std::vector<size_t>(levels, 0);
 
     std::vector<AlphabetType> local_text(size);
-    for(size_t i = 0; i < size; i++) {
-      local_text[i] = text[i];
-    }
+    for(size_t i = 0; i < size; i++) { local_text[i] = text[i]; }
 
     // Construct each level top-down
     for (uint64_t level = 0; level < levels; ++level) {
+      std::vector<AlphabetType> text0;
+      std::vector<AlphabetType> text1;
+
       // Insert the level-th MSB in the bit vector of the level (in text order)
       uint32_t cur_pos = 0;
       for (; cur_pos + 64 <= local_text.size(); cur_pos += 64) {
         uint64_t word = 0ULL;
         for (uint32_t i = 0; i < 64; ++i) {
+          const code_pair cp = codes.encode_symbol(local_text[cur_pos + i]);
           word <<= 1;
-          word |= codes.encode_symbol(local_text[cur_pos + i])[level];
+          word |= cp[level];
+          if (cp.code_length > level + 1) {
+            if (cp[level]) { text1.emplace_back(local_text[cur_pos + i]); }
+            else { text0.emplace_back(local_text[cur_pos + i]); }
+          }
         }
+        _zeros[level] += __builtin_popcountll(~word);
         bv[level][cur_pos >> 6] = word;
       }
       if (local_text.size() & 63ULL) {
         uint64_t word = 0ULL;
         for (uint32_t i = 0; i < local_text.size() - cur_pos; ++i) {
+          const code_pair cp = codes.encode_symbol(local_text[cur_pos + i]);
           word <<= 1;
-          word |= codes.encode_symbol(local_text[cur_pos + i])[level];
+          word |= cp[level];
+          if (cp.code_length > level + 1) {
+            if (cp[level]) { text1.emplace_back(local_text[cur_pos + i]); }
+            else { text0.emplace_back(local_text[cur_pos + i]); }
+          }
         }
         word <<= (64 - (local_text.size() & 63ULL));
         bv[level][local_text.size() >> 6] = word;
+        _zeros[level] +=
+          (local_text.size() & 63ULL) - __builtin_popcountll(word);
       }
 
-      std::vector<AlphabetType> text0;
-      std::vector<AlphabetType> text1;
-      // Scan the text and separate characters that inserted 0s and 1s
-      for (const auto symbol : local_text) {
-        const code_pair cp = codes.encode_symbol(symbol);
-        if (cp.code_length > level + 1) {
-          if (cp[level]) {
-            text1.emplace_back(symbol);
-          } else {
-            text0.emplace_back(symbol);
-          }
-        }
-      }
-      _zeros[level] = text0.size();
       std::move(text1.begin(), text1.end(), std::back_inserter(text0));
-      local_text.swap(text0);
+      local_text = std::move(text0);
     }
-    return wavelet_structure_matrix_huffman<AlphabetType>(std::move(_bv), std::move(_zeros), std::move(codes));
+    return wavelet_structure_matrix_huffman<AlphabetType>(
+      std::move(_bv), std::move(_zeros), std::move(codes));
   }
 }; // class wx_huff_naive<MATRIX>
 
