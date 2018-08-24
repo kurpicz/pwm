@@ -29,8 +29,12 @@ public:
   static wavelet_structure compute(const InputType& text, const uint64_t size,
     const uint64_t levels) {
 
-    if (size == 0) {
-      return wavelet_structure();
+    if(size == 0) {
+      if (ctx_t::compute_zeros) {
+        return wavelet_structure_matrix();
+      } else {
+        return wavelet_structure_tree();
+      }
     }
 
     ctx_t ctx;
@@ -93,7 +97,7 @@ public:
           ctx.hist(0, i) += ctx.hist(0, i + (1ULL << cur_bit_shift));
           for (int32_t rank = 1; rank < omp_size; ++rank) {
             ctx.hist(rank, i) += ctx.hist(rank, i + (1ULL << cur_bit_shift));
-            ctx.borders(rank, i) = 
+            ctx.borders(rank, i) =
               ctx.borders(rank - 1, i) + ctx.hist(rank - 1, i);
           }
         }
@@ -176,9 +180,9 @@ public:
       }
     }
     if (ctx_t::compute_zeros) {
-      return wavelet_structure(std::move(ctx.bv()), std::move(ctx.zeros()));
+      return wavelet_structure_matrix(std::move(ctx.bv()), std::move(ctx.zeros()));
     } else {
-      return wavelet_structure(std::move(ctx.bv()));
+      return wavelet_structure_tree(std::move(ctx.bv()));
     }
   }
 };

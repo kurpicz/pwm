@@ -11,7 +11,7 @@
 #include <iostream>
 #include <string>
 
-#include "util/bit_vectors.hpp"
+#include "util/wavelet_structure.hpp"
 
 template<typename WordType, typename bv_t>
 std::string bit_string(bv_t const& bv, uint64_t const size) {
@@ -25,7 +25,7 @@ std::string bit_string(bv_t const& bv, uint64_t const size) {
   return s;
 }
 
-static std::vector<std::vector<uint64_t>> level_sizes(const bit_vectors& bv,
+static std::vector<std::vector<uint64_t>> level_sizes(const base_bit_vectors& bv,
   uint64_t bit_offset, uint64_t bit_length, uint64_t level) {
 
   if (level == bv.levels()) {
@@ -66,117 +66,6 @@ static std::vector<std::vector<uint64_t>> level_sizes(const bit_vectors& bv,
   }
 
   return r;
-}
-
-[[gnu::unused]] // TODO: C++17 [[maybe_unused]] 
-static void print_bv(const std::vector<uint64_t*>& bv, uint64_t length) {
-  for (uint64_t i = 0; i < bv.size(); i++) {
-    std::cout << "   bv["<<i<<"]";
-
-    std::cout << "[";
-    for (uint64_t j = 0; j < length; j++) {
-      std::cout << uint64_t(bit_at(bv[i], j)) << "";
-    }
-    std::cout << "]";
-
-    std::cout << "\n";
-  }
-  std::cout << "\n";
-}
-
-[[gnu::unused]] // TODO: C++17 [[maybe_unused]] 
-static void print_bv_zeros(const std::vector<uint64_t*>& bv,
-  const std::vector<uint64_t>& zeros, uint64_t length) {
-  for (uint64_t i = 0; i < bv.size(); i++) {
-    std::cout << "   bv["<<i<<"]";
-
-    std::cout << "[";
-    for (uint64_t j = 0; j < length; j++) {
-      std::cout << uint64_t(bit_at(bv[i], j)) << "";
-    }
-    std::cout << "]";
-    std::cout << " zeros[" << i << "] = " << zeros[i];
-    std::cout << std::endl;;
-  }
-  std::cout << std::endl;;
-}
-
-[[gnu::unused]] // TODO: C++17 [[maybe_unused]] 
-static std::string decode_wt(const bit_vectors& bv, uint64_t length) {
-  auto ls = level_sizes(bv, 0, length, 0);
-
-  for (auto& v : ls) {
-    for (uint64_t i = 1; i < v.size(); i++) {
-      v[i] = v[i - 1] + v[i];
-    }
-    for (uint64_t i = 1; i < v.size(); i++) {
-      uint64_t j = v.size() - i;
-      v[j] = v[j - 1];
-    }
-    if (v.size() > 0) {
-      v[0] = 0;
-    }
-  }
-
-  auto r = std::vector<uint8_t>(length);
-
-  for (uint64_t i = 0; i < length; i++) {
-    uint8_t value = 0;
-    uint64_t j = 0;
-    for (uint64_t level = 0; level < bv.levels(); level++) {
-      auto& offset = ls[level][j];
-      uint8_t bit = bit_at(bv[level], offset);
-
-      value <<= 1;
-      value |= bit;
-
-      offset++;
-      j = 2 * j + bit;
-    }
-    r[i] = value;
-  }
-
-  return std::string(r.begin(), r.end());
-}
-
-[[gnu::unused]] // TODO: C++17 [[maybe_unused]] 
-static std::string decode_wm(const bit_vectors& bv,
-  const std::vector<uint64_t>& zeros, const uint64_t length) {
-
-  if (bv.levels() == 0) {
-    return {};
-  }
-
-  auto r = std::vector<uint8_t>(length, uint8_t(0));
-  auto rtmp = std::vector<uint8_t>(length, uint8_t(0));
-  // print_bv_zeros(bv, zeros, length);
-
-  for(uint64_t level = bv.levels() - 1; level > 0; --level) {
-    uint64_t offset0 = 0;
-    uint64_t offset1 = zeros[level - 1];
-
-    for(uint64_t i = 0; i < length; i++) {
-      r[i] |= (bit_at(bv[level], i) << (bv.levels() - level - 1));
-    }
-
-    for(uint64_t i = 0; i < length; i++) {
-      if(bit_at(bv[level - 1], i) == 0) {
-        rtmp[i] = r[offset0];
-        offset0++;
-      } else {
-        rtmp[i] = r[offset1];
-        offset1++;
-      }
-    }
-
-    r.swap(rtmp);
-  }
-
-  for(uint64_t i = 0; i < length; i++) {
-    r[i] |= bit_at(bv[0], i) << (bv.levels() - 1);
-  }
-
-  return std::string(r.begin(), r.end());
 }
 
 /******************************************************************************/

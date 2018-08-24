@@ -29,11 +29,11 @@ public:
   static wavelet_structure compute(AlphabetType const* const text,
     const uint64_t size, const uint64_t /*levels*/) {
 
-    if(size == 0) {
-      return wavelet_structure();
-    }
-
     canonical_huff_codes<AlphabetType, is_tree> codes(text, size);
+
+    if(size == 0) {
+      return wavelet_structure_tree_huffman<AlphabetType>(std::move(codes));
+    }
 
     const uint64_t levels = codes.levels();
 
@@ -78,7 +78,7 @@ public:
       }
       local_text.swap(buckets[0]);
     }
-    return wavelet_structure(std::move(_bv));
+    return wavelet_structure_tree_huffman<AlphabetType>(std::move(_bv), std::move(codes));
   }
 }; // class wt_huff_naive
 
@@ -94,11 +94,11 @@ public:
   static wavelet_structure compute(AlphabetType const* const text,
     const uint64_t size, const uint64_t /*levels*/) {
 
-    if(size == 0) {
-      return wavelet_structure();
-    }
-
     canonical_huff_codes<AlphabetType, is_tree> codes(text, size);
+
+    if(size == 0) {
+      return wavelet_structure_matrix_huffman<AlphabetType>(std::move(codes));
+    }
 
     const uint64_t levels = codes.levels();
 
@@ -150,7 +150,7 @@ public:
       std::move(text1.begin(), text1.end(), std::back_inserter(text0));
       local_text.swap(text0);
     }
-    return wavelet_structure(std::move(_bv), std::move(_zeros));
+    return wavelet_structure_matrix_huffman<AlphabetType>(std::move(_bv), std::move(_zeros), std::move(codes));
   }
 }; // class wx_huff_naive<MATRIX>
 

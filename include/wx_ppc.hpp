@@ -29,8 +29,12 @@ public:
   static wavelet_structure compute(const InputType& text, const uint64_t size,
     const uint64_t levels) {
 
-    if (size == 0) {
-      return wavelet_structure();
+    if(size == 0) {
+      if (ctx_t::compute_zeros) {
+        return wavelet_structure_matrix();
+      } else {
+        return wavelet_structure_tree();
+      }
     }
 
     const auto rho = rho_dispatch<is_tree>::create(levels);
@@ -47,7 +51,7 @@ public:
       const uint64_t omp_size = uint64_t(omp_get_num_threads());
       const uint64_t max_char = (1 << levels);
 
-      auto* const initial_hist_ptr = 
+      auto* const initial_hist_ptr =
         initial_hist.data() + (max_char * omp_rank);
 
       #pragma omp for
@@ -136,9 +140,9 @@ public:
       }
     }
     if (ctx_t::compute_zeros) {
-      return wavelet_structure(std::move(ctx.bv()), std::move(zeros));
+      return wavelet_structure_matrix(std::move(ctx.bv()), std::move(zeros));
     } else {
-      return wavelet_structure(std::move(ctx.bv()));
+      return wavelet_structure_tree(std::move(ctx.bv()));
     }
   }
 }; // class wx_ppc

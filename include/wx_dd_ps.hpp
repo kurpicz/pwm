@@ -34,7 +34,13 @@ public:
   static wavelet_structure compute(const InputType& global_text,
     const uint64_t size, const uint64_t levels) {
 
-    if(size == 0) { return wavelet_structure(); }
+    if(size == 0) {
+      if (ctx_t::compute_zeros) {
+        return wavelet_structure_matrix();
+      } else {
+        return wavelet_structure_tree();
+      }
+    }
 
     const uint64_t shards = omp_get_max_threads();
 
@@ -72,7 +78,7 @@ public:
       ctx.discard_non_merge_data();
     }
     drop_me(std::move(global_sorted_text));
-    
+
     auto _bv = merge_bit_vectors(size, levels, shards, ctxs, rho);
 
     if (ctx_t::compute_zeros) {
@@ -85,9 +91,9 @@ public:
         }
       }
 
-      return wavelet_structure(std::move(_bv), std::move(_zeros));
+      return wavelet_structure_matrix(std::move(_bv), std::move(_zeros));
     } else {
-      return wavelet_structure(std::move(_bv));
+      return wavelet_structure_tree(std::move(_bv));
     }
   }
 }; // class wx_dd_ps

@@ -12,6 +12,8 @@
 #include "benchmark/algorithm.hpp"
 #include "util/alphabet_util.hpp"
 #include "util/file_util.hpp"
+#include "util/print.hpp"
+#include "util/structure_decode.hpp"
 
 #ifdef MALLOC_COUNT
 #include "benchmark/malloc_count.h"
@@ -65,7 +67,16 @@ int32_t main(int32_t argc, char const* argv[]) {
   TCLAP::SwitchArg memory_arg("", "memory",
     "Compute peak memory during construction.", false);
   cmd.add(memory_arg);
+  TCLAP::SwitchArg check_arg("c", "check",
+    "Check the constructed wavelet structure for validity.", false);
+  cmd.add(check_arg);
+  TCLAP::SwitchArg print_arg("d", "debug_print",
+    "Output the bit vectors in a human readable format to stdout.", false);
+  cmd.add(print_arg);
+
   cmd.parse( argc, argv );
+
+  int returncode = 0;
 
   auto& algo_list = algorithm_list::get_algorithm_list();
   if (list_all_algorithms.getValue()) {
@@ -84,6 +95,8 @@ int32_t main(int32_t argc, char const* argv[]) {
   const bool no_trees = no_trees_arg.getValue();
   const bool no_matrices = no_matrices_arg.getValue();
   const bool memory = memory_arg.getValue();
+  const bool debug_print = print_arg.getValue();
+  const bool check = check_arg.getValue();
 
   for (const auto& path : file_paths) {
     std::cout << std::endl << "Text: " << path << std::endl;
@@ -129,8 +142,8 @@ int32_t main(int32_t argc, char const* argv[]) {
     }
     std::cout << "Characters: " << text_size << std::endl;
 #ifdef MALLOC_COUNT
-    std::cout << "Memory peak text: " << malloc_count_peak() << ", MB: "
-              << malloc_count_peak() / (1024 * 1024) << std::endl;
+    std::cout << "Memory peak text: " << malloc_count_peak() << " B, "
+              << malloc_count_peak() / (1024 * 1024) << " MiB" << std::endl;
 #endif // MALLOC_COUNT
     for (const auto& a : algo_list) {
       if (filter == "" || (a->name().find(filter) != std::string::npos)) {
@@ -143,8 +156,11 @@ int32_t main(int32_t argc, char const* argv[]) {
 #ifdef MALLOC_COUNT
                   malloc_count_reset_peak();
                   a->memory_peak(txt_prt, text_size, levels);
-                  std::cout << malloc_count_peak() << ", MB: "
-                            << malloc_count_peak() / (1024 * 1024) << std::endl;
+                  std::cout << "Memory peak algo: "
+                            << malloc_count_peak() << " B, "
+                            << malloc_count_peak() / (1024 * 1024)
+                            << " MiB"
+                            << std::endl;
 #else
                   std::cout << "Memory measurement is NOT enabled."
                             << std::endl;
@@ -153,6 +169,112 @@ int32_t main(int32_t argc, char const* argv[]) {
                   std::cout << a->median_time(
                     txt_prt, text_size, levels, nr_runs) << std::endl;
                 }
+                if (debug_print || check) {
+                  auto structure = a->compute_bitvector(txt_prt, text_size, levels);
+                  if (debug_print) {
+                    print_structure(std::cout, structure);
+                  }
+                  if (check) {
+                    if (word_width != 1) {
+                      std::cout << "WARNING: Can only check texts over 1-byte alphabets\n";
+                    } else {
+                      construction_algorithm const* naive = nullptr;
+                      if ((a->is_tree()) && !(a->is_huffman_shaped())) {
+                        naive = algo_list.filtered([](auto e) {
+                            return e->name() == "wt_naive";
+                        }).at(0);
+                      }
+                      if (!(a->is_tree()) && !(a->is_huffman_shaped())) {
+                        naive = algo_list.filtered([](auto e) {
+                            return e->name() == "wm_naive";
+                        }).at(0);
+                      }
+                      if ((a->is_tree()) && (a->is_huffman_shaped())) {
+                        naive = algo_list.filtered([](auto e) {
+                            return e->name() == "huff_wt_naive";
+                        }).at(0);
+                      }
+                      if (!(a->is_tree()) && (a->is_huffman_shaped())) {
+                        naive = algo_list.filtered([](auto e) {
+                            return e->name() == "huff_wm_naive";
+                        }).at(0);
+                      }
+                      assert(naive != nullptr);
+                      auto naive_structure = naive->compute_bitvector(txt_prt, text_size, levels);
+                      bool err_trigger = false;
+                      auto check_err = [&](bool cond, auto const& msg) {
+                        if (!cond) {
+                          std::cout << "ERROR: " << msg << "\n";
+                          err_trigger = true;
+                        }
+                        return cond;
+                      };
+
+                      if (check_err(structure.levels() == naive_structure.levels(),
+                                    "structures have different level sizes")) {
+                        if (!a->is_tree()) {
+                          check_err(structure.zeros() == naive_structure.zeros(),
+                                    "zeros arrays differ");
+                        }
+                        auto& sbvs = structure.bvs();
+                        auto& nbvs = naive_structure.bvs();
+                        for (size_t l = 0; l < structure.levels(); l++) {
+                          auto sbs = sbvs.level_bit_size(l);
+                          auto nbs = nbvs.level_bit_size(l);
+                          if(check_err(sbs == nbs,
+                                       std::string("bit size differs on level ")
+                                       + std::to_string(l))) {
+                            for (uint64_t bi = 0; bi < sbs; bi++) {
+                              if(!check_err(bit_at(sbvs[l], bi) == bit_at(nbvs[l], bi),
+                                 std::string("bit ")
+                                 + std::to_string(bi)
+                                 + " differs on level "
+                                 + std::to_string(l))) {
+                                break;
+                              }
+                            }
+                          }
+                        }
+                      }
+
+                      if (err_trigger) {
+                        returncode = -2;
+                      } else {
+                        // std::cout << "Output structurally OK\n";
+                      }
+
+                      if (err_trigger) {
+                        if (!debug_print) {
+                          std::cout << "Output:\n";
+                          print_structure(std::cout, structure);
+                        }
+                        std::cout << "Naive result as comparison:\n";
+                        print_structure(std::cout, naive_structure);
+                      }
+
+                      auto pvec = [](auto const& v) {
+                        std::cout << "[";
+                        for (auto e : v) {
+                            std::cout << uint64_t(e) << ", ";
+                        }
+                        std::cout << "]\n";
+                      };
+
+                      std::string decoded = decode_structure(structure);
+                      if (std::equal(text_uint8.begin(), text_uint8.end(),
+                                     decoded.begin(), decoded.end())) {
+                        // std::cout << "Output decoded OK\n";
+                      } else {
+                        std::cout << "ERROR: Decoded output not equal to input!\n";
+                        std::cout << "Input:\n";
+                        pvec(text_uint8);
+                        std::cout << "Decoded:\n";
+                        pvec(decoded);
+                      }
+                    }
+                    std::cout << "\n";
+                  }
+                }
               }
             }
           }
@@ -160,7 +282,7 @@ int32_t main(int32_t argc, char const* argv[]) {
       }
     }
   }
-  return 0;
+  return returncode;
 }
 
 /******************************************************************************/

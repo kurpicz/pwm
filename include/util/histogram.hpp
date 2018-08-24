@@ -18,6 +18,8 @@ struct histogram_entry {
   const AlphabetType symbol;
   uint64_t frequency;
 
+  histogram_entry(AlphabetType s, uint64_t f): symbol(s), frequency(f) {}
+
   friend std::ostream& operator <<(std::ostream& os,
     const histogram_entry& he) {
 
@@ -45,8 +47,7 @@ public:
       }
       for (uint64_t pos = 0; pos < hist.size(); ++pos) {
         if (hist[pos] > 0) {
-          data_.emplace_back(
-            histogram_entry<AlphabetType> { AlphabetType(pos), hist[pos] });
+          data_.emplace_back(AlphabetType(pos), hist[pos]);
         }
       }
     } else {
@@ -62,8 +63,7 @@ public:
         }
       }
       for (const auto& symbol : symbol_list) {
-        data_.emplace_back(
-          histogram_entry<AlphabetType> { symbol.first, symbol.second });
+        data_.emplace_back(symbol.first, symbol.second);
       }
     }
   }

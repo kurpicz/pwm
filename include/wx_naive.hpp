@@ -10,6 +10,7 @@
 
 #include <cstring>
 
+#include "util/bit_vectors.hpp"
 #include "util/wavelet_structure.hpp"
 
 template <typename AlphabetType, bool is_tree_>
@@ -28,7 +29,7 @@ public:
     const uint64_t size, const uint64_t levels) {
 
     if(size == 0) {
-      return wavelet_structure();
+      return wavelet_structure_tree();
     }
 
     auto _bv = bit_vectors(levels, size);
@@ -73,7 +74,7 @@ public:
         }
       }
     }
-    return wavelet_structure(std::move(_bv));
+    return wavelet_structure_tree(std::move(_bv));
   }
 }; // class wt_naive
 
@@ -90,7 +91,7 @@ public:
     const uint64_t size, const uint64_t levels) {
 
     if(size == 0) {
-      return wavelet_structure();
+      return wavelet_structure_matrix();
     }
 
     auto _bv = bit_vectors(levels, size);
@@ -130,7 +131,7 @@ public:
       std::vector<AlphabetType> text1;
       text1.reserve(size);
       // Scan the text and separate characters that inserted 0s and 1s
-      for (uint64_t i = 0; i < local_text.size(); ++i) {
+      for (uint64_t i = 0; i < size; ++i) {
         if ((local_text[i] >> (levels - (level + 1))) & 1ULL) {
           text1.push_back(local_text[i]);
         } else {
@@ -148,7 +149,7 @@ public:
         }
       }
     }
-    return wavelet_structure(std::move(_bv), std::move(_zeros));
+    return wavelet_structure_matrix(std::move(_bv), std::move(_zeros));
   }
 }; // class wx_naive<MATRIX>
 

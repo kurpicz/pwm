@@ -41,6 +41,17 @@ public:
   inline auto begin() { return algorithms_.cbegin(); }
   inline auto end() { return algorithms_.cend(); }
 
+  template<typename filter_function>
+  inline auto filtered(filter_function f) {
+    std::vector<construction_algorithm const*> r;
+    for (auto e : *this) {
+      if (f(e)) {
+        r.push_back(e);
+      }
+    }
+    return r;
+  }
+
 private:
   algorithm_list() { }
 
