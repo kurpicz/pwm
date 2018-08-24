@@ -46,9 +46,7 @@ public:
       }
 
       // The number of 0s is the position of the first 1 in the previous level
-      if (compute_zeros) {
-        zeros_[level - 1] = borders_[level][1];
-      }
+      if constexpr (compute_zeros) { zeros_[level - 1] = borders_[level][1]; }
     }
   }
 
