@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include "bit_vectors.hpp"
+#include "bit_vector/bit_vectors.hpp"
 #include "flat_two_dim_array.hpp"
 #include "permutation.hpp"
 

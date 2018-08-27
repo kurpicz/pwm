@@ -10,7 +10,7 @@
 
 #include <algorithm>
 
-#include "huffman/huff_bit_vectors.hpp"
+#include "bit_vector/bit_vectors.hpp"
 #include "huffman/huff_codes.hpp"
 #include "util/border_hist_array.hpp"
 #include "util/debug.hpp"

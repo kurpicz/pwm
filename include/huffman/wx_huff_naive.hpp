@@ -10,7 +10,7 @@
 
 #include <cstring>
 
-#include "huff_bit_vectors.hpp"
+#include "bit_vector/bit_vectors.hpp"
 #include "huff_codes.hpp"
 #include "util/wavelet_structure.hpp"
 

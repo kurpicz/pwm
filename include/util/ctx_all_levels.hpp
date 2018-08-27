@@ -9,8 +9,8 @@
 
 #pragma once
 
+#include "bit_vector/bit_vectors.hpp"
 #include "permutation.hpp"
-#include "bit_vectors.hpp"
 #include "border_hist_array.hpp"
 
 // TODO: WM/WT abstract that selects zeros and rho

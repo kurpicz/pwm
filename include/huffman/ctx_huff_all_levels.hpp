@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "huff_bit_vectors.hpp"
+#include "bit_vector/bit_vectors.hpp"
 #include "huff_permutation.hpp"
 #include "util/border_hist_array.hpp"
 
