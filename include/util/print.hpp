@@ -14,7 +14,7 @@
 #include "construction/wavelet_structure.hpp"
 #include "util/debug.hpp"
 
-[[gnu::unused]] // TODO: C++17 [[maybe_unused]]
+[[maybe_unused]]
 static void print_structure(std::ostream& out, wavelet_structure const& structure) {
   const base_bit_vectors& bv = structure.bvs();
   const std::vector<uint64_t>& zeros = structure.zeros();

@@ -56,11 +56,8 @@ public:
         const AlphabetType cur_char = text[pos];
         max_symbol_ = std::max(max_symbol_, cur_char);
         auto result = symbol_list.find(cur_char);
-        if (result == symbol_list.end()) {
-          symbol_list.emplace(cur_char, 1);
-        } else {
-          ++(result->second);
-        }
+        if (result == symbol_list.end()) { symbol_list.emplace(cur_char, 1); }
+        else { ++(result->second); }
       }
       for (const auto& symbol : symbol_list) {
         data_.emplace_back(symbol.first, symbol.second);

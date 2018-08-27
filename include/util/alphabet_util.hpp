@@ -16,13 +16,11 @@
 template <typename AlphabetType>
 static uint64_t reduce_alphabet(std::vector<AlphabetType>& text) {
   uint64_t max_char = uint64_t(0);
-  if (std::is_same<AlphabetType, uint8_t>::value) { // TODO: C++17 if constexpr
+  if constexpr (std::is_same<AlphabetType, uint8_t>::value) {
     std::array<uint64_t, std::numeric_limits<uint8_t>::max()> occ;
     occ.fill(0);
     for (auto& c : text) {
-      if (occ[c] == 0) {
-        occ[c] = ++max_char;
-      }
+      if (occ[c] == 0) { occ[c] = ++max_char; }
       c = occ[c] - 1;
     }
     --max_char;
@@ -42,7 +40,7 @@ static uint64_t reduce_alphabet(std::vector<AlphabetType>& text) {
   return max_char;
 }
 
-[[gnu::unused]] // TODO: C++17 [[maybe_unused]] 
+[[maybe_unused]]
 static uint64_t levels_for_max_char(uint64_t max_char) {
   uint64_t levels = 0;
   while (max_char) {
