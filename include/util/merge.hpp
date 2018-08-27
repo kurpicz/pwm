@@ -12,7 +12,7 @@
 #include <climits>
 #include <omp.h>
 
-#include "bit_vector/bit_vectors.hpp"
+#include "arrays/bit_vectors.hpp"
 #include "common.hpp"
 
 template<typename WordType>

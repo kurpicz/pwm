@@ -1,5 +1,5 @@
 /*******************************************************************************
- * include/bit_vectors/bit_vectors.hpp
+ * include/arrays/bit_vectors.hpp
  *
  * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
  * Copyright (C) 2017 Marvin Löbel <loebel.marvin@gmail.com>
@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include "util/flat_two_dim_array.hpp"
+#include "flat_two_dim_array.hpp"
 
 struct bit_vector_sizes {
   static uint64_t level_size(const uint64_t, const uint64_t size) {
@@ -28,7 +28,8 @@ struct huff_bit_vectors_sizes {
   static constexpr bool is_bit_vector = true;
 }; // struct huff_bit_vectors_sizes
 
-using huff_bit_vectors = flat_two_dim_array<uint64_t, huff_bit_vectors_sizes>;
+using base_bit_vectors = base_flat_two_dim_array<uint64_t>;
 using bit_vectors = flat_two_dim_array<uint64_t, bit_vector_sizes>;
+using huff_bit_vectors = flat_two_dim_array<uint64_t, huff_bit_vectors_sizes>;
 
 /******************************************************************************/

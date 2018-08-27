@@ -10,7 +10,7 @@
 
 #include <cstring>
 
-#include "bit_vector/bit_vectors.hpp"
+#include "arrays/bit_vectors.hpp"
 #include "util/wavelet_structure.hpp"
 
 template <typename AlphabetType, bool is_tree_>

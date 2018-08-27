@@ -1,5 +1,5 @@
 /*******************************************************************************
- * include/util/flat_two_dim_array.hpp
+ * include/arrays/flat_two_dim_array.hpp
  *
  * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
  * Copyright (C) 2017 Marvin Löbel <loebel.marvin@gmail.com>
@@ -116,7 +116,7 @@ public:
       }
     }
     data_[0] = new IndexType[data_size];
-    memset(data_.at(0), 0, data_size * sizeof(IndexType));
+    memset(data_[0], 0, data_size * sizeof(IndexType));
     for (uint64_t level = 1; level < data_.size(); ++level) {
       const uint64_t level_size =
         size_function::level_size(level - 1, size_f_args...);

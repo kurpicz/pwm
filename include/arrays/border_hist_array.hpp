@@ -1,5 +1,5 @@
 /*******************************************************************************
- * include/util/border_hist_array.hpp
+ * include/arrays/border_hist_array.hpp
  *
  * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
  * Copyright (C) 2017 Marvin Löbel <loebel.marvin@gmail.com>
@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include "common.hpp"
+#include "util/common.hpp"
 #include "flat_two_dim_array.hpp"
 
 struct border_hist_level_size {

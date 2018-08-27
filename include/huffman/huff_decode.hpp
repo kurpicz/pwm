@@ -10,9 +10,9 @@
 
 #include <algorithm>
 
-#include "bit_vector/bit_vectors.hpp"
+#include "arrays/bit_vectors.hpp"
+#include "arrays/border_hist_array.hpp"
 #include "huffman/huff_codes.hpp"
-#include "util/border_hist_array.hpp"
 #include "util/debug.hpp"
 #include "util/wavelet_structure.hpp"
 

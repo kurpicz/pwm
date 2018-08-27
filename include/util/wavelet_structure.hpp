@@ -13,10 +13,8 @@
 #include <type_traits>
 #include <typeinfo>
 
-#include "flat_two_dim_array.hpp"
+#include "arrays/bit_vectors.hpp"
 #include "huffman/huff_codes.hpp"
-
-using base_bit_vectors = base_flat_two_dim_array<uint64_t>;
 
 class wavelet_structure;
 
