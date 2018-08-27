@@ -15,7 +15,16 @@ Using these ideas, we have implemented:
 In addition, there are also a naive construction algorithms (*wx_naive*).
 Replace _wx_ with either _wt_ or _wm_ for the corresponding WT- or WM-construction algorithm.
 
-A detailed description and benchmarks of the implemented algorithms can be found in this [arXiv preprint](https://arxiv.org/abs/1702.07578).
+A detailed description and benchmarks of the implemented algorithms can be found [here](https://doi.org/10.1137/1.9781611975055.2) ([arXiv preprint](https://arxiv.org/abs/1702.07578)).
+
+    @inproceedings{Fischer2018WT,
+      author    = {Johannes Fischer and Florian Kurpicz and Marvin L{\"{o}}bel},
+      title     = {Simple, Fast and Lightweight Parallel Wavelet Tree Construction},
+      booktitle = {Proceedings of the 20th Workshop on Algorithm Engineering and Experiments ({ALENEX})},
+      pages     = {9--20},
+      publisher = {{SIAM}},
+      year      = {2018}
+    }
 
 ## How to get it?
 First clone this repository, then build all executables.
