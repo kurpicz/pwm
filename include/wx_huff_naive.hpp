@@ -1,5 +1,5 @@
 /*******************************************************************************
- * include/huffman/wx_huff_naive.hpp
+ * include/wx_huff_naive.hpp
  *
  * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
  *
@@ -12,7 +12,7 @@
 
 #include "arrays/bit_vectors.hpp"
 #include "construction/wavelet_structure.hpp"
-#include "huff_codes.hpp"
+#include "huffman/huff_codes.hpp"
 
 template <typename AlphabetType, bool is_tree>
 class wx_huff_naive;

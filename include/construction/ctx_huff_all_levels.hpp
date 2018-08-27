@@ -1,5 +1,5 @@
 /*******************************************************************************
- * include/huffman/ctx_huff_all_levels.hpp
+ * include/construction/ctx_huff_all_levels.hpp
  *
  * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
  *
@@ -9,7 +9,7 @@
 #pragma once
 
 #include "arrays/bit_vectors.hpp"
-#include "huff_permutation.hpp"
+#include "huffman/huff_permutation.hpp"
 #include "util/border_hist_array.hpp"
 
 /// Keep calculated information for individual levels around

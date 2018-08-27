@@ -7,7 +7,7 @@
  ******************************************************************************/
 
 #include "benchmark/algorithm.hpp"
-#include "huffman/wx_huff_naive.hpp"
+#include "wx_huff_naive.hpp"
 #include "wx_naive.hpp"
 
 using wm_naive_8 = wx_naive<uint8_t, false>;
