@@ -11,7 +11,7 @@
 #include <fstream>
 #include <vector>
 
-#include "type_for_bytes.hpp"
+#include "util/type_for_bytes.hpp"
 
 template <uint8_t BytesPerWord>
 static std::vector<typename type_for_bytes<BytesPerWord>::type> file_to_vector(

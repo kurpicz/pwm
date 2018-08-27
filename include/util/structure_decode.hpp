@@ -11,9 +11,9 @@
 #include <iostream>
 #include <string>
 
-#include "util/wavelet_structure.hpp"
-#include "util/decode.hpp"
+#include "construction/wavelet_structure.hpp"
 #include "huffman/huff_decode.hpp"
+#include "util/decode.hpp"
 
 [[gnu::unused]] // TODO: C++17 [[maybe_unused]]
 static std::string decode_structure(const wavelet_structure& structure) {

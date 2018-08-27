@@ -18,7 +18,7 @@
 
 #include "util/common.hpp"
 #include "util/type_for_bytes.hpp"
-#include "util/wavelet_structure.hpp"
+#include "construction/wavelet_structure.hpp"
 
 class construction_algorithm;
 

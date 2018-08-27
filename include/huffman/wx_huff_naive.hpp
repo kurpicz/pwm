@@ -11,8 +11,8 @@
 #include <cstring>
 
 #include "arrays/bit_vectors.hpp"
+#include "construction/wavelet_structure.hpp"
 #include "huff_codes.hpp"
-#include "util/wavelet_structure.hpp"
 
 template <typename AlphabetType, bool is_tree>
 class wx_huff_naive;

@@ -15,7 +15,7 @@
 #include <type_traits>
 #include <climits>
 
-#include "permutation.hpp"
+#include "util/permutation.hpp"
 
 constexpr uint64_t word_size(uint64_t size) {
   return (size + 63ULL) >> 6;

@@ -11,7 +11,7 @@
 #include <cstring>
 
 #include "arrays/bit_vectors.hpp"
-#include "util/wavelet_structure.hpp"
+#include "construction/wavelet_structure.hpp"
 
 template <typename AlphabetType, bool is_tree_>
 class wx_naive;

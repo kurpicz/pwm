@@ -10,9 +10,9 @@
 
 #include <vector>
 
-#include "util/ctx_single_level.hpp"
-#include "util/wavelet_structure.hpp"
-#include "util/ps.hpp"
+#include "construction/ctx_single_level.hpp"
+#include "construction/wavelet_structure.hpp"
+#include "construction/ps.hpp"
 
 template <typename AlphabetType, bool is_tree_>
 class wx_ps {

@@ -11,8 +11,8 @@
 #include <omp.h>
 
 #include "util/common.hpp"
-#include "util/ctx_sliced_single_level.hpp"
-#include "util/wavelet_structure.hpp"
+#include "construction/ctx_sliced_single_level.hpp"
+#include "construction/wavelet_structure.hpp"
 
 template <typename AlphabetType, bool is_tree_>
 class wx_pps {

@@ -8,9 +8,9 @@
 
 #pragma once
 
-#include "util/ctx_compute_borders.hpp"
-#include "util/pc_ss.hpp"
-#include "util/wavelet_structure.hpp"
+#include "construction/ctx_compute_borders.hpp"
+#include "construction/pc_ss.hpp"
+#include "construction/wavelet_structure.hpp"
 
 template <typename AlphabteType, bool is_tree_>
 class wx_ppc_ss {

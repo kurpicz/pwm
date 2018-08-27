@@ -5,6 +5,7 @@
  *
  * All rights reserved. Published under the BSD-2 license in the LICENSE file.
  ******************************************************************************/
+
 #pragma once
 
 template <typename AlphabetType, typename ContextType>

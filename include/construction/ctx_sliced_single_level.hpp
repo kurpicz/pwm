@@ -11,7 +11,7 @@
 
 #include "arrays/bit_vectors.hpp"
 #include "arrays/helper_array.hpp"
-#include "permutation.hpp"
+#include "util/permutation.hpp"
 
 // TODO: WM/WT abstract that selects zeros and rho
 

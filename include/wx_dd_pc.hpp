@@ -13,10 +13,10 @@
 #include <omp.h>
 #include <vector>
 
-#include "util/ctx_all_levels.hpp"
-#include "util/merge.hpp"
-#include "util/pc.hpp"
-#include "util/wavelet_structure.hpp"
+#include "construction/ctx_all_levels.hpp"
+#include "construction/merge.hpp"
+#include "construction/pc.hpp"
+#include "construction/wavelet_structure.hpp"
 
 template <typename AlphabetType, bool is_tree_>
 class wx_dd_pc {

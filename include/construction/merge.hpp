@@ -13,7 +13,7 @@
 #include <omp.h>
 
 #include "arrays/bit_vectors.hpp"
-#include "common.hpp"
+#include "util/common.hpp"
 
 template<typename WordType>
 void copy_bits(WordType* const dst, WordType const* const src,

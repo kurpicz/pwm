@@ -11,7 +11,7 @@
 #include <iostream>
 #include <string>
 
-#include "util/wavelet_structure.hpp"
+#include "construction/wavelet_structure.hpp"
 
 template<typename WordType, typename bv_t>
 std::string bit_string(bv_t const& bv, uint64_t const size) {

@@ -11,7 +11,7 @@
 #include <iostream>
 #include <string>
 
-#include "util/wavelet_structure.hpp"
+#include "construction/wavelet_structure.hpp"
 #include "util/debug.hpp"
 
 [[gnu::unused]] // TODO: C++17 [[maybe_unused]]
