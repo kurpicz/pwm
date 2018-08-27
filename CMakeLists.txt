@@ -20,12 +20,6 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release")
 endif(NOT CMAKE_BUILD_TYPE)
 
-# Check compiler version
-if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" AND
-   ${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS "5.4")
-  message(FATAL_ERROR "g++ version 5.4 or greater required!")
-endif()
-
 set(CXX_STANDARD c++17)
 
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
@@ -51,7 +45,6 @@ set(CMAKE_CXX_FLAGS_RELEASE
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -ggdb ")
 
 option(ENABLE_MALLOC_COUNT "Enable memory measurement." OFF)
-
 
 if( NOT EXISTS "${CMAKE_SOURCE_DIR}/external/googletest/.git" )
   execute_process(COMMAND  git submodule update --init
