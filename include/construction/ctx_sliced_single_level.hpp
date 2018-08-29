@@ -52,7 +52,7 @@ public:
   }
 
   uint64_t rho (uint64_t /*level*/, uint64_t const index) {
-    if (!is_tree) { // TODO: if constexpr C++17
+    if constexpr (!is_tree) {
       return bit_reverse_[index];
     } else {
       return index;

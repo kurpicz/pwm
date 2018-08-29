@@ -161,7 +161,7 @@ private:
     level_sizes_ = std::vector<uint64_t>(
       code_pairs_[code_length_order.back()].code_length, 0);
 
-    if (!is_tree) { // TODO: C++17 (if constexpr)
+    if constexpr (!is_tree) {
       uint64_t code_nr = 0;
       uint64_t cur_length = 1;
       std::vector<uint64_t> code_words { 0ULL, 1ULL };
