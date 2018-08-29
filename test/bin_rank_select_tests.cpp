@@ -11,10 +11,10 @@
 #include <random>
 
 #include "arrays/bit_vectors.hpp"
-#include "queries/bin_rank_select_popcnt.hpp"
+#include "queries/bin_rank_popcnt.hpp"
 #include "util/common.hpp" 
 
-TEST(bin_rank_select_popcnt, rank) {
+TEST(bin_rank_popcnt, rank) {
   const size_t bit_vector_size = 1024*1024*128;
 
   bit_vectors bv(1, bit_vector_size);
@@ -25,7 +25,7 @@ TEST(bin_rank_select_popcnt, rank) {
     *(bv[0] + i) = dis(gen);
   }
 
-  bin_rank_select_popcnt rank_support(bv[0], word_size(bit_vector_size));
+  bin_rank_popcnt rank_support(bv[0], word_size(bit_vector_size));
 
   size_t one_count = 0;
   for (size_t i = 0; i < bit_vector_size; ++i) {

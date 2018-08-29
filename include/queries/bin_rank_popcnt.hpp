@@ -1,5 +1,5 @@
 /*******************************************************************************
- * include/queries/bin_rank_select_popcnt.hpp
+ * include/queries/bin_rank_popcnt.hpp
  *
  * Copyright (C) 2018 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
  *
@@ -25,10 +25,10 @@
 
 #include <limits>
 
-class bin_rank_select_popcnt {
+class bin_rank_popcnt {
 
 public:
-  bin_rank_select_popcnt(uint64_t const * data, const size_t size)
+  bin_rank_popcnt(uint64_t const * data, const size_t size)
   : l0_(size / upper_block_cover_, 0ULL), l12_(size / l12_block_cover_, 0ULL),
     data_(data), size_(size) {
 
@@ -142,6 +142,6 @@ private:
   std::vector<uint64_t> l12_;
   uint64_t const * const data_;
   const size_t size_;
-}; // class bin_rank_select_popcnt
+}; // class bin_rank_popcnt
 
 /******************************************************************************/
