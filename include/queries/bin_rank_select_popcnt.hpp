@@ -71,7 +71,6 @@ public:
 
     // Find L1/L2 block
     size_t l1_pos = remaining_bits / l12_block_bit_size_;
-    // std::cout << "rank1: after L1 pos is " << l1_pos << std::endl;
     remaining_bits -= (l1_pos * l12_block_bit_size_);
     const uint64_t l12_block = l12_[l1_pos];
     result += get_l1_entry(l12_block);
@@ -121,7 +120,8 @@ private:
 
   inline uint32_t get_l2_entry(const uint64_t word,
     const size_t entry_pos) const {
-    return (word & ((~0ULL) >> (32 + (entry_pos * 10)))) >> (22 - (entry_pos * 10));
+    return (word & ((~0ULL) >> (32 + (entry_pos * 10)))) >>
+      (22 - (entry_pos * 10));
   }
 
 private:

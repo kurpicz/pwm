@@ -12,9 +12,9 @@
 
 #include "arrays/bit_vectors.hpp"
 #include "queries/bin_rank_select_popcnt.hpp"
-#include "util/common.hpp"
+#include "util/common.hpp" 
 
-TEST(bin_rank_select_popcnt, construction) {
+TEST(bin_rank_select_popcnt, rank) {
   const size_t bit_vector_size = 1024*1024*128;
 
   bit_vectors bv(1, bit_vector_size);
