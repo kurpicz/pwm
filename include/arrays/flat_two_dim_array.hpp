@@ -17,6 +17,8 @@
 template <typename IndexType>
 class base_flat_two_dim_array {
 public:
+  using index_type = IndexType;
+  
   base_flat_two_dim_array() = default;
 
   base_flat_two_dim_array(const uint64_t levels)
