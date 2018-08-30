@@ -24,6 +24,7 @@
 #pragma once
 
 #include <limits>
+#include <vector>
 
 class bin_rank_popcnt {
 
@@ -60,6 +61,12 @@ public:
       }
     }
   }
+
+  bin_rank_popcnt(bin_rank_popcnt const&) = delete;
+  bin_rank_popcnt& operator =(bin_rank_popcnt const&) = delete;
+  bin_rank_popcnt(bin_rank_popcnt&&) = default;
+  bin_rank_popcnt& operator =(bin_rank_popcnt&&) = default;
+
 
   inline size_t rank1(const size_t index) const {
     size_t result = 0;
