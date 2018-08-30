@@ -30,11 +30,8 @@ public:
     const uint64_t levels) {
 
     if(size == 0) {
-      if (ctx_t::compute_zeros) {
-        return wavelet_structure_matrix();
-      } else {
-        return wavelet_structure_tree();
-      }
+      if constexpr (ctx_t::compute_zeros) { return wavelet_structure_matrix(); }
+      else { return wavelet_structure_tree(); }
     }
 
     auto ctx = ctx_t(size, levels);
@@ -42,11 +39,9 @@ public:
     auto sorted_text = std::vector<AlphabetType>(size);
     ps(text, size, levels, ctx, sorted_text.data());
 
-    if (ctx_t::compute_zeros)  {
+    if constexpr (ctx_t::compute_zeros)  {
       return wavelet_structure_matrix(std::move(ctx.bv()), std::move(ctx.zeros()));
-    } else {
-      return wavelet_structure_tree(std::move(ctx.bv()));
-    }
+    } else { return wavelet_structure_tree(std::move(ctx.bv())); }
   }
 }; // class wx_ps
 

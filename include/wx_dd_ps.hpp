@@ -35,11 +35,8 @@ public:
     const uint64_t size, const uint64_t levels) {
 
     if(size == 0) {
-      if (ctx_t::compute_zeros) {
-        return wavelet_structure_matrix();
-      } else {
-        return wavelet_structure_tree();
-      }
+      if constexpr (ctx_t::compute_zeros) { return wavelet_structure_matrix(); }
+      else { return wavelet_structure_tree(); }
     }
 
     const uint64_t shards = omp_get_max_threads();
@@ -81,7 +78,7 @@ public:
 
     auto _bv = merge_bit_vectors(size, levels, shards, ctxs, rho);
 
-    if (ctx_t::compute_zeros) {
+    if constexpr (ctx_t::compute_zeros) {
       auto _zeros = std::vector<uint64_t>(levels, 0);
 
       #pragma omp parallel for
@@ -92,9 +89,7 @@ public:
       }
 
       return wavelet_structure_matrix(std::move(_bv), std::move(_zeros));
-    } else {
-      return wavelet_structure_tree(std::move(_bv));
-    }
+    } else { return wavelet_structure_tree(std::move(_bv)); }
   }
 }; // class wx_dd_ps
 

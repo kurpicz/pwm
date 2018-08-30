@@ -30,11 +30,8 @@ public:
     const uint64_t levels) {
 
     if(size == 0) {
-      if (ctx_t::compute_zeros) {
-        return wavelet_structure_matrix();
-      } else {
-        return wavelet_structure_tree();
-      }
+      if (ctx_t::compute_zeros) { return wavelet_structure_matrix(); }
+      else { return wavelet_structure_tree(); }
     }
 
     const auto rho = rho_dispatch<is_tree>::create(levels);
@@ -88,7 +85,7 @@ public:
 
       #pragma omp single
       {
-        if (ctx_t::compute_zeros) {
+        if constexpr (ctx_t::compute_zeros) {
           // The number of 0s at the last level is the number of "even" characters
           for (uint64_t i = 0; i < max_char; i += 2) {
             zeros[levels - 1] += ctx.hist(levels, i);
@@ -127,9 +124,7 @@ public:
             borders[prev_rho] + ctx.hist(level, prev_rho);
         }
         // The number of 0s is the position of the first 1 in the previous level
-        if (ctx_t::compute_zeros) {
-          zeros[level - 1] = borders[1];
-        }
+        if constexpr (ctx_t::compute_zeros) { zeros[level - 1] = borders[1]; }
 
         // Now we insert the bits with respect to their bit prefixes
         for (uint64_t i = 0; i < size; ++i) {
@@ -139,11 +134,9 @@ public:
         }
       }
     }
-    if (ctx_t::compute_zeros) {
+    if constexpr (ctx_t::compute_zeros) {
       return wavelet_structure_matrix(std::move(ctx.bv()), std::move(zeros));
-    } else {
-      return wavelet_structure_tree(std::move(ctx.bv()));
-    }
+    } else { return wavelet_structure_tree(std::move(ctx.bv())); }
   }
 }; // class wx_ppc
 

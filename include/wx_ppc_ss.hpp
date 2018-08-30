@@ -28,11 +28,8 @@ public:
     const uint64_t levels) {
 
     if(size == 0) {
-      if (ctx_t::compute_zeros) {
-        return wavelet_structure_matrix();
-      } else {
-        return wavelet_structure_tree();
-      }
+      if constexpr (ctx_t::compute_zeros) { return wavelet_structure_matrix(); }
+      else { return wavelet_structure_tree(); }
     }
 
     const auto rho = rho_dispatch<is_tree>::create(levels);
@@ -77,11 +74,9 @@ public:
       }
     }
 
-    if (ctx_t::compute_zeros) {
+    if constexpr (ctx_t::compute_zeros) {
       return wavelet_structure_matrix(std::move(ctx.bv()), std::move(ctx.zeros()));
-    } else {
-      return wavelet_structure_tree(std::move(ctx.bv()));
-    }
+    } else { return wavelet_structure_tree(std::move(ctx.bv())); }
   }
 }; // class wx_ppc_ss
 

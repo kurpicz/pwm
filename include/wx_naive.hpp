@@ -28,9 +28,7 @@ public:
   static wavelet_structure compute(AlphabetType const* const text,
     const uint64_t size, const uint64_t levels) {
 
-    if(size == 0) {
-      return wavelet_structure_tree();
-    }
+    if(size == 0) { return wavelet_structure_tree(); }
 
     auto _bv = bit_vectors(levels, size);
     auto& bv = _bv.raw_data();

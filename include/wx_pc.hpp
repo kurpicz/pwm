@@ -30,23 +30,18 @@ public:
     const uint64_t levels) {
 
     if(size == 0) {
-      if (ctx_t::compute_zeros) {
-        return wavelet_structure_matrix();
-      } else {
-        return wavelet_structure_tree();
-      }
+      if constexpr (ctx_t::compute_zeros) { return wavelet_structure_matrix(); }
+      else { return wavelet_structure_tree(); }
     }
 
     auto ctx = ctx_t(size, levels);
 
     pc(text, size, levels, ctx);
 
-    if (ctx_t::compute_zeros) {
+    if constexpr (ctx_t::compute_zeros) {
       return wavelet_structure_matrix(
         std::move(ctx.bv()), std::move(ctx.zeros()));
-    } else {
-      return wavelet_structure_tree(std::move(ctx.bv()));
-    }
+    } else { return wavelet_structure_tree(std::move(ctx.bv())); }
   }
 }; // class wx_pc
 

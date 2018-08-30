@@ -1,3 +1,4 @@
+
 /*******************************************************************************
  * include/wx_pps.hpp
  *
@@ -30,11 +31,8 @@ public:
     const uint64_t levels) {
 
     if(size == 0) {
-      if (ctx_t::compute_zeros) {
-        return wavelet_structure_matrix();
-      } else {
-        return wavelet_structure_tree();
-      }
+      if constexpr (ctx_t::compute_zeros) { return wavelet_structure_matrix(); }
+      else { return wavelet_structure_tree(); }
     }
 
     ctx_t ctx;
@@ -118,7 +116,7 @@ public:
           }
           // The number of 0s is the position of the first 1 at the first
           // processor
-          if (ctx_t::compute_zeros) {
+          if constexpr (ctx_t::compute_zeros) {
             zeros[level - 1] = offsets[1ULL << prefix_shift];
           }
         }
@@ -179,11 +177,10 @@ public:
         }
       }
     }
-    if (ctx_t::compute_zeros) {
-      return wavelet_structure_matrix(std::move(ctx.bv()), std::move(ctx.zeros()));
-    } else {
-      return wavelet_structure_tree(std::move(ctx.bv()));
-    }
+    if constexpr (ctx_t::compute_zeros) {
+      return wavelet_structure_matrix(
+        std::move(ctx.bv()), std::move(ctx.zeros()));
+    } else { return wavelet_structure_tree(std::move(ctx.bv())); }
   }
 };
 
