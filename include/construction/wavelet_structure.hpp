@@ -65,7 +65,7 @@ public:
     : base_wavelet_structure(std::move(bvs), true, false) { }
 };
 
-class wavelet_structure_matrix: public base_wavelet_structure {
+class wavelet_structure_matrix : public base_wavelet_structure {
 public:
     wavelet_structure_matrix()
     : wavelet_structure_matrix(base_bit_vectors(), {}) {}
@@ -81,7 +81,7 @@ private:
 };
 
 template<typename AlphabetType>
-class wavelet_structure_tree_huffman: public base_wavelet_structure {
+class wavelet_structure_tree_huffman : public base_wavelet_structure {
 public:
     wavelet_structure_tree_huffman(canonical_huff_codes<AlphabetType, true>&& codes)
     : wavelet_structure_tree_huffman(base_bit_vectors(), std::move(codes)) { }
@@ -98,7 +98,7 @@ private:
 };
 
 template<typename AlphabetType>
-class wavelet_structure_matrix_huffman: public base_wavelet_structure {
+class wavelet_structure_matrix_huffman : public base_wavelet_structure {
 public:
     wavelet_structure_matrix_huffman(canonical_huff_codes<AlphabetType, false>&& codes)
     : wavelet_structure_matrix_huffman(base_bit_vectors(), {}, std::move(codes)) { }

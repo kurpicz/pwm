@@ -1,7 +1,7 @@
 /*******************************************************************************
  * test/bin_rank_select.cpp
  *
- * Copyright (C) 2019 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
+ * Copyright (C) 2018 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
  *
  * All rights reserved. Published under the BSD-2 license in the LICENSE file.
  ******************************************************************************/

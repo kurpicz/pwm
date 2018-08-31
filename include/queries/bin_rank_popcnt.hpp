@@ -27,10 +27,13 @@
 #include <vector>
 
 class bin_rank_popcnt {
+  template <uint8_t select_value>
+  friend class bin_select_popcnt;
 
 public:
   bin_rank_popcnt(uint64_t const * data, const size_t size)
-  : l0_(size / upper_block_cover_, 0ULL), l12_(size / l12_block_cover_, 0ULL),
+  : l0_((size / upper_block_cover_) + 1, 0ULL),
+    l12_((size / l12_block_cover_) + 1, 0ULL),
     data_(data), size_(size) {
 
     auto cur_pos = data;
@@ -40,7 +43,7 @@ public:
     size_t l12_pos = 0;
     uint32_t l1_entry = 0UL;
 
-    while (cur_pos != end_pos) {
+    while (cur_pos < end_pos) {
       l12_[l12_pos] = set_l1_entry(l12_[l12_pos], l1_entry);
       for (size_t i = 0; i < 3; ++i) {
         uint32_t l2_entry = 0UL;
@@ -60,13 +63,14 @@ public:
         l1_entry = 0UL;
       }
     }
+
   }
 
+  bin_rank_popcnt() = default;
   bin_rank_popcnt(bin_rank_popcnt const&) = delete;
   bin_rank_popcnt& operator =(bin_rank_popcnt const&) = delete;
   bin_rank_popcnt(bin_rank_popcnt&&) = default;
   bin_rank_popcnt& operator =(bin_rank_popcnt&&) = default;
-
 
   inline size_t rank1(const size_t index) const {
     size_t result = 0;
@@ -147,8 +151,8 @@ private:
 
   std::vector<uint64_t> l0_;
   std::vector<uint64_t> l12_;
-  uint64_t const * const data_;
-  const size_t size_;
+  uint64_t const * data_;
+  size_t size_;
 }; // class bin_rank_popcnt
 
 /******************************************************************************/
