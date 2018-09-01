@@ -32,7 +32,6 @@ public:
   // transform the output!
   inline uint64_t operator [](size_t index) const {
     if (ws_.is_tree() && !ws_.is_huffman_shaped()) {
-      std::cout << "TREE" << std::endl;
       return access_tree(0, index, 0, ws_.bvs().level_bit_size(0), 0ULL) ;}
     else if (!ws_.is_tree() && !ws_.is_huffman_shaped()) {
       return access_matrix(0, index, 0ULL);
@@ -50,7 +49,7 @@ private:
     size_t const right = rank_support_[level].rank0(end);
 
     word <<= 1;
-    if (bit_at(ws_.bvs()[level], index)) {
+    if (bit_at(ws_.bvs()[level], start + index)) {
       word |= 1ULL;
       size_t const offset = rank_support_[level].rank1(start + index);
       return access_tree(level + 1, offset - (start - left),

@@ -11,6 +11,7 @@
 
 #include "test/util.hpp"
 #include "util/alphabet_util.hpp"
+#include "util/print.hpp"
 
 #include "queries/access.hpp"
 
@@ -26,11 +27,7 @@ TEST(access_tests, access_wt) {
 
     access_support access(wt);
 
-    for (size_t i = 0; i < vec.size(); ++i) {
-      if (access[i] != vec[i]) {
-        std::cout << "MOP " << access[i] << " vs " << (uint64_t)vec[i] << std::endl;
-      }
-    }
+    for (size_t i = 0; i < vec.size(); ++i) { ASSERT_EQ(access[i], vec[i]); }
   });
 
 }

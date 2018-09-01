@@ -28,16 +28,14 @@ public:
   static wavelet_structure compute(AlphabetType const* const text,
     const uint64_t size, const uint64_t levels) {
 
-    if(size == 0) { return wavelet_structure_tree(); }
+    if (size == 0) { return wavelet_structure_tree(); }
 
     auto _bv = bit_vectors(levels, size);
     auto& bv = _bv.raw_data();
 
     // TODO: When not semi_xternal, this can/should be done way nicer.
     std::vector<AlphabetType> local_text(size);
-    for(size_t i = 0; i < size; i++) {
-        local_text[i] = text[i];
-    }
+    for(size_t i = 0; i < size; i++) { local_text[i] = text[i]; }
 
     for (uint64_t level = 0; level < levels; ++level) {
       uint32_t cur_pos = 0;
@@ -88,9 +86,7 @@ public:
   static wavelet_structure compute(AlphabetType const* const text,
     const uint64_t size, const uint64_t levels) {
 
-    if(size == 0) {
-      return wavelet_structure_matrix();
-    }
+    if (size == 0) { return wavelet_structure_matrix(); }
 
     auto _bv = bit_vectors(levels, size);
     auto _zeros = std::vector<size_t>(levels, 0);
@@ -98,9 +94,7 @@ public:
 
     // TODO: When not semi_xternal, this can/should be done way nicer.
     std::vector<AlphabetType> local_text(size);
-    for(size_t i = 0; i < size; i++) {
-        local_text[i] = text[i];
-    }
+    for (size_t i = 0; i < size; i++) { local_text[i] = text[i]; }
 
     // Construct each level top-down
     for (uint64_t level = 0; level < levels; ++level) {
@@ -132,9 +126,7 @@ public:
       for (uint64_t i = 0; i < size; ++i) {
         if ((local_text[i] >> (levels - (level + 1))) & 1ULL) {
           text1.push_back(local_text[i]);
-        } else {
-          text0.push_back(local_text[i]);
-        }
+        } else { text0.push_back(local_text[i]); }
       }
       _zeros[level] = text0.size();
       if (level + 1 < levels) {
