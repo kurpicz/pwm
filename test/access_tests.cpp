@@ -13,7 +13,7 @@
 #include "util/alphabet_util.hpp"
 #include "util/print.hpp"
 
-#include "queries/access.hpp"
+#include "queries/query_support.hpp"
 
 #include "wx_naive.hpp"
 
@@ -25,9 +25,9 @@ TEST(access_tests, access_wt) {
     auto wt = wx_naive<uint8_t, true>::compute(vec.data(),
       vec.size(), levels);
 
-    access_support access(wt);
+    query_support qs(wt);
 
-    for (size_t i = 0; i < vec.size(); ++i) { ASSERT_EQ(access[i], vec[i]); }
+    for (size_t i = 0; i < vec.size(); ++i) { ASSERT_EQ(qs.access(i), vec[i]); }
   });
 
 }
@@ -40,8 +40,8 @@ TEST(access_tests, access_wm) {
     auto wm = wx_naive<uint8_t, false>::compute(vec.data(),
       vec.size(), levels);
 
-    access_support access(wm);
-    for (size_t i = 0; i < vec.size(); ++i) { ASSERT_EQ(access[i], vec[i]); }
+    query_support qs(wm);
+    for (size_t i = 0; i < vec.size(); ++i) { ASSERT_EQ(qs.access(i), vec[i]); }
   });
 
 }

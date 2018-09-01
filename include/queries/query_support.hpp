@@ -1,5 +1,5 @@
 /*******************************************************************************
- * include/queries/access.hpp
+ * include/queries/query_support.hpp
  *
  * Copyright (C) 2018 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
  *
@@ -15,10 +15,10 @@
 #include "util/common.hpp"
 
 template <typename rank_support_type = bin_rank_popcnt>
-class access_support {
+class query_support {
 
 public:
-  access_support(wavelet_structure& ws) : ws_(ws), rank_support_(ws_.levels()) {
+  query_support(wavelet_structure& ws) : ws_(ws), rank_support_(ws_.levels()) {
     for (size_t i = 0; i < ws_.levels(); ++i) {
       rank_support_[i] = std::move(rank_support_type(ws_.bvs()[i],
         word_size(ws_.bvs().level_bit_size(i))));
@@ -30,7 +30,7 @@ public:
   // alphabet.
   // TODO: make the effective alphabet accessible for this, such that we can
   // transform the output!
-  inline uint64_t operator [](size_t index) const {
+  inline uint64_t access(size_t index) const {
     if (ws_.is_tree() && !ws_.is_huffman_shaped()) {
       return access_tree(0, index, 0, ws_.bvs().level_bit_size(0), 0ULL) ;}
     else if (!ws_.is_tree() && !ws_.is_huffman_shaped()) {
@@ -79,8 +79,6 @@ private:
   wavelet_structure& ws_;
   std::vector<rank_support_type> rank_support_;  
 
-}; // class access_support
-
-
+}; // class query_support
 
 /******************************************************************************/
