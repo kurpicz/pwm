@@ -29,7 +29,6 @@ TEST(access_tests, access_wt) {
 
     for (size_t i = 0; i < vec.size(); ++i) { ASSERT_EQ(qs.access(i), vec[i]); }
   });
-
 }
 
 TEST(access_tests, access_wm) {
@@ -43,7 +42,26 @@ TEST(access_tests, access_wm) {
     query_support qs(wm);
     for (size_t i = 0; i < vec.size(); ++i) { ASSERT_EQ(qs.access(i), vec[i]); }
   });
+}
 
+TEST(rank_tests, rank_wt) {
+  test::roundtrip_batch([&](std::string const& s){
+    auto vec = std::vector<uint8_t>(s.begin(), s.end());
+    uint64_t levels = no_reduction_alphabet(vec);
+
+    auto wm = wx_naive<uint8_t, true>::compute(vec.data(),
+      vec.size(), levels);
+
+    std::vector<size_t> symbol_counts(256, 0);
+
+    query_support qs(wm);
+    for (size_t i = 0; i < vec.size(); ++i) {
+      for (size_t j = 0; j < 256; ++j) {
+        ASSERT_EQ(qs.rank(j, i), symbol_counts[j]);
+      }
+      ++symbol_counts[vec[i]];
+    }
+  });  
 }
 
 TEST(rank_tests, rank_wm) {

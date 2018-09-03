@@ -43,7 +43,7 @@ public:
     if (index == 0) { return 0; }
 
     if (ws_.is_tree() && !ws_.is_huffman_shaped()) {
-      std::cout << "NOT YET IMPLEMENTED!" << std::endl; }
+      return rank_tree(0, symbol, index, 0, ws_.bvs().level_bit_size(0)); }
     else if (!ws_.is_tree() && !ws_.is_huffman_shaped()) {
       return rank_matrix(0, symbol, index, 0);
     } else { std::cout << "NOT YET IMPLEMENTED!" << std::endl; }
@@ -84,6 +84,26 @@ private:
       index = rank_support_[level].rank1(index) + ws_.zeros()[level];
     } else { index = rank_support_[level].rank0(index); }
     return access_matrix(level + 1, index, word);
+  }
+
+  inline uint64_t rank_tree(size_t const level, uint8_t const symbol,
+    size_t const index, size_t const start, size_t const end) const {
+
+    if (level == ws_.levels()) { return index; }
+
+    size_t const left = rank_support_[level].rank0(start);
+    size_t const right = rank_support_[level].rank0(end);
+
+    size_t const shift_for_bit = ws_.levels() - level - 1;
+    if ((symbol >> shift_for_bit) & uint8_t(1)) {
+      size_t const offset = rank_support_[level].rank1(start + index);
+      return rank_tree(level + 1, symbol, offset - (start - left),
+        start + right - left, end);
+    } else {
+      size_t const offset = rank_support_[level].rank0(start + index);
+      return rank_tree(level + 1, symbol, offset - left, start,
+        start + right - left);
+    }
   }
 
   inline uint64_t rank_matrix(size_t const level, uint8_t const symbol,
