@@ -12,9 +12,12 @@
 
 #include "construction/wavelet_structure.hpp"
 #include "queries/bin_rank_popcnt.hpp"
+#include "queries/bin_select_popcnt.hpp"
 #include "util/common.hpp"
 
-template <typename rank_support_type = bin_rank_popcnt>
+template <typename rank_support_type = bin_rank_popcnt,
+          typename select0_support_type = bin_select0_popcnt,
+          typename select1_support_type = bin_select1_popcnt>
 class query_support {
 
 public:
@@ -22,6 +25,8 @@ public:
     for (size_t i = 0; i < ws_.levels(); ++i) {
       rank_support_[i] = std::move(rank_support_type(ws_.bvs()[i],
         word_size(ws_.bvs().level_bit_size(i))));
+      select0_support_.emplace_back(select0_support_type(rank_support_[i]));
+      select1_support_.emplace_back(select1_support_type(rank_support_[i]));
     }
   }
 
@@ -124,7 +129,9 @@ private:
 
 private:
   wavelet_structure& ws_;
-  std::vector<rank_support_type> rank_support_;  
+  std::vector<rank_support_type> rank_support_;
+  std::vector<select0_support_type> select0_support_;
+  std::vector<select1_support_type> select1_support_;
 
 }; // class query_support
 
