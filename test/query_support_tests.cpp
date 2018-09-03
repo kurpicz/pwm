@@ -1,5 +1,5 @@
 /*******************************************************************************
- * test/access_tests.cpp
+ * test/query_support_tests.cpp
  *
  * Copyright (C) 2018 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
  *
