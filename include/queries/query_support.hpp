@@ -32,16 +32,27 @@ public:
   // transform the output!
   inline uint64_t access(size_t index) const {
     if (ws_.is_tree() && !ws_.is_huffman_shaped()) {
-      return access_tree(0, index, 0, ws_.bvs().level_bit_size(0), 0ULL) ;}
+      return access_tree(0, index, 0, ws_.bvs().level_bit_size(0), 0ULL); }
     else if (!ws_.is_tree() && !ws_.is_huffman_shaped()) {
       return access_matrix(0, index, 0ULL);
     } else { std::cout << "NOT YET IMPLEMENTED!" << std::endl; }
     return 0;
   }
 
+  inline uint64_t rank(uint8_t const symbol, uint64_t const index) const {
+    if (index == 0) { return 0; }
+
+    if (ws_.is_tree() && !ws_.is_huffman_shaped()) {
+      std::cout << "NOT YET IMPLEMENTED!" << std::endl; }
+    else if (!ws_.is_tree() && !ws_.is_huffman_shaped()) {
+      return rank_matrix(0, symbol, index, 0);
+    } else { std::cout << "NOT YET IMPLEMENTED!" << std::endl; }
+    return 0;
+  }
+
 private:
-  inline uint64_t access_tree(const size_t level, const size_t index,
-    const size_t start, const size_t end, uint64_t word) const {
+  inline uint64_t access_tree(size_t const level, size_t const index,
+    size_t const start, size_t const end, uint64_t word) const {
 
     if (level == ws_.levels()) { return word; }
 
@@ -73,6 +84,22 @@ private:
       index = rank_support_[level].rank1(index) + ws_.zeros()[level];
     } else { index = rank_support_[level].rank0(index); }
     return access_matrix(level + 1, index, word);
+  }
+
+  inline uint64_t rank_matrix(size_t const level, uint8_t const symbol,
+    size_t index, size_t offset) const {
+
+    if (level == ws_.levels()) { return index - offset; }
+
+    size_t const shift_for_bit = ws_.levels() - level - 1;
+    if ((symbol >> shift_for_bit) & uint8_t(1)) {
+      index = ws_.zeros()[level] + rank_support_[level].rank1(index);
+      offset = ws_.zeros()[level] + rank_support_[level].rank1(offset);
+    } else {
+      index = rank_support_[level].rank0(index);
+      offset = rank_support_[level].rank0(offset);
+    }
+    return rank_matrix(level + 1, symbol, index, offset);
   }
 
 private:
