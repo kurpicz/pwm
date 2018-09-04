@@ -37,7 +37,8 @@ public:
   // transform the output!
   inline uint64_t access(size_t index) const {
     if (ws_.is_tree() && !ws_.is_huffman_shaped()) {
-      return access_tree(0, index, 0, ws_.bvs().level_bit_size(0), 0ULL); }
+      return access_tree(0, index, 0, ws_.bvs().level_bit_size(0), 0ULL);
+    }
     else if (!ws_.is_tree() && !ws_.is_huffman_shaped()) {
       return access_matrix(0, index, 0ULL);
     } else { std::cout << "NOT YET IMPLEMENTED!" << std::endl; }
@@ -48,9 +49,22 @@ public:
     if (index == 0) { return 0; }
 
     if (ws_.is_tree() && !ws_.is_huffman_shaped()) {
-      return rank_tree(0, symbol, index, 0, ws_.bvs().level_bit_size(0)); }
+      return rank_tree(0, symbol, index, 0, ws_.bvs().level_bit_size(0));
+    }
     else if (!ws_.is_tree() && !ws_.is_huffman_shaped()) {
       return rank_matrix(0, symbol, index, 0);
+    } else { std::cout << "NOT YET IMPLEMENTED!" << std::endl; }
+    return 0;
+  }
+
+  inline uint64_t select(uint8_t const symbol, uint64_t const occ) const {
+    if (occ == 0) { return 0; }
+
+    if (ws_.is_tree() && !ws_.is_huffman_shaped()) {
+      return select_tree(0, symbol, occ, 0, ws_.bvs().level_bit_size(0));
+    }
+    else if (!ws_.is_tree() && !ws_.is_huffman_shaped()) {
+      return select_matrix(0, symbol, occ, 0);
     } else { std::cout << "NOT YET IMPLEMENTED!" << std::endl; }
     return 0;
   }
@@ -75,7 +89,6 @@ private:
       return access_tree(level + 1, offset - left, start, start + right - left,
         word);
     }
-    
   }
 
   inline uint64_t access_matrix(size_t const level, size_t index,
@@ -125,6 +138,51 @@ private:
       offset = rank_support_[level].rank0(offset);
     }
     return rank_matrix(level + 1, symbol, index, offset);
+  }
+
+  inline uint64_t select_tree(size_t const level, uint8_t const symbol,
+    size_t occ, size_t const start, size_t const end) const {
+
+    if (level == ws_.levels()) { return occ; }
+
+    size_t const left = rank_support_[level].rank0(start);
+    size_t const right = rank_support_[level].rank0(end);
+
+    size_t const shift_for_bit = ws_.levels() - level - 1;
+    if ((symbol >> shift_for_bit) & uint8_t(1)) {
+      std::cout << "BIT IS ONE" << std::endl;
+      occ = select_tree(level + 1, symbol, occ, start + right - left, end);
+      std::cout << "RET " << select1_support_[level].select(start - left + occ) - start << std::endl;
+      return select1_support_[level].select(start - left + occ) - start;
+    } else {
+      std::cout << "BIT IS ZERO" << std::endl;
+      occ = select_tree(level + 1, symbol, occ, start, start + right -left);
+      std::cout << "RET " << select0_support_[level].select(left + occ) - start << std::endl;
+      return select0_support_[level].select(left + occ) - start;
+    }
+  }
+
+  inline uint64_t select_matrix(size_t const level, uint8_t const symbol,
+    size_t occ, size_t offset) const {
+
+    if (level == ws_.levels()) { return occ + offset; }
+
+    size_t const shift_for_bit = ws_.levels() - level - 1;
+    if ((symbol >> shift_for_bit) & uint8_t(1)) {
+      offset = ws_.zeros()[level] + rank_support_[level].rank1(offset);
+      occ = select_matrix(level + 1, symbol, occ, offset);
+      if (level == 0) {
+        return select1_support_[level].select(occ - ws_.zeros()[level]);
+      } else {
+        return select1_support_[level].select(occ - ws_.zeros()[level]) + 1;
+      }
+    } else {
+      offset = rank_support_[level].rank0(offset);
+      occ = select_matrix(level + 1, symbol, occ, offset);
+      if (level == 0) {
+        return select0_support_[level].select(occ);
+      } else { return select0_support_[level].select(occ) + 1; }
+    }
   }
 
 private:
