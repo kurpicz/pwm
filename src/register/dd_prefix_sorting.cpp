@@ -1,5 +1,5 @@
 /*******************************************************************************
- * src/dd_prefix_sorting.cpp
+ * src/register/dd_prefix_sorting.cpp
  *
  * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
  *

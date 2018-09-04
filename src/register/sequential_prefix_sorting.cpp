@@ -1,5 +1,5 @@
   /*******************************************************************************
- * src/sequential_prefix_sorting.cpp
+ * src/register/sequential_prefix_sorting.cpp
  *
  * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
  *

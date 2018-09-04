@@ -1,5 +1,5 @@
 /*******************************************************************************
- * src/parallel_prefix_sorting.cpp
+ * src/register/parallel_prefix_counting.cpp
  *
  * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
  *
@@ -7,34 +7,34 @@
  ******************************************************************************/
 
 #include "benchmark/algorithm.hpp"
-#include "wx_pps.hpp"
+#include "wx_ppc.hpp"
 
-using wm_pps_8 = wx_pps<uint8_t, false>;
-using wm_pps_16 = wx_pps<uint16_t, false>;
-using wm_pps_32 = wx_pps<uint32_t, false>;
+using wm_ppc_8  = wx_ppc<uint8_t, false>;
+using wm_ppc_16 = wx_ppc<uint16_t, false>;
+using wm_ppc_32 = wx_ppc<uint32_t, false>;
 
-CONSTRUCTION_REGISTER("wm_pps",
+CONSTRUCTION_REGISTER("wm_ppc",
   "Parallel wavelet matrix construction with 8-bit alphabet "
-  "(using sorting).", wm_pps_8)
-CONSTRUCTION_REGISTER("wm_pps",
+  "(using counting).", wm_ppc_8)
+CONSTRUCTION_REGISTER("wm_ppc",
   "Parallel wavelet matrix construction with 16-bit alphabet "
-  "(using sorting).", wm_pps_16)
-CONSTRUCTION_REGISTER("wm_pps",
+  "(using counting).", wm_ppc_16)
+CONSTRUCTION_REGISTER("wm_ppc",
   "Parallel wavelet matrix construction with 32-bit alphabet "
-  "(using sorting).", wm_pps_32)
+  "(using counting).", wm_ppc_32)
 
-using wt_pps_8 = wx_pps<uint8_t, true>;
-using wt_pps_16 = wx_pps<uint16_t, true>;
-using wt_pps_32 = wx_pps<uint32_t, true>;
+using wt_ppc_8  = wx_ppc<uint8_t, true>;
+using wt_ppc_16 = wx_ppc<uint16_t, true>;
+using wt_ppc_32 = wx_ppc<uint32_t, true>;
 
-CONSTRUCTION_REGISTER("wt_pps",
+CONSTRUCTION_REGISTER("wt_ppc",
   "Parallel wavelet tree construction with 8-bit alphabet "
-  "(using sorting).", wt_pps_8)
-CONSTRUCTION_REGISTER("wt_pps",
+  "(using counting).", wt_ppc_8)
+CONSTRUCTION_REGISTER("wt_ppc",
   "Parallel wavelet tree construction with 16-bit alphabet "
-  "(using sorting).", wt_pps_16)
-CONSTRUCTION_REGISTER("wt_pps",
+  "(using counting).", wt_ppc_16)
+CONSTRUCTION_REGISTER("wt_ppc",
   "Parallel wavelet tree construction with 32-bit alphabet "
-  "(using sorting).", wt_pps_32)
+  "(using counting).", wt_ppc_32)
 
 /******************************************************************************/

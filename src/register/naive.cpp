@@ -1,5 +1,5 @@
 /*******************************************************************************
- * src/naive.cpp
+ * src/register/naive.cpp
  *
  * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
  *
