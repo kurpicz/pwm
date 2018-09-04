@@ -8,7 +8,7 @@
 
 #include <gtest/gtest.h>
 
-#include "test/util.hpp"
+#include "util/util.hpp"
 
 #include "huffman/huff_codes.hpp"
 #include "util/alphabet_util.hpp"

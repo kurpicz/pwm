@@ -112,7 +112,7 @@ macro(run_test test_target construction_test)
 generic_run_test(
   ${test_target}
   "${test_target}.cpp"
-  "test/test_driver.cpp"
+  "util/test_driver.cpp"
   gtest
   check
   build_check

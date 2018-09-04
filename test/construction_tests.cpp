@@ -9,7 +9,7 @@
 
 #include <gtest/gtest.h>
 
-#include "test/util.hpp"
+#include "util/util.hpp"
 
 #include "benchmark/algorithm.hpp"
 #include "huffman/huff_codes.hpp"

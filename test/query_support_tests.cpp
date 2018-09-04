@@ -9,7 +9,7 @@
 #include <gtest/gtest.h>
 #include <vector>
 
-#include "test/util.hpp"
+#include "util/util.hpp"
 #include "util/alphabet_util.hpp"
 #include "util/print.hpp"
 

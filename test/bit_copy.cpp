@@ -9,7 +9,7 @@
 #include <gtest/gtest.h>
 
 #include "construction/merge.hpp"
-#include "test/util.hpp"
+#include "util/util.hpp"
 #include "util/debug.hpp"
 
 void bit_compare(
