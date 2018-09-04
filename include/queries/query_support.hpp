@@ -150,15 +150,19 @@ private:
 
     size_t const shift_for_bit = ws_.levels() - level - 1;
     if ((symbol >> shift_for_bit) & uint8_t(1)) {
-      std::cout << "BIT IS ONE" << std::endl;
       occ = select_tree(level + 1, symbol, occ, start + right - left, end);
-      std::cout << "RET " << select1_support_[level].select(start - left + occ) - start << std::endl;
-      return select1_support_[level].select(start - left + occ) - start;
+      if (level == 0) {
+        return select1_support_[level].select(start - left + occ) - start;
+      } else {
+        return select1_support_[level].select(start - left + occ) - start + 1;
+      }
     } else {
-      std::cout << "BIT IS ZERO" << std::endl;
       occ = select_tree(level + 1, symbol, occ, start, start + right -left);
-      std::cout << "RET " << select0_support_[level].select(left + occ) - start << std::endl;
-      return select0_support_[level].select(left + occ) - start;
+      if (level == 0) {
+        return select0_support_[level].select(left + occ) - start;
+      } else {
+        return select0_support_[level].select(left + occ) - start + 1;
+      }
     }
   }
 
