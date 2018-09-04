@@ -610,5 +610,218 @@ external_bit_vectors ps_fully_external(const InputType& text, uint64_t const siz
 }
 
 
+//template <typename ReaderType, typename WriterType>
+//inline void split(
+//    ReaderType &reader,
+//    WriterType &leftWriter,
+//    WriterType &rightWriter,
+//    unsigned shift,
+//    uint64_t length) {
+//  for(uint64_t i = 0; i < length; i++) {
+//    auto symbol = *reader;
+//    if((symbol >> shift) & 0x1)
+//      rightWriter << symbol;
+//    else
+//      leftWriter << symbol;
+//    ++reader;
+//  }
+//}
+
+
+template <typename AlphabetType, typename ContextType, typename InputType>
+external_bit_vectors ps_fully_external2(const InputType& text, uint64_t const size, const uint64_t levels,
+                                       ContextType& /*ctx*/) {
+
+  std::cout << "PS external" << std::endl;
+  external_bit_vectors result(levels, size, 0);
+
+  using in_vector_type = InputType;
+  using reader_type = typename in_vector_type::bufreader_type;
+  using writer_type = typename in_vector_type::bufwriter_type;
+
+  using out_vector_type = typename std::remove_reference<decltype(result.raw_data())>::type;
+  using result_writer_type = typename out_vector_type::bufwriter_type;
+  out_vector_type& bv = result.raw_data();
+
+  std::vector<std::vector<uint64_t>> hist(levels + 1);
+  for(unsigned i = 0; i <= levels; i++)
+    hist[i].resize(pow(2, i));
+
+  stxxl_files::reset_usage();
+  in_vector_type v1 = stxxl_files::getVector<in_vector_type>(1);
+  in_vector_type v2 = stxxl_files::getVector<in_vector_type>(2);
+  in_vector_type v3 = stxxl_files::getVector<in_vector_type>(3);
+  in_vector_type v4 = stxxl_files::getVector<in_vector_type>(4);
+
+  v1.clear();
+  v2.clear();
+  v3.clear();
+  v4.clear();
+
+  in_vector_type * leftPrev = &v1;
+  in_vector_type * rightPrev = &v2;
+
+  in_vector_type * leftCur = &v3;
+  in_vector_type * rightCur = &v4;
+
+  reader_type * leftReader;
+  reader_type * rightReader;
+  writer_type * leftWriter;
+  writer_type * rightWriter;
+
+  result_writer_type result_writer(bv);
+
+  std::cout << "Level 1 of " << levels << " (initial scan)... " << std::endl;
+  // Initial Scan:
+  {
+    leftCur->reserve(size);
+    rightCur->reserve(size);
+
+    leftReader = new reader_type(text);
+    leftWriter = new writer_type(*leftCur);
+    rightWriter = new writer_type(*rightCur);
+
+    uint64_t cur_pos = 0;
+    for (; cur_pos + 64 <= size; cur_pos += 64) {
+      uint64_t word = 0ULL;
+      for (unsigned i = 0; i < 64; ++i) {
+        auto symbol = **leftReader;
+        if(symbol >> (levels - 1))
+          *rightWriter << symbol;
+        else
+          *leftWriter << symbol;
+        ++(*leftReader);
+        hist[levels][symbol]++;
+        word <<= 1;
+        word |= ((symbol >> (levels - 1)) & 1ULL);
+      }
+      result_writer << word;
+    }
+    if (size & 63ULL) {
+      uint64_t word = 0ULL;
+      for (unsigned i = 0; i < size - cur_pos; ++i) {
+        auto symbol = **leftReader;
+        if(symbol >> (levels - 1))
+          *rightWriter << symbol;
+        else
+          *leftWriter << symbol;
+        ++(*leftReader);
+        hist[levels][symbol]++;
+        word <<= 1;
+        word |= ((symbol >> (levels - 1)) & 1ULL);
+      }
+      word <<= (64 - (size & 63ULL));
+      result_writer << word;
+    }
+
+    delete leftReader;
+    delete leftWriter;
+    delete rightWriter;
+  }
+
+  // calculate histograms
+  for(unsigned i = levels; i > 0; i--) {
+    for(unsigned j = 0; j < hist[i].size(); j+=2) {
+      hist[i - 1][j / 2] = hist[i][j] + hist[i][j + 1];
+    }
+  }
+
+  // scans (top down WT construction in left-right-buffers)
+  for(unsigned i = 1; i < levels; i++) {
+    std::cout << "Level " << i + 1 << " of " << levels << "... " << std::endl;
+
+    std::swap(leftCur, leftPrev);
+    std::swap(rightCur, rightPrev);
+
+    leftCur->clear();
+    rightCur->clear();
+    leftCur->reserve(size);
+    rightCur->reserve(size);
+
+    leftReader = new reader_type(*leftPrev);
+    rightReader = new reader_type(*rightPrev);
+    leftWriter = new writer_type(*leftCur);
+    rightWriter = new writer_type(*rightCur);
+
+    unsigned histId = 0;
+    uint64_t histRemains = hist[i][0];
+    reader_type * leftRightReader = leftReader;
+
+    auto const shift = levels - i - 1;
+    uint64_t cur_pos = 0;
+    for (; cur_pos + 64 <= size; cur_pos += 64) {
+      uint64_t word = 0ULL;
+      for (unsigned k = 0; k < 64; ++k) {
+        if(histRemains == 0) {
+          do{
+            histId++;
+            histRemains = hist[i][histId];
+          } while(histRemains == 0);
+          if(histId % 2 == 0) leftRightReader = leftReader;
+          else leftRightReader = rightReader;
+        }
+        auto symbol = **leftRightReader;
+        if((symbol >> shift) & 0x1)
+          *rightWriter << symbol;
+        else
+          *leftWriter << symbol;
+        word <<= 1;
+        word |= ((symbol >> shift) & 1ULL);
+
+        ++(*leftRightReader);
+        --histRemains;
+      }
+      result_writer << word;
+    }
+    if (size & 63ULL) {
+      uint64_t word = 0ULL;
+      for (unsigned k = 0; k < size - cur_pos; ++k) {
+        if(histRemains == 0) {
+          do{
+            histId++;
+            histRemains = hist[i][histId];
+          } while(histRemains == 0);
+          if(histId % 2 == 0) leftRightReader = leftReader;
+          else leftRightReader = rightReader;
+        }
+        auto symbol = **leftRightReader;
+        if((symbol >> shift) & 0x1)
+          *rightWriter << symbol;
+        else
+          *leftWriter << symbol;
+        word <<= 1;
+        word |= ((symbol >> shift) & 1ULL);
+
+        ++(*leftRightReader);
+        --histRemains;
+      }
+      word <<= (64 - (size & 63ULL));
+      result_writer << word;
+    }
+
+    delete leftReader;
+    delete rightReader;
+    delete leftWriter;
+    delete rightWriter;
+  }
+
+  result_writer.finish();
+
+  std::cout << "Done." << std::endl << std::endl;
+
+  //~ std::cout << "RESULT IS: " << bv.size() << ", SHOULD BE: " << levels * ((size + 63) / 64) << ", SIZE: " << size << ", LEVELS: " << levels << std::endl << std::endl;
+  //~ uint64_t words = (size + 63) / 64;
+  //~ unsigned tesla = 0;
+  //~ for(auto word : bv) {
+  //~ if(tesla % words == 0) std::cout << std::endl << "Level " << tesla / words << ":  ";
+  //~ std::cout << std::bitset<64>(word);
+  //~ tesla++;
+  //~ }
+  //~ std::cout << std::endl << std::endl << std::endl;
+
+  return result;
+}
+
+
 
 /******************************************************************************/

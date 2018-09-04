@@ -30,7 +30,7 @@ public:
     if(size == 0) { return external_bit_vectors(); }
 
     auto ctx = ctx_t(size, levels);
-    return ps_fully_external<AlphabetType>(text, size, levels, ctx);
+    return ps_fully_external2<AlphabetType>(text, size, levels, ctx);
   }
 }; // class wx_ps
 
