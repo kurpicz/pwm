@@ -151,18 +151,12 @@ private:
     size_t const shift_for_bit = ws_.levels() - level - 1;
     if ((symbol >> shift_for_bit) & uint8_t(1)) {
       occ = select_tree(level + 1, symbol, occ, start + right - left, end);
-      if (level == 0) {
-        return select1_support_[level].select(start - left + occ) - start;
-      } else {
-        return select1_support_[level].select(start - left + occ) - start + 1;
-      }
+      return select1_support_[level].select(start - left + occ) - start +
+        (level == 0 ? 0 : 1);
     } else {
       occ = select_tree(level + 1, symbol, occ, start, start + right -left);
-      if (level == 0) {
-        return select0_support_[level].select(left + occ) - start;
-      } else {
-        return select0_support_[level].select(left + occ) - start + 1;
-      }
+      return select0_support_[level].select(left + occ) - start +
+        (level == 0 ? 0 : 1);
     }
   }
 
@@ -175,17 +169,12 @@ private:
     if ((symbol >> shift_for_bit) & uint8_t(1)) {
       offset = ws_.zeros()[level] + rank_support_[level].rank1(offset);
       occ = select_matrix(level + 1, symbol, occ, offset);
-      if (level == 0) {
-        return select1_support_[level].select(occ - ws_.zeros()[level]);
-      } else {
-        return select1_support_[level].select(occ - ws_.zeros()[level]) + 1;
-      }
+      return select1_support_[level].select(occ - ws_.zeros()[level]) +
+        (level == 0 ? 0 : 1);
     } else {
       offset = rank_support_[level].rank0(offset);
       occ = select_matrix(level + 1, symbol, occ, offset);
-      if (level == 0) {
-        return select0_support_[level].select(occ);
-      } else { return select0_support_[level].select(occ) + 1; }
+      return select0_support_[level].select(occ) + (level == 0 ? 0 : 1);
     }
   }
 
