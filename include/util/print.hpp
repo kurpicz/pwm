@@ -20,7 +20,6 @@ static void print_structure(std::ostream& out, wavelet_structure const& structur
   const std::vector<uint64_t>& zeros = structure.zeros();
   for (uint64_t i = 0; i < bv.levels(); i++) {
     out << "   bv["<<i<<"]";
-
     out << "[";
     for (uint64_t j = 0; j < bv.level_bit_size(i); j++) {
       out << uint64_t(bit_at(bv[i], j)) << "";
