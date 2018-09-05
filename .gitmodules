@@ -1,6 +1,3 @@
-[submodule "external/tclap"]
-	path = external/tclap
-	url = git://git.code.sf.net/p/tclap/code
 [submodule "external/googletest"]
 	path = external/googletest
 	url = https://github.com/google/googletest
