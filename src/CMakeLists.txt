@@ -20,7 +20,7 @@ endif(ENABLE_MALLOC_COUNT)
 set(INTERNAL_LIBS rt dl)
 
 add_executable(benchmark ${INTERNAL_SRCS})
-target_link_libraries(benchmark ${INTERNAL_LIBS})
+target_link_libraries(benchmark tlx_command_line ${INTERNAL_LIBS})
 
 add_executable(alphabet_count alphabet_count.cpp)
 add_executable(fastq_extract fastq_extract.cpp)

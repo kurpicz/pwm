@@ -52,6 +52,15 @@ if( NOT EXISTS "${CMAKE_SOURCE_DIR}/external/googletest/.git" )
 )
 endif()
 
+add_library(tlx_command_line
+  external/tlx/tlx/cmdline_parser.cpp
+  external/tlx/tlx/string/parse_si_iec_units.cpp)
+
+target_include_directories(tlx_command_line PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/external/tlx/>
+  $<INSTALL_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/external/tlx/>
+)
+
 # Add include directory to include searches
 include_directories(external/tclap/include)
 include_directories(include)

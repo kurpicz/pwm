@@ -6,7 +6,7 @@
  * All rights reserved. Published under the BSD-2 license in the LICENSE file.
  ******************************************************************************/
 
-#include <tclap/CmdLine.h>
+#include <tlx/cmdline_parser.hpp>
 #include <vector>
 
 #include "benchmark/algorithm.hpp"
@@ -32,71 +32,61 @@ auto filter_wavelet_type(bool is_tree, bool no_trees, bool no_matrices) {
 }
 
 int32_t main(int32_t argc, char const* argv[]) {
-  TCLAP::CmdLine cmd("Benchmark for wavelet tree (and matrix) construction",
-    ' ', "0.2");
+  std::vector<std::string> file_paths;
+  std::string filter = "";
+  unsigned int word_width = 1;
+  unsigned int nr_runs = 5;
+  bool list_algorithms_only = false;
+  bool run_only_parallel = false;
+  bool run_only_sequential = false;
+  bool no_trees = false;
+  bool no_matrices = false;
+  bool memory = false;
+  bool check = false;
+  bool debug_print = false;
 
-  TCLAP::SwitchArg list_all_algorithms("l", "list",
-    "Print the name and description of all registered algorithms", false);
-  cmd.add(list_all_algorithms);
-  TCLAP::MultiArg<std::string> file_path_arg("f", "file",
-    "Path to the text file.", false, "string");
-  cmd.add(file_path_arg);
-  TCLAP::ValueArg<std::string> filter_arg("n", "name",
-    "Runs all algorithms that contain the <name> in their name", false, "",
-    "string");
-  cmd.add(filter_arg);
-  TCLAP::ValueArg<int32_t> word_width_arg("b", "byte",
-    "Bytes per char in the input text.", false, 1, "uint8_t");
-  cmd.add(word_width_arg);
-  TCLAP::ValueArg<int32_t> nr_runs_arg("r", "runs",
-    "Number of repetitions of the construction algorithm.",
-    false, 5, "int32_t");
-  cmd.add(nr_runs_arg);
-  TCLAP::SwitchArg run_only_parallel_arg("p", "parallel",
-    "Run only parallel construction algorithms.", false);
-  cmd.add(run_only_parallel_arg);
-  TCLAP::SwitchArg run_only_sequential_arg("s", "sequential",
-    "Run only sequential construction algorithms.", false);
-  cmd.add(run_only_sequential_arg);
-  TCLAP::SwitchArg no_trees_arg("m", "no_trees",
-    "Skip all wavelet trees construction algorithms.", false);
-  cmd.add(no_trees_arg);
-  TCLAP::SwitchArg no_matrices_arg("t", "no_matrices",
-    "Skip all wavelet matrices construction algorithms.", false);
-  cmd.add(no_matrices_arg);
-  TCLAP::SwitchArg memory_arg("", "memory",
-    "Compute peak memory during construction.", false);
-  cmd.add(memory_arg);
-  TCLAP::SwitchArg check_arg("c", "check",
-    "Check the constructed wavelet structure for validity.", false);
-  cmd.add(check_arg);
-  TCLAP::SwitchArg print_arg("d", "debug_print",
-    "Output the bit vectors in a human readable format to stdout.", false);
-  cmd.add(print_arg);
+  tlx::CmdlineParser cp;
 
-  cmd.parse( argc, argv );
+  cp.set_description("Parallel Wavelet Tree and Wavelet Matrix Construction");
+  cp.set_author("Florian Kurpicz <florian.kurpicz@tu-dortmund.de>\n"
+    "        Marvin Löbel <loebel.marvin@gmail.com>");
+
+  cp.add_stringlist('f', "file", file_paths, "Path(s) to the text file(s).");
+  cp.add_string('n', "name", filter,
+        "Runs all algorithms that contain the <name> in their name");
+  cp.add_uint('b', "byte", word_width, "Bytes per char in the input text.");
+  cp.add_uint('r', "runs", nr_runs,
+    "Number of repetitions of the construction algorithm.");
+  cp.add_flag('l', "list", list_algorithms_only,
+    "Print the name and description of all registered algorithms");
+  cp.add_flag('p', "parallel", run_only_parallel,
+    "Run only parallel construction algorithms.");
+  cp.add_flag('s', "sequential", run_only_sequential,
+    "Run only sequential construction algorithms.");
+  cp.add_flag('m', "no_trees", no_trees,
+    "Skip all wavelet trees construction algorithms.");
+  cp.add_flag('t', "no_matrices", no_matrices,
+    "Skip all wavelet matrices construction algorithms.");
+  cp.add_flag('p', "memory", memory,
+    "Compute peak memory during construction.");
+  cp.add_flag('c', "check", check,
+    "Check the constructed wavelet structure for validity.");
+  cp.add_flag('d', "debug_print", debug_print,
+    "Output the bit vectors in a human readable format to stdout.");
+
+  if (!cp.process(argc, argv)) {
+    return -1;
+  }
 
   int returncode = 0;
 
   auto& algo_list = algorithm_list::get_algorithm_list();
-  if (list_all_algorithms.getValue()) {
+  if (list_algorithms_only) {
     for (const auto& a : algo_list) {
       a->print_info();
     }
     return 0;
   }
-
-  const std::vector<std::string> file_paths = file_path_arg.getValue();
-  std::string filter = filter_arg.getValue();
-  const int32_t word_width = word_width_arg.getValue();
-  const int32_t nr_runs = nr_runs_arg.getValue();
-  const bool run_only_parallel = run_only_parallel_arg.getValue();
-  const bool run_only_sequential = run_only_sequential_arg.getValue();
-  const bool no_trees = no_trees_arg.getValue();
-  const bool no_matrices = no_matrices_arg.getValue();
-  const bool memory = memory_arg.getValue();
-  const bool debug_print = print_arg.getValue();
-  const bool check = check_arg.getValue();
 
   for (const auto& path : file_paths) {
     std::cout << std::endl << "Text: " << path << std::endl;
