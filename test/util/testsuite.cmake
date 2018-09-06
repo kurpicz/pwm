@@ -54,6 +54,11 @@ macro(generic_run_test test_target test_file
     ${TEST_TARGET_DEPS}
   )
 
+  target_include_directories(${test_target}_testrunner PUBLIC
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/>
+    $<INSTALL_INTERFACE:${PROJECT_SOURCE_DIR}/include/>
+  )
+
   # Runs the test and generates a stamp file on success.
   add_custom_command(
     OUTPUT
