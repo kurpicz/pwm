@@ -63,11 +63,11 @@ int32_t main(int32_t argc, char const* argv[]) {
     "Run only parallel construction algorithms.");
   cp.add_flag('s', "sequential", run_only_sequential,
     "Run only sequential construction algorithms.");
-  cp.add_flag('m', "no_trees", no_trees,
+  cp.add_flag('\0', "no_trees", no_trees,
     "Skip all wavelet trees construction algorithms.");
-  cp.add_flag('t', "no_matrices", no_matrices,
+  cp.add_flag('\0', "no_matrices", no_matrices,
     "Skip all wavelet matrices construction algorithms.");
-  cp.add_flag('p', "memory", memory,
+  cp.add_flag('\0', "memory", memory,
     "Compute peak memory during construction.");
   cp.add_flag('c', "check", check,
     "Check the constructed wavelet structure for validity.");
@@ -132,8 +132,10 @@ int32_t main(int32_t argc, char const* argv[]) {
     }
     std::cout << "Characters: " << text_size << std::endl;
 #ifdef MALLOC_COUNT
-    std::cout << "Memory peak text: " << malloc_count_peak() << " B, "
-              << malloc_count_peak() / (1024 * 1024) << " MiB" << std::endl;
+    if (memory) {
+      std::cout << "Memory peak text: " << malloc_count_peak() << " B, "
+                << malloc_count_peak() / (1024 * 1024) << " MiB" << std::endl;
+    }
 #endif // MALLOC_COUNT
     for (const auto& a : algo_list) {
       if (filter == "" || (a->name().find(filter) != std::string::npos)) {
@@ -141,32 +143,32 @@ int32_t main(int32_t argc, char const* argv[]) {
           if (filter_parallel(run_only_parallel, a->is_parallel())) {
             if (filter_sequential(run_only_sequential, a->is_parallel())) {
               if (filter_wavelet_type(a->is_tree(), no_trees, no_matrices)) {
-                a->print_info();
+                std::cout << "RESULT " << "algo=" << a->name() << ' ';
                 if (memory) {
 #ifdef MALLOC_COUNT
                   malloc_count_reset_peak();
                   a->memory_peak(txt_prt, text_size, levels);
-                  std::cout << "Memory peak algo: "
-                            << malloc_count_peak() << " B, "
-                            << malloc_count_peak() / (1024 * 1024)
-                            << " MiB"
-                            << std::endl;
+                  std::cout << "memory=" << malloc_count_peak() << ' ';
 #else
                   std::cout << "Memory measurement is NOT enabled."
                             << std::endl;
 #endif // MALLOC_COUNT
-                } else {
-                  std::cout << a->median_time(
-                    txt_prt, text_size, levels, nr_runs) << std::endl;
                 }
+                std::cout << "runs=" << nr_runs << " ";
+                std::cout << "median_time=" << a->median_time(
+                  txt_prt, text_size, levels, nr_runs) << ' ';
+                std::cout << "input=" << path << ' ';
+
+                std::cout << std::endl;
+                
                 if (debug_print || check) {
-                  auto structure = a->compute_bitvector(txt_prt, text_size, levels);
-                  if (debug_print) {
-                    print_structure(std::cout, structure);
-                  }
+                  auto structure =
+                    a->compute_bitvector(txt_prt, text_size, levels);
+                  if (debug_print) { print_structure(std::cout, structure); }
                   if (check) {
                     if (word_width != 1) {
-                      std::cout << "WARNING: Can only check texts over 1-byte alphabets\n";
+                      std::cout << "WARNING:" <<
+                      " Can only check texts over 1-byte alphabets\n";
                     } else {
                       construction_algorithm const* naive = nullptr;
                       if ((a->is_tree()) && !(a->is_huffman_shaped())) {
@@ -190,24 +192,25 @@ int32_t main(int32_t argc, char const* argv[]) {
                         }).at(0);
                       }
                       assert(naive != nullptr);
-                      auto naive_structure = naive->compute_bitvector(txt_prt, text_size, levels);
+                      auto naive_wx =
+                        naive->compute_bitvector(txt_prt, text_size, levels);
                       bool err_trigger = false;
                       auto check_err = [&](bool cond, auto const& msg) {
                         if (!cond) {
-                          std::cout << "ERROR: " << msg << "\n";
+                          std::cout << "ERROR: " << msg << std::endl;
                           err_trigger = true;
                         }
                         return cond;
                       };
 
-                      if (check_err(structure.levels() == naive_structure.levels(),
+                      if (check_err(structure.levels() == naive_wx.levels(),
                                     "structures have different level sizes")) {
                         if (!a->is_tree()) {
-                          check_err(structure.zeros() == naive_structure.zeros(),
+                          check_err(structure.zeros() == naive_wx.zeros(),
                                     "zeros arrays differ");
                         }
                         auto& sbvs = structure.bvs();
-                        auto& nbvs = naive_structure.bvs();
+                        auto& nbvs = naive_wx.bvs();
                         for (size_t l = 0; l < structure.levels(); l++) {
                           auto sbs = sbvs.level_bit_size(l);
                           auto nbs = nbvs.level_bit_size(l);
@@ -215,7 +218,8 @@ int32_t main(int32_t argc, char const* argv[]) {
                                        std::string("bit size differs on level ")
                                        + std::to_string(l))) {
                             for (uint64_t bi = 0; bi < sbs; bi++) {
-                              if(!check_err(bit_at(sbvs[l], bi) == bit_at(nbvs[l], bi),
+                              if(!check_err(
+                                bit_at(sbvs[l], bi) == bit_at(nbvs[l], bi),
                                  std::string("bit ")
                                  + std::to_string(bi)
                                  + " differs on level "
@@ -226,11 +230,9 @@ int32_t main(int32_t argc, char const* argv[]) {
                           }
                         }
                       }
-
-                      if (err_trigger) {
-                        returncode = -2;
+                      if (err_trigger) { returncode = -2;
                       } else {
-                        // std::cout << "Output structurally OK\n";
+                        std::cout << "Output structurally OK" << std::endl;
                       }
 
                       if (err_trigger) {
@@ -239,7 +241,7 @@ int32_t main(int32_t argc, char const* argv[]) {
                           print_structure(std::cout, structure);
                         }
                         std::cout << "Naive result as comparison:\n";
-                        print_structure(std::cout, naive_structure);
+                        print_structure(std::cout, naive_wx);
                       }
 
                       auto pvec = [](auto const& v) {
@@ -253,16 +255,18 @@ int32_t main(int32_t argc, char const* argv[]) {
                       std::string decoded = decode_structure(structure);
                       if (std::equal(text_uint8.begin(), text_uint8.end(),
                                      decoded.begin(), decoded.end())) {
-                        // std::cout << "Output decoded OK\n";
+                        std::cout << "Output decoded OK" << std::endl;
                       } else {
-                        std::cout << "ERROR: Decoded output not equal to input!\n";
-                        std::cout << "Input:\n";
+                        std::cout << "ERROR:"
+                                  << "Decoded output not equal to input!"
+                                  << std::endl;
+                        std::cout << "Input:" << std::endl;
                         pvec(text_uint8);
-                        std::cout << "Decoded:\n";
+                        std::cout << "Decoded:" << std::endl;
                         pvec(decoded);
                       }
                     }
-                    std::cout << "\n";
+                    std::cout << std::endl;
                   }
                 }
               }
