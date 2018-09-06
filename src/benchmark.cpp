@@ -157,9 +157,9 @@ int32_t main(int32_t argc, char const* argv[]) {
                 std::cout << "runs=" << nr_runs << " ";
                 std::cout << "median_time=" << a->median_time(
                   txt_prt, text_size, levels, nr_runs) << ' ';
-                std::cout << "input=" << path << ' ';
-
-                std::cout << std::endl;
+                std::cout << "input=" << path << ' '
+                          << "characters=" << text_size << ' '
+                          << "word_width=" << word_width << std::endl;
                 
                 if (debug_print || check) {
                   auto structure =
