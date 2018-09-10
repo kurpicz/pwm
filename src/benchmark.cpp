@@ -160,7 +160,7 @@ int32_t main(int32_t argc, char const* argv[]) {
                 std::cout << "input=" << path << ' '
                           << "characters=" << text_size << ' '
                           << "word_width=" << word_width << std::endl;
-                
+
                 if (debug_print || check) {
                   auto structure =
                     a->compute_bitvector(txt_prt, text_size, levels);
@@ -206,8 +206,16 @@ int32_t main(int32_t argc, char const* argv[]) {
                       if (check_err(structure.levels() == naive_wx.levels(),
                                     "structures have different level sizes")) {
                         if (!a->is_tree()) {
-                          check_err(structure.zeros() == naive_wx.zeros(),
-                                    "zeros arrays differ");
+                          size_t sl = structure.levels();
+                          check_err(structure.zeros().size() == sl,
+                                    "structure zeros too short");
+                          if (sl > 0) {
+                            auto sz = structure.zeros();
+                            auto nz = naive_wx.zeros();
+                            sz.pop_back();
+                            nz.pop_back();
+                            check_err(sz == nz, "zeros arrays differ");
+                          }
                         }
                         auto& sbvs = structure.bvs();
                         auto& nbvs = naive_wx.bvs();
