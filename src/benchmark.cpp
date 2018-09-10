@@ -41,6 +41,7 @@ int32_t main(int32_t argc, char const* argv[]) {
   bool list_algorithms_only = false;
   bool run_only_parallel = false;
   bool run_only_sequential = false;
+  bool run_only_huffman = false;
   bool no_trees = false;
   bool no_matrices = false;
   bool memory = false;
@@ -61,14 +62,18 @@ int32_t main(int32_t argc, char const* argv[]) {
     "Number of repetitions of the construction algorithm.");
   cp.add_flag('l', "list", list_algorithms_only,
     "Print the name and description of all registered algorithms");
+
   cp.add_flag('p', "parallel", run_only_parallel,
     "Run only parallel construction algorithms.");
   cp.add_flag('s', "sequential", run_only_sequential,
     "Run only sequential construction algorithms.");
+  cp.add_flag('h', "huffman", run_only_huffman,
+    "Run only huffman-shaped construction algorithms.");
   cp.add_flag('\0', "no_trees", no_trees,
     "Skip all wavelet trees construction algorithms.");
   cp.add_flag('\0', "no_matrices", no_matrices,
     "Skip all wavelet matrices construction algorithms.");
+
   cp.add_flag('\0', "memory", memory,
     "Compute peak memory during construction.");
   cp.add_flag('c', "check", check,
@@ -145,6 +150,7 @@ int32_t main(int32_t argc, char const* argv[]) {
       GUARD_LOOP(filter_parallel(run_only_parallel, a->is_parallel()));
       GUARD_LOOP(filter_sequential(run_only_sequential, a->is_parallel()));
       GUARD_LOOP(filter_wavelet_type(a->is_tree(), no_trees, no_matrices));
+      GUARD_LOOP((!run_only_huffman) || a->is_huffman_shaped());
 
       std::cout << "RESULT " << "algo=" << a->name() << ' ';
       if (memory) {
