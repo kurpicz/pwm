@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include <string>
+#include <functional>
 
 #include "construction/wavelet_structure.hpp"
 #include "util/debug.hpp"
@@ -35,31 +36,35 @@ static void print_structure(std::ostream& out, wavelet_structure const& structur
 
 template<typename T>
 struct force_integer_trait {
-  inline static std::ostream& print(std::ostream& out, T const& v) {
-      return out << v;
+  inline static void print(std::ostream& out, T const& v) {
+    out << v;
   }
 };
 template<>
 struct force_integer_trait<uint8_t> {
-  inline static std::ostream& print(std::ostream& out, uint8_t const& v) {
-    return out << int(v);
+  inline static void print(std::ostream& out, uint8_t const& v) {
+    out << int(v);
 }
 };
 /// Print T, but convert it to int first if it is a char-like type
-template<typename T>
-inline std::ostream& print_force_integer(std::ostream& out, T const& t) {
-  return force_integer_trait<T>::print(out, t);
-}
+struct print_force_type {
+    template<typename T>
+    inline void operator()(std::ostream& out, T const& t) const {
+      force_integer_trait<T>::print(out, t);
+    }
+};
 
-template<typename list_type>
-static std::ostream& print_list(std::ostream& out, list_type const& list, bool nice = false) {
+template<typename list_type, typename map_type = print_force_type>
+static std::ostream& print_list(std::ostream& out, list_type const& list,
+                                bool nice = false,
+                                map_type fmt = map_type()) {
     if (!nice) {
         out << "[";
         for(size_t i = 0; i < list.size(); i++) {
             if (i > 0) {
                 out << ", ";
             }
-            print_force_integer(out, list[i]);
+            fmt(out, list[i]);
         }
         out << "]";
     } else {
@@ -69,7 +74,7 @@ static std::ostream& print_list(std::ostream& out, list_type const& list, bool n
                 out << ",\n";
             }
             out << "    ";
-            print_force_integer(out, list[i]);
+            fmt(out, list[i]);
         }
         out << "\n]\n";
     }
