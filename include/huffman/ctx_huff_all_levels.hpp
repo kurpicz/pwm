@@ -15,7 +15,7 @@
 /// Keep calculated information for individual levels around
 template<bool is_tree>
 class ctx_huff_all_levels {
-  
+
 public:
   using rho_t = typename rho_dispatch<is_tree>::type;
 

@@ -43,7 +43,7 @@ struct force_integer_trait {
 template<>
 struct force_integer_trait<uint8_t> {
   inline static void print(std::ostream& out, uint8_t const& v) {
-    out << int(v);
+    out << uint64_t(v & 0xff);
 }
 };
 /// Print T, but convert it to int first if it is a char-like type

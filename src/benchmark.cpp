@@ -251,7 +251,8 @@ int32_t main(int32_t argc, char const* argv[]) {
                 }
               }
             }
-            if (err_trigger) { returncode = -2;
+            if (err_trigger) {
+              returncode = -2;
             } else {
               std::cout << "Output structurally OK" << std::endl;
             }
@@ -273,7 +274,8 @@ int32_t main(int32_t argc, char const* argv[]) {
               std::cout << "]\n";
             };
 
-            std::string decoded = decode_structure(structure);
+            std::string decoded_ = decode_structure(structure);
+            std::vector<uint8_t> decoded(decoded_.begin(), decoded_.end());
             if (std::equal(text_uint8.begin(), text_uint8.end(),
                            decoded.begin(), decoded.end())) {
               std::cout << "Output decoded OK" << std::endl;
