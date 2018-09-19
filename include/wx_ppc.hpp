@@ -37,7 +37,7 @@ public:
     const auto rho = rho_dispatch<is_tree>::create(levels);
     // TODO create new context with all max size hist-levels.
     ctx_t ctx(size, levels, rho);
-    auto& bv = ctx.bv().raw_data();
+    auto& bv = ctx.bv();
     auto& zeros = ctx.zeros();
 
     std::vector<uint64_t> initial_hist((1ULL << levels) * levels, 0);

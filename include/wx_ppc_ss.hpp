@@ -34,7 +34,7 @@ public:
 
     const auto rho = rho_dispatch<is_tree>::create(levels);
     auto ctx = ctx_t(size, levels, rho);
-    auto& bv = ctx.bv().raw_data();
+    auto& bv = ctx.bv();
 
     // While initializing the histogram, we also compute the first level
     uint64_t cur_pos = 0;
