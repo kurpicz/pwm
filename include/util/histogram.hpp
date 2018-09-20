@@ -32,6 +32,8 @@ template <typename AlphabetType>
 class histogram {
 
 public:
+  histogram() = default;
+
   histogram(const AlphabetType* text, const uint64_t size,
     const uint64_t reduced_sigma = 0) : max_symbol_(0){
 
