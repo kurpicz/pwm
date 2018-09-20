@@ -2,6 +2,7 @@
  * include/wx_huff_naive.hpp
  *
  * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
+ * Copyright (C) 2018 Marvin Löbel <loebel.marvin@gmail.com>
  *
  * All rights reserved. Published under the BSD-2 license in the LICENSE file.
  ******************************************************************************/
@@ -10,13 +11,11 @@
 
 #include <cstring>
 
-#include "arrays/bit_vectors.hpp"
 #include "construction/wavelet_structure.hpp"
-#include "huffman/huff_codes.hpp"
 
-// TODO: temporary
-#include "util/print.hpp"
-#include <unordered_map>
+#include "huffman/huff_bit_vectors.hpp"
+#include "huffman/huff_codes.hpp"
+#include "huffman/huff_level_sizes_builder.hpp"
 
 template <typename AlphabetType, bool is_tree_>
 class wx_huff_naive {
@@ -30,7 +29,12 @@ public:
   static wavelet_structure compute(AlphabetType const* const text,
     const uint64_t size, const uint64_t /*levels*/) {
 
-    canonical_huff_codes<AlphabetType, is_tree> codes(text, size);
+    histogram<AlphabetType> hist { text, size };
+    level_sizes_builder<AlphabetType> builder { std::move(hist) };
+    canonical_huff_codes<AlphabetType, is_tree> codes(builder);
+
+    auto const& level_sizes = builder.level_sizes();
+    uint64_t const levels = builder.levels();
 
     if(size == 0) {
       if constexpr (is_tree) {
@@ -40,14 +44,11 @@ public:
       }
     }
 
-    // [snapshot]: got text, size, created huff codes
-    const uint64_t levels = codes.levels();
+    auto bv = huff_bit_vectors(levels, level_sizes);
+    auto zeros = std::vector<size_t>();
 
-    auto _bv = huff_bit_vectors(levels, codes.level_sizes());
-    auto& bv = _bv.raw_data();
-    auto _zeros = std::vector<size_t>();
     if constexpr (!is_tree) {
-        _zeros = std::vector<size_t>(levels, 0);
+      zeros = std::vector<size_t>(levels, 0);
     }
 
     std::vector<AlphabetType> local_text(size);
@@ -65,12 +66,6 @@ public:
       // Eat prefix in whole 64bit word chunks.
       // Modification of local_text ensures its only as long as the level.
       for (; cur_pos + 64 <= local_text.size(); cur_pos += 64) {
-        /*
-        std::cout << "level " << level
-                  << " cur_pos " << cur_pos
-                  << " size " << local_text.size()
-                  << " ok\n";
-        */
         uint64_t word = 0ULL;
         for (uint32_t i = 0; i < 64; ++i) {
           const code_pair cp = codes.encode_symbol(local_text[cur_pos + i]);
@@ -84,11 +79,10 @@ public:
           }
         }
         if constexpr (!is_tree) {
-          _zeros[level] += __builtin_popcountll(~word);
+          zeros[level] += __builtin_popcountll(~word);
         }
         bv[level][cur_pos >> 6] = word;
       }
-      //std::cout << "\n";
 
       // if there are remaining odd bits...
       if (local_text.size() & 63ULL) {
@@ -107,7 +101,7 @@ public:
         word <<= (64 - (local_text.size() & 63ULL));
         bv[level][local_text.size() >> 6] = word;
         if constexpr (!is_tree) {
-          _zeros[level] +=
+          zeros[level] +=
             (local_text.size() & 63ULL) - __builtin_popcountll(word);
         }
       }
@@ -124,12 +118,6 @@ public:
           }
         }
 
-        /*
-        print_list(std::cout, buckets, true, [&](auto& out, auto& val) {
-          print_list(out, val);
-        }) << "\n";
-        */
-
         for (uint64_t i = 1; i < buckets.size(); ++i) {
           std::move(buckets[i].begin(), buckets[i].end(),
             std::back_inserter(buckets[0]));
@@ -139,14 +127,13 @@ public:
         std::move(text1.begin(), text1.end(), std::back_inserter(text0));
         local_text = std::move(text0);
       }
-      //print_list(std::cout, local_text) << "\n";
     }
     if constexpr (is_tree) {
       return wavelet_structure_tree_huffman<AlphabetType>(
-        std::move(_bv), std::move(codes));
+        std::move(bv), std::move(codes));
     } else /*if constexpr (!is_tree)*/ {
       return wavelet_structure_matrix_huffman<AlphabetType>(
-        std::move(_bv), std::move(_zeros), std::move(codes));
+        std::move(bv), std::move(zeros), std::move(codes));
     }
   }
 }; // class wx_huff_naive
