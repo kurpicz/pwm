@@ -176,7 +176,7 @@ int32_t main(int32_t argc, char const* argv[]) {
         auto structure =
           a->compute_bitvector(txt_prt, text_size, levels);
         if (debug_print) {
-          print_structure(std::cout, structure);
+          print_structure(std::cout, structure, true);
         }
         if (check) {
           if (word_width != 1) {
@@ -260,10 +260,10 @@ int32_t main(int32_t argc, char const* argv[]) {
             if (err_trigger) {
               if (!debug_print) {
                 std::cout << "Output:\n";
-                print_structure(std::cout, structure);
+                print_structure(std::cout, structure, true);
               }
               std::cout << "Naive result as comparison:\n";
-              print_structure(std::cout, naive_wx);
+              print_structure(std::cout, naive_wx, true);
             }
 
             auto pvec = [](auto const& v) {

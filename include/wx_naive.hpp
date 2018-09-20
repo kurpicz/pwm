@@ -30,8 +30,7 @@ public:
 
     if (size == 0) { return wavelet_structure_tree(); }
 
-    auto _bv = bit_vectors(levels, size);
-    auto& bv = _bv.raw_data();
+    auto bv = bit_vectors(levels, size);
 
     // TODO: When not semi_xternal, this can/should be done way nicer.
     std::vector<AlphabetType> local_text(size);
@@ -70,7 +69,7 @@ public:
         }
       }
     }
-    return wavelet_structure_tree(std::move(_bv));
+    return wavelet_structure_tree(std::move(bv));
   }
 }; // class wt_naive
 
