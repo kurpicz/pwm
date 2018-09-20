@@ -14,6 +14,7 @@
 #include "benchmark/algorithm.hpp"
 #include "huffman/huff_codes.hpp"
 #include "huffman/huff_decode.hpp"
+#include "huffman/huff_level_sizes_builder.hpp"
 #include "util/alphabet_util.hpp"
 #include "util/common.hpp"
 #include "util/decode.hpp"
@@ -49,14 +50,16 @@ TEST(huffman_shaped_wavelet_construction, smoketest) {
         auto vec = std::vector<uint8_t>(s.begin(), s.end());
         uint64_t levels = no_reduction_alphabet(vec);
         auto bvz = a->compute_bitvector(&vec, vec.size() , levels);
+        histogram<uint8_t> hist { vec.data(), vec.size() };
+        level_sizes_builder<uint8_t> builder { std::move(hist) };
         if (a->is_tree()) {
           const auto codes =
-            canonical_huff_codes<uint8_t, true>(vec.data(), vec.size());
+            canonical_huff_codes<uint8_t, true>(builder);
           auto decoded_s = decode_wt_huff(bvz.bvs(), codes);
           ASSERT_EQ(s, decoded_s) << "Failure (Algorithm): " << a->name();
         } else {
           const auto codes =
-            canonical_huff_codes<uint8_t, false>(vec.data(), vec.size());
+            canonical_huff_codes<uint8_t, false>(builder);
           auto decoded_s = decode_wm_huff(bvz.bvs(), codes);
           ASSERT_EQ(s, decoded_s) << "Failure (Algorithm): " << a->name();
         }
