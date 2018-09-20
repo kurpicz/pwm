@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
 
+#*******************************************************************************
+#* reducer.py
+#*
+#* Copyright (C) 2018 Marvin Löbel <loebel.marvin@gmail.com>
+#*
+#* All rights reserved. Published under the BSD-2 license in the LICENSE file.
+#******************************************************************************/
+
 import argparse
 import subprocess
 import copy
