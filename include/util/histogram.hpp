@@ -2,6 +2,7 @@
  * include/util/histogram.hpp
  *
  * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
+ * Copyright (C) 2018 Marvin Löbel <loebel.marvin@gmail.com>
  *
  * All rights reserved. Published under the BSD-2 license in the LICENSE file.
  ******************************************************************************/
@@ -27,6 +28,8 @@ struct histogram_entry {
               << he.frequency << " ]";
   }
 }; // struct histogram_entry
+
+// TODO: Optimize memory layout and frequency search
 
 template <typename AlphabetType>
 class histogram {
@@ -63,6 +66,25 @@ public:
       }
       for (const auto& symbol : symbol_list) {
         data_.emplace_back(symbol.first, symbol.second);
+      }
+    }
+  }
+
+  histogram(std::vector<histogram> const& others): max_symbol_(0) {
+    for (auto& o: others) {
+      max_symbol_ = std::max(max_symbol_, o.max_symbol_);
+      for (size_t j = 0; j < o.size(); j++) {
+        bool found = false;
+        for (size_t i = 0; i < size(); i++) {
+          if ((*this)[i].symbol == o[j].symbol) {
+            (*this)[i].frequency += o[j].frequency;
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          data_.emplace_back(o[j].symbol, o[j].frequency);
+        }
       }
     }
   }

@@ -2,6 +2,7 @@
  * include/huffman/huff_codes.hpp
  *
  * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
+ * Copyright (C) 2018 Marvin Löbel <loebel.marvin@gmail.com>
  *
  * All rights reserved. Published under the BSD-2 license in the LICENSE file.
  ******************************************************************************/
@@ -62,9 +63,9 @@ public:
   canonical_huff_codes() = default;
 
   template<typename level_sizes_builder>
-  canonical_huff_codes(level_sizes_builder& ls_builder)
+  canonical_huff_codes(level_sizes_builder& level_sizes)
   {
-    compute_codes(ls_builder);
+    compute_codes(level_sizes);
   }
 
   // Returns code_length and code_word for a given symbol, w.r.t. the text that
@@ -98,9 +99,9 @@ private:
 private:
 
   template<typename level_sizes_builder>
-  void compute_codes(level_sizes_builder& ls_builder)
+  void compute_codes(level_sizes_builder& level_sizes)
   {
-    const auto& histogram = ls_builder.get_histogram();
+    const auto& histogram = level_sizes.get_histogram();
 
     struct frequency_tree_item {
       uint64_t occurrences;
@@ -157,7 +158,8 @@ private:
         return code_pairs_[a].code_length < code_pairs_[b].code_length;
       });
 
-    ls_builder.init(code_pairs_[code_length_order.back()].code_length);
+    level_sizes.allocate_levels(
+      code_pairs_[code_length_order.back()].code_length);
 
     if constexpr (!is_tree) {
       uint64_t code_nr = 0;
@@ -190,7 +192,7 @@ private:
           code_pairs_[cur_code_pos].code_word = code_words.back();
           code_words.pop_back();
 
-          ls_builder.count(code_pairs_[cur_code_pos].code_length - 1,
+          level_sizes.count(code_pairs_[cur_code_pos].code_length - 1,
                            cur_code_pos);
           decode_table_.emplace(std::make_pair(
             code_pairs_[cur_code_pos],
@@ -219,7 +221,7 @@ private:
           cur_code_pair, cur_code_pos));
 
         // Count the number of symbols that occur for each code length
-        ls_builder.count(cur_code_pair.code_length - 1,
+        level_sizes.count(cur_code_pair.code_length - 1,
                          cur_code_pos);
       };
 
@@ -233,6 +235,7 @@ private:
         generate_next_code();
       }
     }
+    level_sizes.drop_hist_and_finalize_level_sizes();
   }
 }; // class canonical_huff_codes
 
