@@ -37,9 +37,11 @@ macro(generic_run_test test_target test_file
       ${PROJECT_SOURCE_DIR}/src/register/sequential_prefix_counting.cpp
       ${PROJECT_SOURCE_DIR}/src/register/sequential_prefix_counting_single_scan.cpp
       ${PROJECT_SOURCE_DIR}/src/register/sequential_prefix_sorting.cpp
+      ${PROJECT_SOURCE_DIR}/src/register/huff_naive.cpp
+      ${PROJECT_SOURCE_DIR}/src/register/huff_dd_naive.cpp
       )
   else()
-    unset(CONSTRUCTION_ALGORITHMS) 
+    unset(CONSTRUCTION_ALGORITHMS)
   endif()
 
   add_executable(${test_target}_testrunner
