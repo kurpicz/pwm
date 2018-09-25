@@ -251,49 +251,33 @@ inline auto huff_merge_bit_vectors(std::vector<uint64_t> const& level_sizes,
   auto r =  huff_bit_vectors(levels, level_sizes);
   auto& _bv = r;
 
-  // TODO: Bugs
-
-  //#pragma omp parallel
-  for(size_t merge_shard = 0; merge_shard < shards; merge_shard++)
-  {
-    auto& ctx = ctxs[merge_shard];
-
+  #pragma omp parallel for
+  for(size_t merge_shard = 0; merge_shard < shards; merge_shard++) {
     for (size_t level = 0; level < levels; level++) {
+      auto& lctx = ctxs[merge_shard].levels[level];
+
       const auto target_right = std::min(
-        ctx.levels[level].write_end_offset,
+        lctx.write_end_offset,
         level_sizes[level]);
       const auto target_left = std::min(
-        (merge_shard > 0 ? ctxs[merge_shard - 1].levels[level].write_end_offset : 0),
+        (merge_shard > 0
+          ? ctxs[merge_shard - 1].levels[level].write_end_offset
+          : 0),
         target_right);
 
-      // std::cout << "\n";
-      // std::cout << "[merge] target_{left,right}: " << target_left;
-      // std::cout << ", " << target_right << "\n";
-
-      auto i = ctx.levels[level].first_read_block;
+      uint64_t i = lctx.first_read_block;
       uint64_t write_offset = target_left;
 
       auto copy_next_block = [&](size_t const initial_read_offset) {
-        // std::cout << "\n";
-        // std::cout << "[merge] i: " << i << "\n";
-        // std::cout << "[merge] write_offset: " << write_offset << "\n";
-        // std::cout << "[merge] initial_read_offset: " << initial_read_offset << "\n";
-
         const auto block = i / shards;
         const auto read_shard = i % shards;
         i++;
-
-        // std::cout << "[merge] block: " << block << "\n";
-        // std::cout << "[merge] read_shard: " << read_shard << "\n";
 
         const auto& local_bv = src_ctxs[read_shard].bv()[level];
         const auto& h = src_ctxs[read_shard];
         auto const permuted_block = rho(level, block);
         uint64_t block_size = h.hist(level, permuted_block) - initial_read_offset;
         uint64_t distance_to_end = target_right - write_offset;
-
-        // std::cout << "[merge] block_size: " << block_size << "\n";
-        // std::cout << "[merge] distance_to_end: " << distance_to_end << "\n";
 
         uint64_t copy_size;
         if (PWM_LIKELY(block_size <= distance_to_end)) {
@@ -302,13 +286,8 @@ inline auto huff_merge_bit_vectors(std::vector<uint64_t> const& level_sizes,
             copy_size = distance_to_end;
         }
 
-        auto& local_cursor = ctx.levels[level].read_offsets[read_shard];
+        auto& local_cursor = lctx.read_offsets[read_shard];
 
-        // std::cout << "[merge] copy_bits("
-        //     << "write_offset=" << write_offset << ", "
-        //     << "local_cursor=" << local_cursor << ", "
-        //     << "copy_size=" << copy_size << ")"
-        //     << "\n";
         copy_bits<uint64_t>(
           _bv[level].data(),
           local_bv.data(),
@@ -320,7 +299,7 @@ inline auto huff_merge_bit_vectors(std::vector<uint64_t> const& level_sizes,
 
       if (write_offset < target_right) {
         // the first block might start somewhere in the middle
-        copy_next_block(ctx.levels[level].initial_read_offset);
+        copy_next_block(lctx.initial_read_offset);
       }
       while (write_offset < target_right) {
         // other blocks start at 0
