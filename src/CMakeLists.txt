@@ -22,6 +22,7 @@ set(INTERNAL_SRCS
 
   ${CMAKE_CURRENT_SOURCE_DIR}/register/huff_naive.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/register/huff_dd_naive.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/register/huff_pc.cpp
 )
 
 set(INTERNAL_LIBS rt dl)
