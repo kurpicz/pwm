@@ -21,6 +21,22 @@ void copy_bits(WordType* const dst, WordType const* const src,
   uint64_t& dst_off_ref, uint64_t& src_off_ref, uint64_t const block_size) {
   if (block_size == 0) return;
 
+  auto debug_ptr = [dst](WordType* const) {
+    /*
+    NB: Code skeleton for debugging writes to memory.
+    This should not have runtime impact while commented out
+
+    #include <bitset>
+    #include <sstream>
+
+    int64_t diff = ptr - dst;
+    std::stringstream ss;
+    ss << "write [" << dst << "][" << diff << "]: " << std::bitset<64>(*ptr) << "\n";
+    // Using a stringstream to get a atomic write to cout
+    std::cout << ss.str();
+    */
+  };
+
   WordType constexpr BITS = (sizeof(WordType) * CHAR_BIT);
   WordType constexpr MOD_MASK = BITS - 1;
   WordType constexpr SHIFT = log2(MOD_MASK);
@@ -41,6 +57,7 @@ void copy_bits(WordType* const dst, WordType const* const src,
         bool const bit = bit_at<WordType>(src, src_off++);
 
         word |= (WordType(bit) << (MOD_MASK - (dst_off++ & MOD_MASK)));
+        debug_ptr(&word);
       }
     }
 
@@ -55,6 +72,7 @@ void copy_bits(WordType* const dst, WordType const* const src,
 
       while (ds != ds_end) {
         *ds++ = *sr++;
+        debug_ptr(ds);
       }
 
       dst_off += words * BITS;
@@ -69,6 +87,7 @@ void copy_bits(WordType* const dst, WordType const* const src,
         bool const bit = bit_at<WordType>(src, src_off++);
 
         word |= (WordType(bit) << (MOD_MASK - (dst_off++ & MOD_MASK)));
+        debug_ptr(&word);
       }
     }
   } else {
@@ -80,6 +99,7 @@ void copy_bits(WordType* const dst, WordType const* const src,
         bool const bit = bit_at<WordType>(src, src_off++);
 
         word |= (WordType(bit) << (MOD_MASK - (dst_off++ & MOD_MASK)));
+        debug_ptr(&word);
       }
     }
 
@@ -96,6 +116,7 @@ void copy_bits(WordType* const dst, WordType const* const src,
 
       while (ds != ds_end) {
         *ds++ = (*sr << src_shift_a) | (*(sr+1) >> src_shift_b);
+        debug_ptr(ds);
         sr++;
       }
 
@@ -111,6 +132,7 @@ void copy_bits(WordType* const dst, WordType const* const src,
         bool const bit = bit_at<WordType>(src, src_off++);
 
         word |= (WordType(bit) << (MOD_MASK - (dst_off++ & MOD_MASK)));
+        debug_ptr(&word);
       }
     }
   }
