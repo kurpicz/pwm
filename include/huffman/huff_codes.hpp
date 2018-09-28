@@ -49,8 +49,16 @@ struct code_pair {
   }
 
   friend std::ostream& operator <<(std::ostream& os, const code_pair& cp) {
-    return os << "[ length:" << cp.code_length << ", word: "
-              << cp.code_word << " ]";
+    os << "[ "
+       << "length:" << cp.code_length
+       << ", word: " << cp.code_word
+       << ", bits: ";
+    for(size_t i = 0; i < cp.code_length; i++) {
+      os << int(cp[i]);
+    }
+    os << " ]";
+    DCHECK((cp.code_word >> cp.code_length) == 0);
+    return os;
   }
 } PWM_ATTRIBUTE_PACKED; // struct code_pair
 
