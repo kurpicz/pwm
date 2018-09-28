@@ -64,7 +64,7 @@ while True:
         write_binary(LRF, prev)
 
         ri = random.randrange(0, len(current))
-        rl = random.randrange(0, 100) + 1
+        rl = random.randrange(0, (int(len(current) / 10)) + 1) + 1
 
         left = current[:ri]
         right = current[(ri+rl):]
