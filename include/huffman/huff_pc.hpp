@@ -8,6 +8,12 @@
 
 #pragma once
 
+#include <cstdint>
+#include <cstddef>
+#include <iostream>
+
+#include "huffman/huff_codes.hpp"
+
 template <typename AlphabetType, typename ContextType, typename HuffCodes>
 void huff_pc(AlphabetType const* text,
              uint64_t const size,
