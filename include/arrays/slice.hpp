@@ -31,6 +31,12 @@ public:
   inline T* data() const {
     return m_ptr;
   }
+  inline Slice slice(size_t start, size_t end) const {
+    DCHECK(start <= m_size);
+    DCHECK(end <= m_size);
+    DCHECK(start <= end);
+    return Slice { m_ptr + start, end - start };
+  }
 };
 
 
