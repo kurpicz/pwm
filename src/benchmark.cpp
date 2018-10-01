@@ -196,12 +196,12 @@ int32_t main(int32_t argc, char const* argv[]) {
             }
             if ((a->is_tree()) && (a->is_huffman_shaped())) {
               naive = algo_list.filtered([](auto e) {
-                return e->name() == "huff_wt_naive";
+                return e->name() == "wt_huff_naive";
               }).at(0);
             }
             if (!(a->is_tree()) && (a->is_huffman_shaped())) {
               naive = algo_list.filtered([](auto e) {
-                return e->name() == "huff_wm_naive";
+                return e->name() == "wm_huff_naive";
               }).at(0);
             }
             assert(naive != nullptr);
