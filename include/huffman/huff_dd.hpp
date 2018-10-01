@@ -35,29 +35,29 @@ public:
   using ctx_t = ctx_huff_all_levels<is_tree>;
 
   template <typename InputType>
-  static wavelet_structure compute(const InputType& global_text,
+  static wavelet_structure compute(const InputType& global_text_ptr,
     const uint64_t size, const uint64_t /*levels*/) {
 
     // TODO ^ remove levels parameter from API
+
+    Slice<AlphabetType const> const global_text { global_text_ptr, size };
 
     const uint64_t shards = omp_get_max_threads();
 
     std::vector<histogram<AlphabetType>> local_hists(shards);
 
-    auto get_local_text = [global_text, size, shards] (size_t rank) {
-      const uint64_t local_size = (size / shards) +
-        ((rank < size % shards) ? 1 : 0);
+    auto get_local_slice = [size, shards] (size_t rank, auto slice) {
       const uint64_t offset = (rank * (size / shards)) +
         std::min<uint64_t>(rank, size % shards);
+      const uint64_t local_size = (size / shards) +
+        ((rank < size % shards) ? 1 : 0);
 
-      const AlphabetType* local_text = global_text + offset;
-
-      return Slice<AlphabetType const> { local_text, local_size };
+      return slice.slice(offset, offset + local_size);
     };
 
     #pragma omp parallel for
     for (size_t shard = 0; shard < shards; shard++) {
-      auto text = get_local_text(shard);
+      auto text = get_local_slice(shard, global_text);
 
       // calculate local histogram
       local_hists[shard] = histogram<AlphabetType>(text.data(), text.size());
@@ -89,22 +89,28 @@ public:
     auto ctxs = std::vector<ctx_t>(shards);
 
     // NB: Only allocate if needed
-    std::vector<AlphabetType> second_text_allocation;
+    std::vector<AlphabetType> global_sorted_text_allocation;
     if constexpr (Algorithm::needs_second_text_allocation) {
-      second_text_allocation = std::vector<AlphabetType>(size);
+      global_sorted_text_allocation = std::vector<AlphabetType>(size);
     }
+    Slice<AlphabetType> const global_sorted_text {
+        global_sorted_text_allocation.data(),
+        global_sorted_text_allocation.size()
+    };
 
     #pragma omp parallel for
     for (size_t shard = 0; shard < shards; shard++) {
-      auto const text = get_local_text(shard);
-      std::vector<std::vector<uint64_t>> const& local_level_sizes
-        = builder.level_sizes_shards();
+      std::vector<uint64_t> const& local_level_sizes
+        = builder.level_sizes_shards()[shard];
 
-      ctxs[shard] = ctx_t(local_level_sizes[shard], levels, rho);
+      auto const text = get_local_slice(shard, global_text);
+
+      ctxs[shard] = ctx_t(local_level_sizes, levels, rho);
 
       if constexpr (Algorithm::needs_second_text_allocation) {
+        auto const sorted_text = get_local_slice(shard, global_sorted_text);
         Algorithm::calc_huff(text.data(), text.size(), levels, codes,
-                            ctxs[shard], second_text_allocation.data(),
+                            ctxs[shard], sorted_text.data(),
                             local_level_sizes);
       } else {
         Algorithm::calc_huff(text.data(), text.size(), levels, codes,
@@ -114,7 +120,7 @@ public:
       ctxs[shard].discard_non_merge_data();
     }
 
-    drop_me(std::move(second_text_allocation));
+    drop_me(std::move(global_sorted_text_allocation));
 
     std::vector<uint64_t> const& level_sizes = builder.level_sizes();
     auto bv = huff_merge_bit_vectors(level_sizes, shards, ctxs, rho);
