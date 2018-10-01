@@ -88,6 +88,12 @@ public:
     const auto rho = rho_dispatch<is_tree>::create(levels);
     auto ctxs = std::vector<ctx_t>(shards);
 
+    // NB: Only allocate if needed
+    std::vector<AlphabetType> second_text_allocation;
+    if constexpr (Algorithm::needs_second_text_allocation) {
+      second_text_allocation = std::vector<AlphabetType>(size);
+    }
+
     #pragma omp parallel for
     for (size_t shard = 0; shard < shards; shard++) {
       auto const text = get_local_text(shard);
@@ -96,10 +102,19 @@ public:
 
       ctxs[shard] = ctx_t(local_level_sizes[shard], levels, rho);
 
-      Algorithm::calc_huff(text.data(), text.size(), levels, codes, ctxs[shard]);
+      if constexpr (Algorithm::needs_second_text_allocation) {
+        Algorithm::calc_huff(text.data(), text.size(), levels, codes,
+                            ctxs[shard], second_text_allocation.data(),
+                            local_level_sizes);
+      } else {
+        Algorithm::calc_huff(text.data(), text.size(), levels, codes,
+                             ctxs[shard]);
+      }
 
       ctxs[shard].discard_non_merge_data();
     }
+
+    drop_me(std::move(second_text_allocation));
 
     std::vector<uint64_t> const& level_sizes = builder.level_sizes();
     auto bv = huff_merge_bit_vectors(level_sizes, shards, ctxs, rho);

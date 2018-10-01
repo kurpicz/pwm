@@ -13,6 +13,8 @@
 #include "huffman/huff_dd.hpp"
 
 struct huff_pc_disp {
+  static constexpr bool needs_second_text_allocation = false;
+
   template <typename AlphabetType, typename ContextType, typename HuffCodes>
   static void calc_huff(AlphabetType const* text,
                         uint64_t const size,
