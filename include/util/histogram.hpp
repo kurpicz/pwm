@@ -41,10 +41,10 @@ public:
     const uint64_t reduced_sigma = 0) : max_symbol_(0){
 
     if (std::is_same<AlphabetType, uint8_t>::value) {
-      const uint64_t max_char = std::max(
+      const uint64_t alphabet_size = std::max(
         static_cast<std::remove_cv_t<decltype(reduced_sigma)>>(
           std::numeric_limits<uint8_t>::max() + 1), reduced_sigma);
-      std::vector<uint64_t> hist(max_char, 0);
+      std::vector<uint64_t> hist(alphabet_size, 0);
       for (uint64_t pos = 0; pos < size; ++pos) {
         const AlphabetType cur_char = text[pos];
         max_symbol_ = std::max(max_symbol_, cur_char);
