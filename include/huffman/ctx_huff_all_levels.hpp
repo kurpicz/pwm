@@ -10,7 +10,7 @@
 #pragma once
 
 #include "arrays/bit_vectors.hpp"
-#include "huff_border_hist_array.hpp"
+#include "arrays/pow2_array.hpp"
 
 /// Keep calculated information for individual levels around
 template<bool is_tree>
@@ -70,7 +70,7 @@ public:
   }
 
 private:
-  huff_border_hist_array hist_;
+  pow2_array hist_;
   rho_t const* rho_ = nullptr;
   std::vector<uint64_t> borders_;
   std::vector<uint64_t> zeros_;

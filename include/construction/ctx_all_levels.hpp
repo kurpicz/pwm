@@ -10,7 +10,7 @@
 #pragma once
 
 #include "arrays/bit_vectors.hpp"
-#include "arrays/border_hist_array.hpp"
+#include "arrays/pow2_array.hpp"
 #include "util/permutation.hpp"
 
 // TODO: WM/WT abstract that selects zeros and rho
@@ -18,7 +18,7 @@
 /// Keep calculated information for individual levels around
 template<bool is_tree>
 class ctx_all_levels {
-  
+
 public:
   using rho_t = typename rho_dispatch<is_tree>::type;
 
@@ -72,7 +72,7 @@ public:
   }
 
 private:
-  border_hist_array hist_;
+  pow2_array hist_;
   rho_t const* rho_ = nullptr;
   std::vector<uint64_t> borders_;
   std::vector<uint64_t> zeros_;
