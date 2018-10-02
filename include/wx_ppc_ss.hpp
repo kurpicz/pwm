@@ -60,6 +60,7 @@ public:
 
     ctx.fill_borders();
 
+    // TODO: Is this correct?
     #pragma omp parallel num_threads(levels)
     {
       for (uint64_t i = 0; i < size; ++i) {
