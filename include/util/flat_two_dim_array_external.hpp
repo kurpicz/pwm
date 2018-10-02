@@ -97,7 +97,7 @@ public:
     return data_;
   }
   
-  inline std::vector<uint64_t> const& zeros() const {
+  inline std::vector<uint64_t>& zeros()  {
     return zeros_;
   }
   
