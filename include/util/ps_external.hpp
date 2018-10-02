@@ -601,27 +601,140 @@ external_bit_vectors ps_fully_external_matrix2(const InputType& text, uint64_t c
 }
 
 
-//template <typename ReaderType, typename WriterType>
-//inline void split(
-//    ReaderType &reader,
-//    WriterType &leftWriter,
-//    WriterType &rightWriter,
-//    unsigned shift,
-//    uint64_t length) {
-//  for(uint64_t i = 0; i < length; i++) {
-//    auto symbol = *reader;
-//    if((symbol >> shift) & 0x1)
-//      rightWriter << symbol;
-//    else
-//      leftWriter << symbol;
-//    ++reader;
-//  }
-//}
+template <typename ValueType>
+struct word_packed_reader {
+  const unsigned bits;
+  const uint64_t size;
+
+  const unsigned values_per_word;
+  const unsigned values_in_last_word;
+
+  stxxlvector<uint64_t>::bufreader_type reader;
+
+  unsigned current_word_counter;
+  unsigned current_shift;
+  uint64_t current_word;
+  uint64_t mask;
+
+  word_packed_reader(stxxlvector<uint64_t>& vec, uint64_t size, unsigned bits) :
+      bits(bits),
+      size(size),
+      values_per_word(64 / bits),
+      values_in_last_word(size % values_per_word),
+      reader(vec) {
+
+    assert((vec.size() - 1) * values_per_word < size);
+    assert(vec.size() * values_per_word >= size);
+
+    current_word_counter = 65;
+
+    mask = 0ULL;
+    for(unsigned i = 0; i < bits; i++) {
+      mask <<= 1;
+      mask |= 1ULL;
+    }
+  }
+
+  ValueType next() {
+    if(current_word_counter > values_per_word) {
+      current_word_counter = 0;
+      current_shift = 64 - bits;
+      current_word = *reader;
+      ++reader;
+    }
+
+    ValueType result = ((current_word >> current_shift) & mask);
+    current_word_counter++;
+    current_shift -= bits;
+    return result;
+  }
+
+  bool empty() {
+    return
+      (reader.empty() &&
+       current_word_counter >= values_in_last_word);
+  }
+
+};
+
+
+template <typename ValueType>
+struct word_packed_writer {
+  const unsigned bits;
+  const unsigned values_per_word;
+  const unsigned final_shift;
+
+  stxxlvector<uint64_t>::bufwriter_type writer;
+
+  uint64_t total_counter;
+
+  unsigned current_word_counter;
+  uint64_t current_word;
+  uint64_t mask;
+
+  word_packed_writer(stxxlvector<uint64_t>& vec, unsigned bits) :
+      bits(bits),
+      values_per_word(64 / bits),
+      final_shift(64 % bits),
+      writer(vec) {
+
+    total_counter = 0;
+    current_word_counter = 0;
+    current_word = 0ULL;
+
+    mask = 0ULL;
+    for(unsigned i = 0; i < bits; i++) {
+      mask <<= 1;
+      mask |= 1ULL;
+    }
+  }
+
+  void next(ValueType value) {
+    current_word <<= bits;
+    current_word |= (mask & value);
+    current_word_counter++;
+
+    if(current_word_counter == values_per_word) {
+      total_counter += values_per_word;
+      writer << (current_word << final_shift);
+      current_word_counter = 0;
+      current_word = 0ULL;
+    }
+  }
+
+  uint64_t size() const {
+    return total_counter;
+  }
+
+  void finish() {
+    auto final_size = total_counter + current_word_counter;
+    while(current_word_counter > 0)
+      next(ValueType(0));
+    total_counter = final_size;
+    writer.finish();
+  }
+
+};
 
 
 template <typename AlphabetType, typename ContextType, typename InputType>
 external_bit_vectors ps_fully_external_matrix(const InputType& text, uint64_t const size, const uint64_t levels,
                                             ContextType& /*ctx*/) {
+
+  /*std::cout << "TEST WPRW" << std::endl;
+  stxxlvector<uint64_t> testvec;
+  word_packed_writer<uint8_t> testwriter(testvec, 6);
+  for(uint8_t i = 0; i < 128; i++) {
+    testwriter.next(i);
+  }
+  testwriter.finish();
+  auto testsize = testwriter.size();
+  std::cout << "size " << testsize << std::endl;
+  word_packed_reader<uint8_t> testreader(testvec, testsize, 6);
+  while(!testreader.empty()) {
+    std::cout << uint64_t(testreader.next()) << " . ";
+  }
+  std::cout << std::endl << std::endl;*/
 
   std::cout << "PS external" << std::endl;
   external_bit_vectors result(levels, size, 0);
