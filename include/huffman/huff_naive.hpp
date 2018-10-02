@@ -29,6 +29,8 @@ void huff_naive(AlphabetType const* text,
 
       // calculate histogram
       {
+        // TODO: Only calculate if needed? Right now needed for dd,
+        // but not for standalone.
         for(size_t i = 0; i < size; i++) {
             const code_pair cp = codes.encode_symbol(text[i]);
             for (size_t level = 0; level <= cp.code_length; level++) {
