@@ -13,6 +13,7 @@
 #include "construction/ctx_compute_borders.hpp"
 #include "construction/pc_ss.hpp"
 #include "construction/wavelet_structure.hpp"
+#include "construction/building_blocks.hpp"
 
 template <typename AlphabteType, bool is_tree_>
 class wx_ppc_ss {
@@ -40,9 +41,9 @@ public:
     auto& zeros = ctx.zeros();
 
     const uint64_t max_char = (1 << levels);
-    
-    std::vector<std::vector<uint64_t>> all_hists; 
-    
+
+    std::vector<std::vector<uint64_t>> all_hists;
+
     #pragma omp parallel
     {
       const auto omp_rank = omp_get_thread_num();
@@ -86,7 +87,8 @@ public:
         zeros[levels - 1] += ctx.hist(levels, i);
       }
     }
-    ctx.fill_borders();
+
+    bottom_up_compute_hist_and_borders_and_optional_zeros(size, levels, ctx);
 
     // TODO: Is this correct?
     #pragma omp parallel num_threads(levels)

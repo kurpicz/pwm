@@ -13,6 +13,7 @@
 #include "construction/ctx_all_levels.hpp"
 #include "construction/wavelet_structure.hpp"
 #include "util/common.hpp"
+#include "construction/building_blocks.hpp"
 
 template <typename AlphabetType, bool is_tree_>
 class wx_ppc {

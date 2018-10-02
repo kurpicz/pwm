@@ -37,3 +37,29 @@ inline void scan_text_compute_first_level_bv_and_last_level_hist(
     bv[0][size >> 6] = word;
   }
 }
+
+template<typename ctx_t>
+inline void bottom_up_compute_hist_and_borders_and_optional_zeros(
+  uint64_t const levels,
+  ctx_t& ctx
+) {
+  for (uint64_t level = levels - 1; level > 0; --level) {
+    for (uint64_t pos = 0; pos < ctx.hist_size(level); ++pos) {
+      ctx.hist(level, pos) = ctx.hist(level + 1, pos << 1) +
+        ctx.hist(level + 1, (pos << 1) + 1);
+    }
+
+    ctx.borders(level, 0) = 0;
+    for (uint64_t pos = 1; pos < ctx.hist_size(level); ++pos) {
+      auto const prev_rho = ctx.rho(level, pos - 1);
+
+      ctx.borders(level, ctx.rho(level, pos)) =
+        ctx.borders(level, prev_rho) + ctx.hist(level, prev_rho);
+    }
+
+    // The number of 0s is the position of the first 1 in the previous level
+    if constexpr (ctx_t::compute_zeros) {
+      ctx.zeros()[level - 1] = ctx.borders(level, 1);
+    }
+  }
+}

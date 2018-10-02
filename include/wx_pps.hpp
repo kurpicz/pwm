@@ -14,6 +14,7 @@
 #include "util/common.hpp"
 #include "construction/ctx_sliced_single_level.hpp"
 #include "construction/wavelet_structure.hpp"
+#include "construction/building_blocks.hpp"
 
 template <typename AlphabetType, bool is_tree_>
 class wx_pps {
@@ -51,7 +52,7 @@ public:
       auto& bv = ctx.bv();
       auto& zeros = ctx.zeros();
 
-      // While initializing the histogram, we also compute the fist level
+      // While initializing the histogram, we also compute the first level
       #pragma omp for
       for (uint64_t cur_pos = 0; cur_pos <= size - 64; cur_pos += 64) {
         uint64_t word = 0ULL;
