@@ -405,12 +405,15 @@ inline void split(
   }
 }
 
+// DO NOT USE
 template <typename AlphabetType, typename ContextType, typename InputType>
-external_bit_vectors ps_fully_external(const InputType& text, uint64_t const size, const uint64_t levels,
+external_bit_vectors ps_fully_external_matrix2(const InputType& text, uint64_t const size, const uint64_t levels,
   ContextType& /*ctx*/) {
   
   std::cout << "PS external" << std::endl;
   external_bit_vectors result(levels, size, 0);
+  std::vector<uint64_t>& zeros = result.zeros();
+  zeros.resize(levels);
 
   using in_vector_type = InputType;
   using reader_type = typename in_vector_type::bufreader_type;
@@ -525,7 +528,9 @@ external_bit_vectors ps_fully_external(const InputType& text, uint64_t const siz
       delete leftWriter;
       delete rightWriter;
     }
-    
+    zeros[i - 1] = leftCur->size();
+    std::cout << "ZEROES " << zeros[i-1] << "  " << size << std::endl;
+
     std::swap(leftCur, leftPrev);
     std::swap(rightCur, rightPrev);
     
@@ -534,49 +539,35 @@ external_bit_vectors ps_fully_external(const InputType& text, uint64_t const siz
     
     leftReader = new reader_type(*leftPrev);
     rightReader = new reader_type(*rightPrev);
-    
-    unsigned histId = 0;
-    uint64_t histRemains = hist[i][0];
+
     reader_type * leftRightReader = leftReader;
     
     uint64_t cur_pos = 0;
     for (; cur_pos + 64 <= size; cur_pos += 64) {
       uint64_t word = 0ULL;
       for (unsigned k = 0; k < 64; ++k) {
-        if(histRemains == 0) {
-          do{
-            histId++;
-            histRemains = hist[i][histId];
-          } while(histRemains == 0);
-          if(histId % 2 == 0) leftRightReader = leftReader;
-          else leftRightReader = rightReader;
+        if(leftRightReader->empty()) {
+          leftRightReader = rightReader;
         }
         auto symbol = **leftRightReader;
         word <<= 1;
         word |= ((symbol >> (levels - i - 1)) & 1ULL);
         
         ++(*leftRightReader);
-        --histRemains;
       }
       result_writer << word;
     }
     if (size & 63ULL) {
       uint64_t word = 0ULL;
       for (unsigned k = 0; k < size - cur_pos; ++k) {
-        if(histRemains == 0) {
-          do{
-            histId++;
-            histRemains = hist[i][histId];
-          } while(histRemains == 0);
-          if(histId % 2 == 0) leftRightReader = leftReader;
-          else leftRightReader = rightReader;
+        if(leftRightReader->empty()) {
+          leftRightReader = rightReader;
         }
         auto symbol = **leftRightReader;
         word <<= 1;
         word |= ((symbol >> (levels - i - 1)) & 1ULL);
         
         ++(*leftRightReader);
-        --histRemains;
       }
       word <<= (64 - (size & 63ULL));
       result_writer << word;
@@ -629,7 +620,137 @@ external_bit_vectors ps_fully_external(const InputType& text, uint64_t const siz
 
 
 template <typename AlphabetType, typename ContextType, typename InputType>
-external_bit_vectors ps_fully_external2(const InputType& text, uint64_t const size, const uint64_t levels,
+external_bit_vectors ps_fully_external_matrix(const InputType& text, uint64_t const size, const uint64_t levels,
+                                            ContextType& /*ctx*/) {
+
+  std::cout << "PS external" << std::endl;
+  external_bit_vectors result(levels, size, 0);
+  std::vector<uint64_t>& zeros = result.zeros();
+  zeros.resize(levels);
+
+  using in_vector_type = InputType;
+  using reader_type = typename in_vector_type::bufreader_type;
+  using writer_type = typename in_vector_type::bufwriter_type;
+
+  using out_vector_type = typename std::remove_reference<decltype(result.raw_data())>::type;
+  using result_writer_type = typename out_vector_type::bufwriter_type;
+  out_vector_type& bv = result.raw_data();
+
+  stxxl_files::reset_usage();
+  in_vector_type v1 = stxxl_files::getVector<in_vector_type>(1);
+  in_vector_type v2 = stxxl_files::getVector<in_vector_type>(2);
+  in_vector_type v3 = stxxl_files::getVector<in_vector_type>(3);
+  in_vector_type v4 = stxxl_files::getVector<in_vector_type>(4);
+
+  v1.clear();
+  v2.clear();
+  v3.clear();
+  v4.clear();
+
+  in_vector_type * leftPrev = &v1;
+  in_vector_type * rightPrev = &v2;
+
+  in_vector_type * leftCur = &v3;
+  in_vector_type * rightCur = &v4;
+
+  reader_type * leftReader;
+  reader_type * rightReader;
+  writer_type * leftWriter;
+  writer_type * rightWriter;
+
+  result_writer_type result_writer(bv);
+
+  // scans (top down WT construction in left-right-buffers)
+  for(unsigned i = 0; i < levels; i++) {
+    std::cout << "Level " << i + 1 << " of " << levels << "... " << std::endl;
+
+    std::swap(leftCur, leftPrev);
+    std::swap(rightCur, rightPrev);
+
+    leftCur->clear();
+    rightCur->clear();
+    leftCur->reserve(size);
+    rightCur->reserve(size);
+
+    if(i == 0) {
+      leftReader = new reader_type(text);
+    } else {
+      zeros[i - 1] = leftPrev->size();
+      leftReader = new reader_type(*leftPrev);
+    }
+
+    rightReader = new reader_type(*rightPrev);
+    leftWriter = new writer_type(*leftCur);
+    rightWriter = new writer_type(*rightCur);
+
+    reader_type * leftRightReader = leftReader;
+
+    auto const shift = levels - i - 1;
+    uint64_t cur_pos = 0;
+    for (; cur_pos + 64 <= size; cur_pos += 64) {
+      uint64_t word = 0ULL;
+      for (unsigned k = 0; k < 64; ++k) {
+        if(leftRightReader->empty()) {
+          leftRightReader = rightReader;
+        }
+        auto symbol = **leftRightReader;
+        if((symbol >> shift) & 0x1)
+          *rightWriter << symbol;
+        else
+          *leftWriter << symbol;
+        word <<= 1;
+        word |= ((symbol >> shift) & 1ULL);
+
+        ++(*leftRightReader);
+      }
+      result_writer << word;
+    }
+    if (size & 63ULL) {
+      uint64_t word = 0ULL;
+      for (unsigned k = 0; k < size - cur_pos; ++k) {
+        if(leftRightReader->empty()) {
+          leftRightReader = rightReader;
+        }
+        auto symbol = **leftRightReader;
+        if((symbol >> shift) & 0x1)
+          *rightWriter << symbol;
+        else
+          *leftWriter << symbol;
+        word <<= 1;
+        word |= ((symbol >> shift) & 1ULL);
+
+        ++(*leftRightReader);
+      }
+      word <<= (64 - (size & 63ULL));
+      result_writer << word;
+    }
+
+    delete leftReader;
+    delete rightReader;
+    delete leftWriter;
+    delete rightWriter;
+  }
+
+  result_writer.finish();
+
+  std::cout << "Done." << std::endl << std::endl;
+
+  //~ std::cout << "RESULT IS: " << bv.size() << ", SHOULD BE: " << levels * ((size + 63) / 64) << ", SIZE: " << size << ", LEVELS: " << levels << std::endl << std::endl;
+  //~ uint64_t words = (size + 63) / 64;
+  //~ unsigned tesla = 0;
+  //~ for(auto word : bv) {
+  //~ if(tesla % words == 0) std::cout << std::endl << "Level " << tesla / words << ":  ";
+  //~ std::cout << std::bitset<64>(word);
+  //~ tesla++;
+  //~ }
+  //~ std::cout << std::endl << std::endl << std::endl;
+
+  return result;
+}
+
+
+template <typename AlphabetType, typename ContextType, typename InputType>
+external_bit_vectors ps_fully_external_tree(const InputType& text, uint64_t const size, const uint64_t levels,
                                        ContextType& /*ctx*/) {
 
   std::cout << "PS external" << std::endl;

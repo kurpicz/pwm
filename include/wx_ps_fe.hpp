@@ -30,7 +30,8 @@ public:
     if(size == 0) { return external_bit_vectors(); }
 
     auto ctx = ctx_t(size, levels);
-    return ps_fully_external2<AlphabetType>(text, size, levels, ctx);
+    if(is_tree_) return ps_fully_external_tree<AlphabetType>(text, size, levels, ctx);
+    else return ps_fully_external_matrix<AlphabetType>(text, size, levels, ctx);
   }
 }; // class wx_ps
 
