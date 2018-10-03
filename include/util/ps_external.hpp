@@ -774,7 +774,7 @@ external_bit_vectors ps_fully_external_matrix(const InputType& text, uint64_t co
   result_writer_type result_writer(bv);
 
   // scans (top down WT construction in left-right-buffers)
-  for(unsigned i = 0; i < levels; i++) {
+  for(unsigned i = 0; i < levels - 1; i++) {
     std::cout << "Level " << i + 1 << " of " << levels << "... " << std::endl;
 
     std::swap(leftCur, leftPrev);
@@ -843,6 +843,44 @@ external_bit_vectors ps_fully_external_matrix(const InputType& text, uint64_t co
     delete leftWriter;
     delete rightWriter;
   }
+
+  std::cout << "Level " << levels << " of " << levels << " (final scan)... " << std::endl;
+
+  zeros[levels - 2] = leftCur->size();
+  leftReader = new reader_type(*leftCur);
+  rightReader = new reader_type(*rightCur);
+
+  reader_type * leftRightReader = leftReader;
+
+  uint64_t cur_pos = 0;
+  for (; cur_pos + 64 <= size; cur_pos += 64) {
+    uint64_t word = 0ULL;
+    for (unsigned k = 0; k < 64; ++k) {
+      if(leftRightReader->empty()) {
+        leftRightReader = rightReader;
+      }
+      word <<= 1;
+      word |= (**leftRightReader & 1ULL);
+      ++(*leftRightReader);
+    }
+    result_writer << word;
+  }
+  if (size & 63ULL) {
+    uint64_t word = 0ULL;
+    for (unsigned k = 0; k < size - cur_pos; ++k) {
+      if(leftRightReader->empty()) {
+        leftRightReader = rightReader;
+      }
+      word <<= 1;
+      word |= (**leftRightReader & 1ULL);
+      ++(*leftRightReader);
+    }
+    word <<= (64 - (size & 63ULL));
+    result_writer << word;
+  }
+
+  delete leftReader;
+  delete rightReader;
 
   result_writer.finish();
 
