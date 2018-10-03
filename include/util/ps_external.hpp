@@ -944,34 +944,33 @@ external_bit_vectors ps_fully_external_tree(const InputType& text, uint64_t cons
   std::cout << "PS external" << std::endl;
   external_bit_vectors result(levels, size, 0);
 
-  using in_vector_type = InputType;
-  using reader_type = typename in_vector_type::bufreader_type;
-  using writer_type = typename in_vector_type::bufwriter_type;
-
+  using input_reader_type = typename InputType::bufreader_type;
   using out_vector_type = typename std::remove_reference<decltype(result.raw_data())>::type;
   using result_writer_type = typename out_vector_type::bufwriter_type;
+
+  using word_packed_vector_type = stxxlvector<uint64_t>;
+  using value_type = typename InputType::value_type;
+  using reader_type = word_packed_reader<value_type>;
+  using writer_type = word_packed_writer<value_type>;
+
   out_vector_type& bv = result.raw_data();
 
-  std::vector<std::vector<uint64_t>> hist(levels + 1);
-  for(unsigned i = 0; i <= levels; i++)
-    hist[i].resize(pow(2, i));
-
   stxxl_files::reset_usage();
-  in_vector_type v1 = stxxl_files::getVector<in_vector_type>(1);
-  in_vector_type v2 = stxxl_files::getVector<in_vector_type>(2);
-  in_vector_type v3 = stxxl_files::getVector<in_vector_type>(3);
-  in_vector_type v4 = stxxl_files::getVector<in_vector_type>(4);
+  word_packed_vector_type v1 = stxxl_files::getVector<word_packed_vector_type>(1);
+  word_packed_vector_type v2 = stxxl_files::getVector<word_packed_vector_type>(2);
+  word_packed_vector_type v3 = stxxl_files::getVector<word_packed_vector_type>(3);
+  word_packed_vector_type v4 = stxxl_files::getVector<word_packed_vector_type>(4);
 
   v1.clear();
   v2.clear();
   v3.clear();
   v4.clear();
 
-  in_vector_type * leftPrev = &v1;
-  in_vector_type * rightPrev = &v2;
+  word_packed_vector_type * leftPrev = &v1;
+  word_packed_vector_type * rightPrev = &v2;
 
-  in_vector_type * leftCur = &v3;
-  in_vector_type * rightCur = &v4;
+  word_packed_vector_type * leftCur = &v3;
+  word_packed_vector_type * rightCur = &v4;
 
   reader_type * leftReader;
   reader_type * rightReader;
@@ -980,50 +979,60 @@ external_bit_vectors ps_fully_external_tree(const InputType& text, uint64_t cons
 
   result_writer_type result_writer(bv);
 
+  uint64_t left_size = 0;
+  uint64_t right_size = 0;
+
+  std::vector<std::vector<uint64_t>> hist(levels + 1);
+  for(unsigned i = 0; i <= levels; i++)
+    hist[i].resize(pow(2, i));
+
   std::cout << "Level 1 of " << levels << " (initial scan)... " << std::endl;
   // Initial Scan:
   {
-    leftCur->reserve(size);
-    rightCur->reserve(size);
+    leftCur->reserve(size / (64 / levels) + 1);
+    rightCur->reserve(size / (64 / levels) + 1);
 
-    leftReader = new reader_type(text);
-    leftWriter = new writer_type(*leftCur);
-    rightWriter = new writer_type(*rightCur);
+    input_reader_type initialReader(text);
+    leftWriter = new writer_type(*leftCur, levels - 1);
+    rightWriter = new writer_type(*rightCur, levels - 1);
 
     uint64_t cur_pos = 0;
     for (; cur_pos + 64 <= size; cur_pos += 64) {
       uint64_t word = 0ULL;
       for (unsigned i = 0; i < 64; ++i) {
-        auto symbol = **leftReader;
-        if(symbol >> (levels - 1))
-          *rightWriter << symbol;
+        auto symbol = *initialReader;
+        auto bit = (symbol >> (levels - 1)) & 0x1;
+        if(bit)
+          rightWriter->next(symbol);
         else
-          *leftWriter << symbol;
-        ++(*leftReader);
-        hist[levels][symbol]++;
+          leftWriter->next(symbol);
         word <<= 1;
-        word |= ((symbol >> (levels - 1)) & 1ULL);
+        word |= bit;
+        ++initialReader;
+        hist[levels][symbol]++;
       }
       result_writer << word;
     }
     if (size & 63ULL) {
       uint64_t word = 0ULL;
       for (unsigned i = 0; i < size - cur_pos; ++i) {
-        auto symbol = **leftReader;
-        if(symbol >> (levels - 1))
-          *rightWriter << symbol;
+        auto symbol = *initialReader;
+        auto bit = (symbol >> (levels - 1)) & 0x1;
+        if(bit)
+          rightWriter->next(symbol);
         else
-          *leftWriter << symbol;
-        ++(*leftReader);
-        hist[levels][symbol]++;
+          leftWriter->next(symbol);
         word <<= 1;
-        word |= ((symbol >> (levels - 1)) & 1ULL);
+        word |= bit;
+        ++initialReader;
+        hist[levels][symbol]++;
       }
       word <<= (64 - (size & 63ULL));
       result_writer << word;
     }
 
-    delete leftReader;
+    left_size = leftWriter->finish();
+    right_size = rightWriter->finish();
     delete leftWriter;
     delete rightWriter;
   }
@@ -1039,23 +1048,26 @@ external_bit_vectors ps_fully_external_tree(const InputType& text, uint64_t cons
   for(unsigned i = 1; i < levels - 1; i++) {
     std::cout << "Level " << i + 1 << " of " << levels << "... " << std::endl;
 
+    const unsigned bits = levels - i;
+    const unsigned values_per_word = 64 / bits;
+
     std::swap(leftCur, leftPrev);
     std::swap(rightCur, rightPrev);
 
     leftCur->clear();
     rightCur->clear();
-    leftCur->reserve(size);
-    rightCur->reserve(size);
+    leftCur->reserve(size / values_per_word + 1);
+    rightCur->reserve(size / values_per_word + 1);
 
-    leftReader = new reader_type(*leftPrev);
-    rightReader = new reader_type(*rightPrev);
-    leftWriter = new writer_type(*leftCur);
-    rightWriter = new writer_type(*rightCur);
+    leftReader = new reader_type(*leftPrev, left_size, bits);
+    rightReader = new reader_type(*rightPrev, right_size, bits);
+    leftWriter = new writer_type(*leftCur, bits - 1);
+    rightWriter = new writer_type(*rightCur, bits - 1);
+
+    reader_type * leftRightReader = leftReader;
 
     unsigned histId = 0;
     uint64_t histRemains = hist[i][0];
-    reader_type * leftRightReader = leftReader;
-
     auto const shift = levels - i - 1;
     uint64_t cur_pos = 0;
     for (; cur_pos + 64 <= size; cur_pos += 64) {
@@ -1069,15 +1081,14 @@ external_bit_vectors ps_fully_external_tree(const InputType& text, uint64_t cons
           if(histId % 2 == 0) leftRightReader = leftReader;
           else leftRightReader = rightReader;
         }
-        auto symbol = **leftRightReader;
+        auto symbol = leftRightReader->next();
         auto bit = (symbol >> shift) & 0x1;
         if(bit)
-          *rightWriter << symbol;
+          rightWriter->next(symbol);
         else
-          *leftWriter << symbol;
+          leftWriter->next(symbol);
         word <<= 1;
         word |= bit;
-        ++(*leftRightReader);
         --histRemains;
       }
       result_writer << word;
@@ -1093,21 +1104,22 @@ external_bit_vectors ps_fully_external_tree(const InputType& text, uint64_t cons
           if(histId % 2 == 0) leftRightReader = leftReader;
           else leftRightReader = rightReader;
         }
-        auto symbol = **leftRightReader;
+        auto symbol = leftRightReader->next();
         auto bit = (symbol >> shift) & 0x1;
         if(bit)
-          *rightWriter << symbol;
+          rightWriter->next(symbol);
         else
-          *leftWriter << symbol;
+          leftWriter->next(symbol);
         word <<= 1;
         word |= bit;
-        ++(*leftRightReader);
         --histRemains;
       }
       word <<= (64 - (size & 63ULL));
       result_writer << word;
     }
 
+    left_size = leftWriter->finish();
+    right_size = rightWriter->finish();
     delete leftReader;
     delete rightReader;
     delete leftWriter;
@@ -1116,13 +1128,13 @@ external_bit_vectors ps_fully_external_tree(const InputType& text, uint64_t cons
 
   std::cout << "Level " << levels << " of " << levels << " (final scan)... " << std::endl;
 
-  leftReader = new reader_type(*leftCur);
-  rightReader = new reader_type(*rightCur);
+  leftReader = new reader_type(*leftCur, left_size, 1);
+  rightReader = new reader_type(*rightCur, right_size, 1);
+
+  reader_type * leftRightReader = leftReader;
 
   unsigned histId = 0;
   uint64_t histRemains = hist[levels - 1][0];
-  reader_type * leftRightReader = leftReader;
-
   uint64_t cur_pos = 0;
   for (; cur_pos + 64 <= size; cur_pos += 64) {
     uint64_t word = 0ULL;
@@ -1136,8 +1148,7 @@ external_bit_vectors ps_fully_external_tree(const InputType& text, uint64_t cons
         else leftRightReader = rightReader;
       }
       word <<= 1;
-      word |= (**leftRightReader) & 0x1;
-      ++(*leftRightReader);
+      word |= (leftRightReader->next() & 1ULL);
       --histRemains;
     }
     result_writer << word;
@@ -1154,8 +1165,7 @@ external_bit_vectors ps_fully_external_tree(const InputType& text, uint64_t cons
         else leftRightReader = rightReader;
       }
       word <<= 1;
-      word |= (**leftRightReader) & 0x1;
-      ++(*leftRightReader);
+      word |= (leftRightReader->next() & 1ULL);
       --histRemains;
     }
     word <<= (64 - (size & 63ULL));
