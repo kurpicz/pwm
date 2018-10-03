@@ -13,7 +13,7 @@
 #include <iostream>
 
 #include "util/common.hpp"
-#include "slice.hpp"
+#include "span.hpp"
 
 template <typename IndexType>
 class base_flat_two_dim_array {
@@ -66,14 +66,14 @@ public:
     return level_bit_sizes_[level];
   }
 
-  inline Slice<IndexType const> operator [](const uint64_t index) const {
+  inline span<IndexType const> operator [](const uint64_t index) const {
     DCHECK(index < levels());
     auto ptr = data_[index];
     auto nptr = data_[index + 1];
     return { ptr, size_t(nptr - ptr) };
   }
 
-  inline Slice<IndexType> operator [](const uint64_t index) {
+  inline span<IndexType> operator [](const uint64_t index) {
     DCHECK(index < levels());
     auto ptr = data_[index];
     auto nptr = data_[index + 1];

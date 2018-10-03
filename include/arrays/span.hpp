@@ -1,5 +1,5 @@
 /*******************************************************************************
- * include/arrays/slice.hpp
+ * include/arrays/span.hpp
  *
  * Copyright (C) 2018 Marvin Löbel <loebel.marvin@gmail.com>
  *
@@ -15,11 +15,11 @@
 #include "util/debug_assert.hpp"
 
 template<typename T>
-class Slice {
+class span {
   T* m_ptr;
   size_t m_size;
 public:
-  inline Slice(T* ptr, size_t size):
+  inline span(T* ptr, size_t size):
     m_ptr(ptr), m_size(size) {}
   inline size_t size() const {
     return m_size;
@@ -31,11 +31,11 @@ public:
   inline T* data() const {
     return m_ptr;
   }
-  inline Slice slice(size_t start, size_t end) const {
+  inline span slice(size_t start, size_t end) const {
     DCHECK(start <= m_size);
     DCHECK(end <= m_size);
     DCHECK(start <= end);
-    return Slice { m_ptr + start, end - start };
+    return span { m_ptr + start, end - start };
   }
 };
 
