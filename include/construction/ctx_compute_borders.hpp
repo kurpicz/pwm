@@ -9,7 +9,7 @@
 #pragma once
 
 #include "arrays/bit_vectors.hpp"
-#include "arrays/border_hist_array.hpp"
+#include "arrays/pow2_array.hpp"
 
 // TODO: WM/WT abstract that selects zeros and rho
 
@@ -95,9 +95,9 @@ public:
   }
 
 private:
-  border_hist_array hist_;
+  pow2_array hist_;
   rho_t const* rho_ = nullptr;
-  border_hist_array borders_;
+  pow2_array borders_;
   std::vector<uint64_t> zeros_;
   bit_vectors bv_;
   uint64_t levels_;

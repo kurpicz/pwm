@@ -164,8 +164,10 @@ int32_t main(int32_t argc, char const* argv[]) {
 #endif // MALLOC_COUNT
       }
       std::cout << "runs=" << nr_runs << " ";
-      std::cout << "median_time=" << a->median_time(
-        txt_prt, text_size, levels, nr_runs) << ' ';
+      if (nr_runs > 0) {
+        std::cout << "median_time=" << a->median_time(
+          txt_prt, text_size, levels, nr_runs) << ' ';
+      }
       std::cout << "input=" << path << ' '
                 << "characters=" << text_size << ' '
                 << "word_width=" << word_width << std::endl;
@@ -174,7 +176,7 @@ int32_t main(int32_t argc, char const* argv[]) {
         auto structure =
           a->compute_bitvector(txt_prt, text_size, levels);
         if (debug_print) {
-          print_structure(std::cout, structure);
+          print_structure(std::cout, structure, true);
         }
         if (check) {
           if (word_width != 1) {
@@ -194,12 +196,12 @@ int32_t main(int32_t argc, char const* argv[]) {
             }
             if ((a->is_tree()) && (a->is_huffman_shaped())) {
               naive = algo_list.filtered([](auto e) {
-                return e->name() == "huff_wt_naive";
+                return e->name() == "wt_huff_naive";
               }).at(0);
             }
             if (!(a->is_tree()) && (a->is_huffman_shaped())) {
               naive = algo_list.filtered([](auto e) {
-                return e->name() == "huff_wm_naive";
+                return e->name() == "wm_huff_naive";
               }).at(0);
             }
             assert(naive != nullptr);
@@ -249,7 +251,8 @@ int32_t main(int32_t argc, char const* argv[]) {
                 }
               }
             }
-            if (err_trigger) { returncode = -2;
+            if (err_trigger) {
+              returncode = -2;
             } else {
               std::cout << "Output structurally OK" << std::endl;
             }
@@ -257,10 +260,10 @@ int32_t main(int32_t argc, char const* argv[]) {
             if (err_trigger) {
               if (!debug_print) {
                 std::cout << "Output:\n";
-                print_structure(std::cout, structure);
+                print_structure(std::cout, structure, true);
               }
               std::cout << "Naive result as comparison:\n";
-              print_structure(std::cout, naive_wx);
+              print_structure(std::cout, naive_wx, true);
             }
 
             auto pvec = [](auto const& v) {
@@ -271,7 +274,8 @@ int32_t main(int32_t argc, char const* argv[]) {
               std::cout << "]\n";
             };
 
-            std::string decoded = decode_structure(structure);
+            std::string decoded_ = decode_structure(structure);
+            std::vector<uint8_t> decoded(decoded_.begin(), decoded_.end());
             if (std::equal(text_uint8.begin(), text_uint8.end(),
                            decoded.begin(), decoded.end())) {
               std::cout << "Output decoded OK" << std::endl;

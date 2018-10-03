@@ -13,6 +13,7 @@
 #include <iostream>
 
 #include "util/common.hpp"
+#include "span.hpp"
 
 template <typename IndexType>
 class base_flat_two_dim_array {
@@ -25,12 +26,12 @@ public:
   }
 
   base_flat_two_dim_array(base_flat_two_dim_array&& other) = default;
-
   base_flat_two_dim_array& operator =(base_flat_two_dim_array&& other) {
     if (*this != other) {
       if (data_.size() > 0) { delete[] data_[0]; }
       data_ = std::move(other.data_);
       levels_ = other.levels_;
+      other.levels_ = 0;
       level_bit_sizes_ = std::move(other.level_bit_sizes_);
     }
     return *this;
@@ -65,13 +66,21 @@ public:
     return level_bit_sizes_[level];
   }
 
-  inline const IndexType* operator [](const uint64_t index) const {
-    return data_[index];
+  inline span<IndexType const> operator [](const uint64_t index) const {
+    DCHECK(index < levels());
+    auto ptr = data_[index];
+    auto nptr = data_[index + 1];
+    return { ptr, size_t(nptr - ptr) };
   }
 
-  inline IndexType* operator [](const uint64_t index) {
-    return data_[index];
+  inline span<IndexType> operator [](const uint64_t index) {
+    DCHECK(index < levels());
+    auto ptr = data_[index];
+    auto nptr = data_[index + 1];
+    return { ptr, size_t(nptr - ptr) };
   }
+
+protected:
 
   inline const std::vector<IndexType*>& raw_data() const {
     return data_;
@@ -81,7 +90,6 @@ public:
     return data_;
   }
 
-protected:
   uint64_t levels_ = 0;
   std::vector<IndexType*> data_;
   std::vector<uint64_t> level_bit_sizes_;

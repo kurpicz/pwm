@@ -2,6 +2,7 @@
  * include/util/histogram.hpp
  *
  * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
+ * Copyright (C) 2018 Marvin Löbel <loebel.marvin@gmail.com>
  *
  * All rights reserved. Published under the BSD-2 license in the LICENSE file.
  ******************************************************************************/
@@ -28,18 +29,22 @@ struct histogram_entry {
   }
 }; // struct histogram_entry
 
+// TODO: Optimize memory layout and frequency search
+
 template <typename AlphabetType>
 class histogram {
 
 public:
+  histogram() = default;
+
   histogram(const AlphabetType* text, const uint64_t size,
     const uint64_t reduced_sigma = 0) : max_symbol_(0){
 
     if (std::is_same<AlphabetType, uint8_t>::value) {
-      const uint64_t max_char = std::max(
+      const uint64_t alphabet_size = std::max(
         static_cast<std::remove_cv_t<decltype(reduced_sigma)>>(
           std::numeric_limits<uint8_t>::max() + 1), reduced_sigma);
-      std::vector<uint64_t> hist(max_char, 0);
+      std::vector<uint64_t> hist(alphabet_size, 0);
       for (uint64_t pos = 0; pos < size; ++pos) {
         const AlphabetType cur_char = text[pos];
         max_symbol_ = std::max(max_symbol_, cur_char);
@@ -61,6 +66,25 @@ public:
       }
       for (const auto& symbol : symbol_list) {
         data_.emplace_back(symbol.first, symbol.second);
+      }
+    }
+  }
+
+  histogram(std::vector<histogram> const& others): max_symbol_(0) {
+    for (auto& o: others) {
+      max_symbol_ = std::max(max_symbol_, o.max_symbol_);
+      for (size_t j = 0; j < o.size(); j++) {
+        bool found = false;
+        for (size_t i = 0; i < size(); i++) {
+          if ((*this)[i].symbol == o[j].symbol) {
+            (*this)[i].frequency += o[j].frequency;
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          data_.emplace_back(o[j].symbol, o[j].frequency);
+        }
       }
     }
   }

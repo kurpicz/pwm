@@ -13,7 +13,7 @@
 #include "arrays/bit_vectors.hpp"
 #include "queries/bin_rank_popcnt.hpp"
 #include "queries/bin_select_popcnt.hpp"
-#include "util/common.hpp" 
+#include "util/common.hpp"
 
 TEST(bin_rank_popcnt, rank) {
   const size_t bit_vector_size = 1024*1024*128;
@@ -23,10 +23,10 @@ TEST(bin_rank_popcnt, rank) {
   std::mt19937 gen(44227);
   std::uniform_int_distribution<uint64_t> dis(0);
   for (size_t i = 0; i < word_size(bit_vector_size); ++i) {
-    *(bv[0] + i) = dis(gen);
+    *(bv[0].data() + i) = dis(gen);
   }
 
-  bin_rank_popcnt rank_support(bv[0], word_size(bit_vector_size));
+  bin_rank_popcnt rank_support(bv[0].data(), word_size(bit_vector_size));
 
   size_t one_count = 0;
   for (size_t i = 0; i < bit_vector_size; ++i) {
@@ -44,10 +44,10 @@ TEST(bin_select_popcnt, select) {
   std::mt19937 gen(44227);
   std::uniform_int_distribution<uint64_t> dis(0);
   for (size_t i = 0; i < word_size(bit_vector_size); ++i) {
-    *(bv[0] + i) = dis(gen);
+    *(bv[0].data() + i) = dis(gen);
   }
 
-  bin_rank_popcnt rank_support(bv[0], word_size(bit_vector_size));
+  bin_rank_popcnt rank_support(bv[0].data(), word_size(bit_vector_size));
   bin_select0_popcnt select0_support(rank_support);
   bin_select1_popcnt select1_support(rank_support);
 

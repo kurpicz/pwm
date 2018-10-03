@@ -23,7 +23,7 @@ class query_support {
 public:
   query_support(wavelet_structure& ws) : ws_(ws), rank_support_(ws_.levels()) {
     for (size_t i = 0; i < ws_.levels(); ++i) {
-      rank_support_[i] = std::move(rank_support_type(ws_.bvs()[i],
+      rank_support_[i] = std::move(rank_support_type(ws_.bvs()[i].data(),
         word_size(ws_.bvs().level_bit_size(i))));
       select0_support_.emplace_back(select0_support_type(rank_support_[i]));
       select1_support_.emplace_back(select1_support_type(rank_support_[i]));

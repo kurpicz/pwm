@@ -2,6 +2,7 @@
  * include/huffman/huff_codes.hpp
  *
  * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
+ * Copyright (C) 2018 Marvin Löbel <loebel.marvin@gmail.com>
  *
  * All rights reserved. Published under the BSD-2 license in the LICENSE file.
  ******************************************************************************/
@@ -17,6 +18,7 @@
 #include "util/common.hpp"
 #include "util/macros.hpp"
 #include "util/histogram.hpp"
+#include "util/debug_assert.hpp"
 
 struct code_pair {
   uint64_t code_length;
@@ -24,13 +26,15 @@ struct code_pair {
 
   // Get the size-length prefix. This is necessary as shifting may not yield the
   // correct result due to the different length of the code words
-  uint64_t prefix(const uint64_t size) {
+  uint64_t prefix(const uint64_t size) const {
+    DCHECK(size <= code_length);
     return code_word >> (code_length - size);
   }
 
   // Get the index-th bit of the code word. Note that we cannot simply shift
   // all the code words where they are used, as they have different lengths.
   bool operator [](const uint64_t index) const {
+    DCHECK(index < code_length);
     return (code_word >> (code_length - index - 1)) & 1ULL;
   }
 
@@ -45,8 +49,16 @@ struct code_pair {
   }
 
   friend std::ostream& operator <<(std::ostream& os, const code_pair& cp) {
-    return os << "[ length:" << cp.code_length << ", word: "
-              << cp.code_word << " ]";
+    os << "[ "
+       << "length:" << cp.code_length
+       << ", word: " << cp.code_word
+       << ", bits: ";
+    for(size_t i = 0; i < cp.code_length; i++) {
+      os << int(cp[i]);
+    }
+    os << " ]";
+    DCHECK((cp.code_word >> cp.code_length) == 0);
+    return os;
   }
 } PWM_ATTRIBUTE_PACKED; // struct code_pair
 
@@ -56,10 +68,12 @@ template <typename AlphabetType, bool is_tree>
 class canonical_huff_codes {
 
 public:
-  canonical_huff_codes(AlphabetType const* const text, const uint64_t size,
-    const uint64_t reduced_sigma = 0) {
-    histogram<AlphabetType> hist(text, size, reduced_sigma);
-    compute_codes(hist);
+  canonical_huff_codes() = default;
+
+  template<typename level_sizes_builder>
+  canonical_huff_codes(level_sizes_builder& level_sizes)
+  {
+    compute_codes(level_sizes);
   }
 
   // Returns code_length and code_word for a given symbol, w.r.t. the text that
@@ -87,22 +101,16 @@ public:
     return code_pairs_;
   }
 
-  std::vector<uint64_t> level_sizes() const {
-    return level_sizes_;
-  }
-
-  uint64_t levels() const {
-    return level_sizes_.size();
-  }
-
 private:
   std::vector<code_pair> code_pairs_;
   std::map<code_pair, AlphabetType> decode_table_;
-  std::vector<uint64_t> level_sizes_;// Only used for the construction of the WT
-                                     // and WM, maybe put elsewhere
 private:
 
-  void compute_codes(const histogram<AlphabetType>& histogram) {
+  template<typename level_sizes_builder>
+  void compute_codes(level_sizes_builder& level_sizes)
+  {
+    const auto& histogram = level_sizes.get_histogram();
+
     struct frequency_tree_item {
       uint64_t occurrences;
       std::vector<AlphabetType> covered_symbols;
@@ -110,7 +118,7 @@ private:
       bool operator > (const frequency_tree_item& other) const {
         return occurrences > other.occurrences;
       }
-    }; // struct frequency_tree_item 
+    }; // struct frequency_tree_item
 
     if (histogram.size() == 0) {
       return;
@@ -134,7 +142,7 @@ private:
       ++code_pairs_[frequency_tree.top().covered_symbols.front()].code_length;
     }
 
-    // Implicitly create the frequency three
+    // Implicitly create the frequency tree
     while (frequency_tree.size() > 1) {
       auto ft1 = frequency_tree.top();
       frequency_tree.pop();
@@ -158,8 +166,8 @@ private:
         return code_pairs_[a].code_length < code_pairs_[b].code_length;
       });
 
-    level_sizes_ = std::vector<uint64_t>(
-      code_pairs_[code_length_order.back()].code_length, 0);
+    level_sizes.allocate_levels(
+      code_pairs_[code_length_order.back()].code_length);
 
     if constexpr (!is_tree) {
       uint64_t code_nr = 0;
@@ -192,8 +200,8 @@ private:
           code_pairs_[cur_code_pos].code_word = code_words.back();
           code_words.pop_back();
 
-          level_sizes_[code_pairs_[cur_code_pos].code_length - 1] +=
-            histogram.frequency(cur_code_pos);
+          level_sizes.count(code_pairs_[cur_code_pos].code_length - 1,
+                           cur_code_pos);
           decode_table_.emplace(std::make_pair(
             code_pairs_[cur_code_pos],
             AlphabetType(cur_code_pos)));
@@ -207,32 +215,35 @@ private:
       while (code_nr < code_pairs_.size() &&
         code_pairs_[code_length_order[code_nr]].code_length == 0) { ++code_nr; }
 
-      code_pairs_[code_length_order[code_nr]].code_word = (~code_word) &
-          ((1ULL << code_pairs_[code_length_order[code_nr]].code_length) - 1);
-      decode_table_.emplace(std::make_pair(
-        code_pairs_[code_length_order[code_nr]], code_length_order[code_nr]));
-      level_sizes_[code_pairs_[code_length_order[code_nr]].code_length - 1] +=
-          histogram.frequency(code_length_order[code_nr]);
-      for (++code_nr; code_nr < code_pairs_.size(); ++code_nr) {
+      auto generate_next_code = [&]{
         const uint64_t cur_code_pos = code_length_order[code_nr];
-        // Count the number of symbols that occur for each code length
-        level_sizes_[code_pairs_[cur_code_pos].code_length - 1] +=
-          histogram.frequency(cur_code_pos);
-        // Create new code word
-        code_word = (code_word + 1) << (code_pairs_[cur_code_pos].code_length -
-          code_pairs_[code_length_order[code_nr - 1]].code_length);
+        auto& cur_code_pair = code_pairs_[cur_code_pos];
+
         // We use the bitwise negated word to ensure that a level in the WT is
         // cut of to the right. We also set all bits that do not belong to the
         // code word to 0. This helps when we decode naively when testing.
-        code_pairs_[cur_code_pos].code_word = (~code_word) &
-          ((1ULL << code_pairs_[cur_code_pos].code_length) - 1);
+
+        cur_code_pair.code_word = (~code_word) &
+          ((1ULL << cur_code_pair.code_length) - 1);
         decode_table_.emplace(std::make_pair(
-          code_pairs_[cur_code_pos], cur_code_pos));
+          cur_code_pair, cur_code_pos));
+
+        // Count the number of symbols that occur for each code length
+        level_sizes.count(cur_code_pair.code_length - 1,
+                         cur_code_pos);
+      };
+
+      generate_next_code();
+      for (++code_nr; code_nr < code_pairs_.size(); ++code_nr) {
+        // Create new code word
+        code_word = (code_word + 1) << (
+            code_pairs_[code_length_order[code_nr]].code_length -
+            code_pairs_[code_length_order[code_nr - 1]].code_length);
+
+        generate_next_code();
       }
     }
-    for (uint64_t i = level_sizes_.size() - 1; i > 0; --i) {
-      level_sizes_[i - 1] += level_sizes_[i];
-    }
+    level_sizes.drop_hist_and_finalize_level_sizes();
   }
 }; // class canonical_huff_codes
 

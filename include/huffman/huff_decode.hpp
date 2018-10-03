@@ -11,7 +11,6 @@
 #include <algorithm>
 
 #include "arrays/bit_vectors.hpp"
-#include "arrays/border_hist_array.hpp"
 #include "construction/wavelet_structure.hpp"
 #include "huffman/huff_codes.hpp"
 #include "util/debug.hpp"
