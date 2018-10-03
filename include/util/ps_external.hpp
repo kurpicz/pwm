@@ -672,6 +672,8 @@ struct word_packed_writer {
   uint64_t current_word;
   uint64_t mask;
 
+  bool has_finished = false;
+
   word_packed_writer(stxxlvector<uint64_t>& vec, unsigned bits) :
       bits(bits),
       values_per_word(64 / bits),
@@ -707,11 +709,16 @@ struct word_packed_writer {
   }
 
   void finish() {
+    if(has_finished) return;
     auto final_size = total_counter + current_word_counter;
     while(current_word_counter > 0)
       next(ValueType(0));
     total_counter = final_size;
     writer.finish();
+  }
+
+  ~word_packed_writer() {
+    finish();
   }
 
 };
