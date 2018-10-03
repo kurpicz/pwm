@@ -15,7 +15,7 @@
 #include <vector>
 
 #include "construction/wavelet_structure.hpp"
-#include "arrays/slice.hpp"
+#include "arrays/span.hpp"
 
 #include "huffman/huff_merge.hpp"
 #include "huffman/huff_bit_vectors.hpp"
@@ -40,7 +40,7 @@ public:
 
     // TODO ^ remove levels parameter from API
 
-    Slice<AlphabetType const> const global_text { global_text_ptr, size };
+    span<AlphabetType const> const global_text { global_text_ptr, size };
 
     const uint64_t shards = omp_get_max_threads();
 
@@ -93,7 +93,7 @@ public:
     if constexpr (Algorithm::needs_second_text_allocation) {
       global_sorted_text_allocation = std::vector<AlphabetType>(size);
     }
-    Slice<AlphabetType> const global_sorted_text {
+    span<AlphabetType> const global_sorted_text {
         global_sorted_text_allocation.data(),
         global_sorted_text_allocation.size()
     };
