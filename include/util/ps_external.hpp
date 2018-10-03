@@ -603,6 +603,36 @@ external_bit_vectors ps_fully_external_matrix2(const InputType& text, uint64_t c
 
 template <typename ValueType>
 struct word_packed_reader {
+  virtual ValueType next() = 0;
+  virtual bool empty() = 0;
+//  virtual ~word_packed_reader() = 0;
+};
+
+template <typename ValueType>
+struct word_packed_reader_initial : word_packed_reader<ValueType> {
+  typename stxxlvector<ValueType>::bufreader_type reader;
+  word_packed_reader_initial(const stxxlvector<ValueType>& vec) :
+      reader(vec) { }
+
+  ValueType next() {
+    auto result = *reader;
+    ++reader;
+//    std::cout << "r" << result << " " << std::flush;
+    return result;
+  }
+
+  bool empty() {
+    return reader.empty();
+  }
+
+  ~word_packed_reader_initial() {
+//    reader.finish();
+  };
+};
+
+
+template <typename ValueType>
+struct word_packed_reader_regular : word_packed_reader<ValueType> {
   const unsigned bits;
   const uint64_t size;
 
@@ -616,11 +646,11 @@ struct word_packed_reader {
   uint64_t current_word;
   uint64_t mask;
 
-  word_packed_reader(stxxlvector<uint64_t>& vec, uint64_t size, unsigned bits) :
+  word_packed_reader_regular(const stxxlvector<uint64_t>& vec, uint64_t size, unsigned bits) :
       bits(bits),
       size(size),
       values_per_word(64 / bits),
-      values_in_last_word(size % values_per_word),
+      values_in_last_word((size - 1) % (64 / bits) + 1),
       reader(vec) {
 
     assert((vec.size() - 1) * values_per_word < size);
@@ -636,16 +666,18 @@ struct word_packed_reader {
   }
 
   ValueType next() {
-    if(current_word_counter > values_per_word) {
+    if(current_word_counter >= values_per_word) {
       current_word_counter = 0;
       current_shift = 64 - bits;
       current_word = *reader;
+//      std::cout << std::endl << " | READ  " << std::bitset<64>(current_word) << " | " << std::endl;
       ++reader;
     }
 
     ValueType result = ((current_word >> current_shift) & mask);
     current_word_counter++;
     current_shift -= bits;
+//    std::cout << "" << std::bitset<8>(result) << " " << std::flush;
     return result;
   }
 
@@ -655,6 +687,9 @@ struct word_packed_reader {
        current_word_counter >= values_in_last_word);
   }
 
+  ~word_packed_reader_regular() {
+//    reader.finish();
+  }
 };
 
 
@@ -692,15 +727,19 @@ struct word_packed_writer {
   }
 
   void next(ValueType value) {
+//    std::cout << "w" << value << " " << std::flush;
+//    std::cout << "" << std::bitset<8>(mask & value) << " " << std::flush;
     current_word <<= bits;
     current_word |= (mask & value);
     current_word_counter++;
 
     if(current_word_counter == values_per_word) {
       total_counter += values_per_word;
+//      std::cout << std::endl << " | WRITE " << std::bitset<64>(current_word << final_shift) << " | " << std::endl;
       writer << (current_word << final_shift);
       current_word_counter = 0;
       current_word = 0ULL;
+
     }
   }
 
@@ -748,30 +787,33 @@ external_bit_vectors ps_fully_external_matrix(const InputType& text, uint64_t co
   std::vector<uint64_t>& zeros = result.zeros();
   zeros.resize(levels);
 
-  using in_vector_type = InputType;
-  using reader_type = typename in_vector_type::bufreader_type;
-  using writer_type = typename in_vector_type::bufwriter_type;
+  using word_packed_vector_type = stxxlvector<uint64_t>;
+  using value_type = typename InputType::value_type;
+  using reader_type = word_packed_reader<value_type>;
+  using reader_type_initial = word_packed_reader_initial<value_type>;
+  using reader_type_regular = word_packed_reader_regular<value_type>;
+  using writer_type = word_packed_writer<value_type>;
 
   using out_vector_type = typename std::remove_reference<decltype(result.raw_data())>::type;
   using result_writer_type = typename out_vector_type::bufwriter_type;
   out_vector_type& bv = result.raw_data();
 
   stxxl_files::reset_usage();
-  in_vector_type v1 = stxxl_files::getVector<in_vector_type>(1);
-  in_vector_type v2 = stxxl_files::getVector<in_vector_type>(2);
-  in_vector_type v3 = stxxl_files::getVector<in_vector_type>(3);
-  in_vector_type v4 = stxxl_files::getVector<in_vector_type>(4);
+  word_packed_vector_type v1 = stxxl_files::getVector<word_packed_vector_type>(1);
+  word_packed_vector_type v2 = stxxl_files::getVector<word_packed_vector_type>(2);
+  word_packed_vector_type v3 = stxxl_files::getVector<word_packed_vector_type>(3);
+  word_packed_vector_type v4 = stxxl_files::getVector<word_packed_vector_type>(4);
 
   v1.clear();
   v2.clear();
   v3.clear();
   v4.clear();
 
-  in_vector_type * leftPrev = &v1;
-  in_vector_type * rightPrev = &v2;
+  word_packed_vector_type * leftPrev = &v1;
+  word_packed_vector_type * rightPrev = &v2;
 
-  in_vector_type * leftCur = &v3;
-  in_vector_type * rightCur = &v4;
+  word_packed_vector_type * leftCur = &v3;
+  word_packed_vector_type * rightCur = &v4;
 
   reader_type * leftReader;
   reader_type * rightReader;
@@ -780,32 +822,73 @@ external_bit_vectors ps_fully_external_matrix(const InputType& text, uint64_t co
 
   result_writer_type result_writer(bv);
 
+  const unsigned initial_bits = levels;
+  uint64_t left_size = 0;
+  uint64_t right_size = 0;
+
   // scans (top down WT construction in left-right-buffers)
   for(unsigned i = 0; i < levels - 1; i++) {
     std::cout << "Level " << i + 1 << " of " << levels << "... " << std::endl;
+
+    const unsigned bits = initial_bits - i;
+    const unsigned values_per_word = 64 / bits;
 
     std::swap(leftCur, leftPrev);
     std::swap(rightCur, rightPrev);
 
     leftCur->clear();
     rightCur->clear();
-    leftCur->reserve(size);
-    rightCur->reserve(size);
+    leftCur->reserve(size / values_per_word + 1);
+    rightCur->reserve(size / values_per_word + 1);
+
+//    rightWriter = new writer_type(*rightCur, bits - 1 + 1);
+//    for(auto c : "Stockentenlarve12345678") {rightWriter->next(c); }
+//    delete rightWriter;
+//    std::cout << std::endl;
+//    std::cout << std::endl;
+//    for(int x = 0; x < 20; x++) {
+//      std::swap(leftCur, rightCur);
+//      leftReader = new reader_type_regular(*leftCur, 24, bits);
+//      rightWriter = new writer_type(*rightCur, bits - 1 + 1);
+//      while(!leftReader->empty()) rightWriter->next(leftReader->next());
+//      delete leftReader;
+//      delete rightWriter;
+//      std::cout << std::endl;
+//    }
+//
+//    leftCur->clear();
+//    rightCur->clear();
+//    leftCur->reserve(size / values_per_word + 1);
+//    rightCur->reserve(size / values_per_word + 1);
 
     if(i == 0) {
-      leftReader = new reader_type(text);
+      leftReader = new reader_type_initial(text);
     } else {
-      zeros[i - 1] = leftPrev->size();
-      leftReader = new reader_type(*leftPrev);
+      zeros[i - 1] = left_size;
+      leftReader = new reader_type_regular(*leftPrev, left_size, bits);
     }
 
-    rightReader = new reader_type(*rightPrev);
-    leftWriter = new writer_type(*leftCur);
-    rightWriter = new writer_type(*rightCur);
+    rightReader = new reader_type_regular(*rightPrev, right_size, bits);
+    leftWriter = new writer_type(*leftCur, bits - 1);
+    rightWriter = new writer_type(*rightCur, bits - 1);
 
     reader_type * leftRightReader = leftReader;
 
     auto const shift = levels - i - 1;
+
+//    std::cout << "Sizes: " <<
+//                  size << " " <<
+//                  left_size << " " <<
+//                  right_size << " " <<
+//                  v1.size() << " " <<
+//                  v2.size() << " " <<
+//                  v3.size() << " " <<
+//                  v4.size() << " " <<
+//                  std::endl;
+//    std::cout << "Shift: " << shift << std::endl;
+//    std::cout << "Bits r: " << bits << std::endl;
+//    std::cout << "Bits w: " << bits - 1 << std::endl;
+
     uint64_t cur_pos = 0;
     for (; cur_pos + 64 <= size; cur_pos += 64) {
       uint64_t word = 0ULL;
@@ -813,15 +896,14 @@ external_bit_vectors ps_fully_external_matrix(const InputType& text, uint64_t co
         if(leftRightReader->empty()) {
           leftRightReader = rightReader;
         }
-        auto symbol = **leftRightReader;
+        auto symbol = leftRightReader->next();
         auto bit = (symbol >> shift) & 0x1;
         if(bit)
-          *rightWriter << symbol;
+          rightWriter->next(symbol);
         else
-          *leftWriter << symbol;
+          leftWriter->next(symbol);
         word <<= 1;
         word |= bit;
-        ++(*leftRightReader);
       }
       result_writer << word;
     }
@@ -831,31 +913,36 @@ external_bit_vectors ps_fully_external_matrix(const InputType& text, uint64_t co
         if(leftRightReader->empty()) {
           leftRightReader = rightReader;
         }
-        auto symbol = **leftRightReader;
+        auto symbol = leftRightReader->next();
         auto bit = (symbol >> shift) & 0x1;
         if(bit)
-          *rightWriter << symbol;
+          rightWriter->next(symbol);
         else
-          *leftWriter << symbol;
+          leftWriter->next(symbol);
         word <<= 1;
         word |= bit;
-        ++(*leftRightReader);
       }
       word <<= (64 - (size & 63ULL));
       result_writer << word;
     }
 
+    leftWriter->finish();
+    rightWriter->finish();
+    left_size = leftWriter->size();
+    right_size = rightWriter->size();
     delete leftReader;
     delete rightReader;
     delete leftWriter;
     delete rightWriter;
+
+//    std::cout << std::endl;
   }
 
   std::cout << "Level " << levels << " of " << levels << " (final scan)... " << std::endl;
 
-  zeros[levels - 2] = leftCur->size();
-  leftReader = new reader_type(*leftCur);
-  rightReader = new reader_type(*rightCur);
+  zeros[levels - 2] = left_size;
+  leftReader = new reader_type_regular(*leftCur, left_size, 1);
+  rightReader = new reader_type_regular(*rightCur, right_size, 1);
 
   reader_type * leftRightReader = leftReader;
 
@@ -867,8 +954,7 @@ external_bit_vectors ps_fully_external_matrix(const InputType& text, uint64_t co
         leftRightReader = rightReader;
       }
       word <<= 1;
-      word |= (**leftRightReader & 1ULL);
-      ++(*leftRightReader);
+      word |= (leftRightReader->next() & 1ULL);
     }
     result_writer << word;
   }
@@ -879,8 +965,7 @@ external_bit_vectors ps_fully_external_matrix(const InputType& text, uint64_t co
         leftRightReader = rightReader;
       }
       word <<= 1;
-      word |= (**leftRightReader & 1ULL);
-      ++(*leftRightReader);
+      word |= (leftRightReader->next() & 1ULL);
     }
     word <<= (64 - (size & 63ULL));
     result_writer << word;
@@ -892,16 +977,6 @@ external_bit_vectors ps_fully_external_matrix(const InputType& text, uint64_t co
   result_writer.finish();
 
   std::cout << "Done." << std::endl << std::endl;
-
-  //~ std::cout << "RESULT IS: " << bv.size() << ", SHOULD BE: " << levels * ((size + 63) / 64) << ", SIZE: " << size << ", LEVELS: " << levels << std::endl << std::endl;
-  //~ uint64_t words = (size + 63) / 64;
-  //~ unsigned tesla = 0;
-  //~ for(auto word : bv) {
-  //~ if(tesla % words == 0) std::cout << std::endl << "Level " << tesla / words << ":  ";
-  //~ std::cout << std::bitset<64>(word);
-  //~ tesla++;
-  //~ }
-  //~ std::cout << std::endl << std::endl << std::endl;
 
   return result;
 }
