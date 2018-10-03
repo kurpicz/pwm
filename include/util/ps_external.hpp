@@ -999,7 +999,7 @@ external_bit_vectors ps_fully_external_tree(const InputType& text, uint64_t cons
   }
 
   // scans (top down WT construction in left-right-buffers)
-  for(unsigned i = 1; i < levels; i++) {
+  for(unsigned i = 1; i < levels - 1; i++) {
     std::cout << "Level " << i + 1 << " of " << levels << "... " << std::endl;
 
     std::swap(leftCur, leftPrev);
@@ -1076,6 +1076,57 @@ external_bit_vectors ps_fully_external_tree(const InputType& text, uint64_t cons
     delete leftWriter;
     delete rightWriter;
   }
+
+  std::cout << "Level " << levels << " of " << levels << " (final scan)... " << std::endl;
+
+  leftReader = new reader_type(*leftCur);
+  rightReader = new reader_type(*rightCur);
+
+  unsigned histId = 0;
+  uint64_t histRemains = hist[levels - 1][0];
+  reader_type * leftRightReader = leftReader;
+
+  uint64_t cur_pos = 0;
+  for (; cur_pos + 64 <= size; cur_pos += 64) {
+    uint64_t word = 0ULL;
+    for (unsigned k = 0; k < 64; ++k) {
+      if(histRemains == 0) {
+        do{
+          histId++;
+          histRemains = hist[levels - 1][histId];
+        } while(histRemains == 0);
+        if(histId % 2 == 0) leftRightReader = leftReader;
+        else leftRightReader = rightReader;
+      }
+      word <<= 1;
+      word |= (**leftRightReader) & 0x1;
+      ++(*leftRightReader);
+      --histRemains;
+    }
+    result_writer << word;
+  }
+  if (size & 63ULL) {
+    uint64_t word = 0ULL;
+    for (unsigned k = 0; k < size - cur_pos; ++k) {
+      if(histRemains == 0) {
+        do{
+          histId++;
+          histRemains = hist[levels - 1][histId];
+        } while(histRemains == 0);
+        if(histId % 2 == 0) leftRightReader = leftReader;
+        else leftRightReader = rightReader;
+      }
+      word <<= 1;
+      word |= (**leftRightReader) & 0x1;
+      ++(*leftRightReader);
+      --histRemains;
+    }
+    word <<= (64 - (size & 63ULL));
+    result_writer << word;
+  }
+
+  delete leftReader;
+  delete rightReader;
 
   result_writer.finish();
 
