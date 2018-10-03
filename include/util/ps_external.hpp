@@ -807,13 +807,13 @@ external_bit_vectors ps_fully_external_matrix(const InputType& text, uint64_t co
           leftRightReader = rightReader;
         }
         auto symbol = **leftRightReader;
-        if((symbol >> shift) & 0x1)
+        auto bit = (symbol >> shift) & 0x1;
+        if(bit)
           *rightWriter << symbol;
         else
           *leftWriter << symbol;
         word <<= 1;
-        word |= ((symbol >> shift) & 1ULL);
-
+        word |= bit;
         ++(*leftRightReader);
       }
       result_writer << word;
@@ -825,13 +825,13 @@ external_bit_vectors ps_fully_external_matrix(const InputType& text, uint64_t co
           leftRightReader = rightReader;
         }
         auto symbol = **leftRightReader;
-        if((symbol >> shift) & 0x1)
+        auto bit = (symbol >> shift) & 0x1;
+        if(bit)
           *rightWriter << symbol;
         else
           *leftWriter << symbol;
         word <<= 1;
-        word |= ((symbol >> shift) & 1ULL);
-
+        word |= bit;
         ++(*leftRightReader);
       }
       word <<= (64 - (size & 63ULL));
@@ -1033,13 +1033,13 @@ external_bit_vectors ps_fully_external_tree(const InputType& text, uint64_t cons
           else leftRightReader = rightReader;
         }
         auto symbol = **leftRightReader;
-        if((symbol >> shift) & 0x1)
+        auto bit = (symbol >> shift) & 0x1;
+        if(bit)
           *rightWriter << symbol;
         else
           *leftWriter << symbol;
         word <<= 1;
-        word |= ((symbol >> shift) & 1ULL);
-
+        word |= bit;
         ++(*leftRightReader);
         --histRemains;
       }
@@ -1057,13 +1057,13 @@ external_bit_vectors ps_fully_external_tree(const InputType& text, uint64_t cons
           else leftRightReader = rightReader;
         }
         auto symbol = **leftRightReader;
-        if((symbol >> shift) & 0x1)
+        auto bit = (symbol >> shift) & 0x1;
+        if(bit)
           *rightWriter << symbol;
         else
           *leftWriter << symbol;
         word <<= 1;
-        word |= ((symbol >> shift) & 1ULL);
-
+        word |= bit;
         ++(*leftRightReader);
         --histRemains;
       }
