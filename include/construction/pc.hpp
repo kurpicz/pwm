@@ -88,9 +88,7 @@ void pc(AlphabetType const* text, const uint64_t size, const uint64_t levels,
     }
   }
 
-  if (levels > 1) { // TODO check condition
-    ctx.hist(0, 0) = ctx.hist(1, 0) + ctx.hist(1, 1);
-  }
+  ctx.hist(0, 0) = size;
 }
 
 /******************************************************************************/

@@ -105,9 +105,7 @@ void ps(AlphabetType const* const text, uint64_t const size,
     }
   }
 
-  if (levels > 1) { // TODO check condition
-    ctx.hist(0, 0) = ctx.hist(1, 0) + ctx.hist(1, 1);
-  }
+  ctx.hist(0, 0) = size;
 }
 
 /******************************************************************************/
