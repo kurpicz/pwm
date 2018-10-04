@@ -63,3 +63,30 @@ inline void bottom_up_compute_hist_and_borders_and_optional_zeros(
     }
   }
 }
+
+template<typename level_bv_t, typename loop_body_t>
+inline void write_bits_wordwise(uint64_t start,
+                                uint64_t size,
+                                level_bv_t const& level_bv,
+                                loop_body_t body) {
+    uint64_t cur_pos = start;
+    for (; cur_pos + 64 <= size; cur_pos += 64) {
+      uint64_t word = 0ULL;
+      for (uint64_t i = 0; i < 64; ++i) {
+        uint64_t const bit = body(cur_pos + i);
+        word <<= 1;
+        word |= bit;
+      }
+      level_bv[cur_pos >> 6] = word;
+    }
+    if (size & 63ULL) {
+      uint64_t word = 0ULL;
+      for (uint64_t i = cur_pos; i < size; ++i) {
+        uint64_t const bit = body(i);
+        word <<= 1;
+        word |= bit;
+      }
+      word <<= (64 - (size & 63ULL));
+      level_bv[size >> 6] = word;
+    }
+}

@@ -85,30 +85,12 @@ void huff_ps(AlphabetType const* text,
     uint64_t const level_size = level_sizes[level];
 
     // Now we insert the bits with respect to their bit prefixes
-    uint64_t cur_pos = 0;
-    for (cur_pos = 0; cur_pos + 64 <= level_size; cur_pos += 64) {
-      uint64_t word = 0ULL;
-      for (uint64_t i = 0; i < 64; ++i) {
-        const code_pair cp = codes.encode_symbol(sorted_text[cur_pos + i]);
-        DCHECK(level < cp.code_length);
-        uint64_t const bit = cp[level];
-        word <<= 1;
-        word |= bit;
-      }
-      bv[level][cur_pos >> 6] = word;
-    }
-    if (level_size & 63ULL) {
-      uint64_t word = 0ULL;
-      for (uint64_t i = cur_pos; i < level_size; ++i) {
-        const code_pair cp = codes.encode_symbol(sorted_text[i]);
-        DCHECK(level < cp.code_length);
-        uint64_t const bit = cp[level];
-        word <<= 1;
-        word |= bit;
-      }
-      word <<= (64 - (level_size & 63ULL));
-      bv[level][level_size >> 6] = word;
-    }
+    write_bits_wordwise(0, level_size, bv[level], [&](uint64_t const i) {
+      const code_pair cp = codes.encode_symbol(sorted_text[i]);
+      DCHECK(level < cp.code_length);
+      uint64_t const bit = cp[level];
+      return bit;
+    });
   }
 }
 
