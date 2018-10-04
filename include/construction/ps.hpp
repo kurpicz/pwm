@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include "construction/building_blocks.hpp"
+
 template <typename AlphabetType, typename ContextType>
 void ps(AlphabetType const* const text, uint64_t const size,
   uint64_t const levels, ContextType& ctx, AlphabetType* const sorted_text) {
@@ -17,27 +19,9 @@ void ps(AlphabetType const* const text, uint64_t const size,
   auto& borders = ctx.borders();
   auto& bv = ctx.bv();
 
-  // While initializing the histogram, we also compute the first level
-  uint64_t cur_pos = 0;
-  for (; cur_pos + 64 <= size; cur_pos += 64) {
-    uint64_t word = 0ULL;
-    for (uint64_t i = 0; i < 64; ++i) {
-      ++ctx.hist(levels, text[cur_pos + i]);
-      word <<= 1;
-      word |= ((text[cur_pos + i] >> (levels - 1)) & 1ULL);
-    }
-    bv[0][cur_pos >> 6] = word;
-  }
-  if (size & 63ULL) {
-    uint64_t word = 0ULL;
-    for (uint64_t i = 0; i < size - cur_pos; ++i) {
-      ++ctx.hist(levels, text[cur_pos + i]);
-      word <<= 1;
-      word |= ((text[cur_pos + i] >> (levels - 1)) & 1ULL);
-    }
-    word <<= (64 - (size & 63ULL));
-    bv[0][size >> 6] = word;
-  }
+  scan_text_compute_first_level_bv_and_last_level_hist(
+    text, size, levels, bv, ctx
+  );
 
   // The number of 0s at the last level is the number of "even" characters
   if (ContextType::compute_zeros) {
@@ -86,6 +70,7 @@ void ps(AlphabetType const* const text, uint64_t const size,
     // Since we have sorted the text, we can simply scan it from left to right
     // and for the character at position $i$ we set the $i$-th bit in the
     // bit vector accordingly
+    uint64_t cur_pos = 0;
     for (cur_pos = 0; cur_pos + 63 < size; cur_pos += 64) {
       uint64_t word = 0ULL;
       for (uint64_t i = 0; i < 64; ++i) {

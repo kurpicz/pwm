@@ -8,33 +8,17 @@
 
 #pragma once
 
+#include "construction/building_blocks.hpp"
+
 template <typename AlphabetType, typename ContextType>
 void pc_ss(AlphabetType const* const text, uint64_t const size,
   uint64_t const levels, ContextType& ctx) {
 
   auto& bv = ctx.bv();
 
-  // While initializing the histogram, we also compute the first level
-  uint64_t cur_pos = 0;
-  for (; cur_pos + 64 <= size; cur_pos += 64) {
-    uint64_t word = 0ULL;
-    for (uint64_t i = 0; i < 64; ++i) {
-      ++ctx.hist(levels, text[cur_pos + i]);
-      word <<= 1;
-      word |= ((text[cur_pos + i] >> (levels - 1)) & 1ULL);
-    }
-    bv[0][cur_pos >> 6] = word;
-  }
-  if (size & 63ULL) {
-    uint64_t word = 0ULL;
-    for (uint64_t i = 0; i < size - cur_pos; ++i) {
-      ++ctx.hist(levels, text[cur_pos + i]);
-      word <<= 1;
-      word |= ((text[cur_pos + i] >> (levels - 1)) & 1ULL);
-    }
-    word <<= (64 - (size & 63ULL));
-    bv[0][size >> 6] = word;
-  }
+  scan_text_compute_first_level_bv_and_last_level_hist(
+    text, size, levels, bv, ctx
+  );
 
   ctx.fill_borders();
 
