@@ -18,7 +18,15 @@ set(INTERNAL_SRCS
   ${CMAKE_CURRENT_SOURCE_DIR}/register/parallel_prefix_sorting.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/register/sequential_prefix_counting.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/register/sequential_prefix_counting_single_scan.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/register/sequential_prefix_sorting.cpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/register/sequential_prefix_sorting.cpp
+
+  ${CMAKE_CURRENT_SOURCE_DIR}/register/huff_naive.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/register/huff_dd_naive.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/register/huff_pc.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/register/huff_dd_pc.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/register/huff_ps.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/register/huff_dd_ps.cpp
+)
 
 set(INTERNAL_LIBS rt dl)
 

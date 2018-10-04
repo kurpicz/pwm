@@ -1,5 +1,5 @@
 /*******************************************************************************
- * include/wx_huff_naive.hpp
+ * include/wx_huff_ps.hpp
  *
  * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
  * Copyright (C) 2018 Marvin Löbel <loebel.marvin@gmail.com>
@@ -17,10 +17,10 @@
 #include "huffman/huff_codes.hpp"
 #include "huffman/huff_level_sizes_builder.hpp"
 #include "huffman/ctx_huff_all_levels.hpp"
-#include "huffman/huff_naive.hpp"
+#include "huffman/huff_ps.hpp"
 
 template <typename AlphabetType, bool is_tree_>
-class wx_huff_naive {
+class wx_huff_ps {
 
 public:
   static constexpr bool    is_parallel = false;
@@ -52,7 +52,10 @@ public:
     const auto rho = rho_dispatch<is_tree>::create(levels);
     auto ctx = ctx_t(level_sizes, levels, rho);
 
-    huff_naive(text, size, levels, codes, ctx);
+    {
+      auto sorted_text = std::vector<AlphabetType>(size);
+      huff_ps(text, size, levels, codes, ctx, sorted_text.data(), level_sizes);
+    }
 
     auto& bv = ctx.bv();
     auto& zeros = ctx.zeros();
