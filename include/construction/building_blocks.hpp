@@ -28,10 +28,10 @@ inline void scan_text_compute_first_level_bv_and_last_level_hist(
   }
   if (size & 63ULL) {
     uint64_t word = 0ULL;
-    for (uint64_t i = 0; i < size - cur_pos; ++i) {
-      ++ctx.hist(levels, text[cur_pos + i]);
+    for (uint64_t i = cur_pos; i < size; ++i) {
+      ++ctx.hist(levels, text[i]);
       word <<= 1;
-      word |= ((text[cur_pos + i] >> (levels - 1)) & 1ULL);
+      word |= ((text[i] >> (levels - 1)) & 1ULL);
     }
     word <<= (64 - (size & 63ULL));
     bv[0][size >> 6] = word;
