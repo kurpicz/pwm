@@ -31,8 +31,6 @@ void pc_ss(AlphabetType const* const text, uint64_t const size,
         << (63ULL - (pos & 63ULL)));
     }
   }
-
-  ctx.hist(0, 0) = size;
 }
 
 /******************************************************************************/

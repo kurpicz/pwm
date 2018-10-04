@@ -74,4 +74,5 @@ inline void bottom_up_compute_hist_and_borders_and_optional_zeros(
       ctx.zeros()[level - 1] = ctx.borders(level, 1);
     }
   }
+  ctx.hist(0, 0) = size;
 }
