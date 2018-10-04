@@ -70,24 +70,10 @@ void ps(AlphabetType const* const text, uint64_t const size,
     // Since we have sorted the text, we can simply scan it from left to right
     // and for the character at position $i$ we set the $i$-th bit in the
     // bit vector accordingly
-    uint64_t cur_pos = 0;
-    for (cur_pos = 0; cur_pos + 63 < size; cur_pos += 64) {
-      uint64_t word = 0ULL;
-      for (uint64_t i = 0; i < 64; ++i) {
-        word <<= 1;
-        word |= ((sorted_text[cur_pos + i] >> ((levels - 1) - level)) & 1ULL);
-      }
-      bv[level][cur_pos >> 6] = word;
-    }
-    if (size & 63ULL) {
-      uint64_t word = 0ULL;
-      for (uint64_t i = 0; i < size - cur_pos; ++i) {
-        word <<= 1;
-        word |= ((sorted_text[cur_pos + i] >> ((levels - 1) - level)) & 1ULL);
-      }
-      word <<= (64 - (size & 63ULL));
-      bv[level][size >> 6] = word;
-    }
+    write_bits_wordwise(0, size, bv[level], [&](uint64_t const i) {
+      uint64_t const bit = ((sorted_text[i] >> ((levels - 1) - level)) & 1ULL);
+      return bit;
+    });
   }
 
   ctx.hist(0, 0) = size;

@@ -8,6 +8,33 @@
 
 #pragma once
 
+template<typename level_bv_t, typename loop_body_t>
+inline void write_bits_wordwise(uint64_t start,
+                                uint64_t size,
+                                level_bv_t const& level_bv,
+                                loop_body_t body) {
+    uint64_t cur_pos = start;
+    for (; cur_pos + 64 <= size; cur_pos += 64) {
+      uint64_t word = 0ULL;
+      for (uint64_t i = 0; i < 64; ++i) {
+        uint64_t const bit = body(cur_pos + i);
+        word <<= 1;
+        word |= bit;
+      }
+      level_bv[cur_pos >> 6] = word;
+    }
+    if (size & 63ULL) {
+      uint64_t word = 0ULL;
+      for (uint64_t i = cur_pos; i < size; ++i) {
+        uint64_t const bit = body(i);
+        word <<= 1;
+        word |= bit;
+      }
+      word <<= (64 - (size & 63ULL));
+      level_bv[size >> 6] = word;
+    }
+}
+
 template<typename text_t, typename ctx_t, typename bv_t>
 inline void scan_text_compute_first_level_bv_and_last_level_hist(
   text_t const& text,
@@ -16,26 +43,11 @@ inline void scan_text_compute_first_level_bv_and_last_level_hist(
   bv_t& bv,
   ctx_t& ctx
 ) {
-  uint64_t cur_pos = 0;
-  for (; cur_pos + 64 <= size; cur_pos += 64) {
-    uint64_t word = 0ULL;
-    for (uint64_t i = 0; i < 64; ++i) {
-      ++ctx.hist(levels, text[cur_pos + i]);
-      word <<= 1;
-      word |= ((text[cur_pos + i] >> (levels - 1)) & 1ULL);
-    }
-    bv[0][cur_pos >> 6] = word;
-  }
-  if (size & 63ULL) {
-    uint64_t word = 0ULL;
-    for (uint64_t i = cur_pos; i < size; ++i) {
-      ++ctx.hist(levels, text[i]);
-      word <<= 1;
-      word |= ((text[i] >> (levels - 1)) & 1ULL);
-    }
-    word <<= (64 - (size & 63ULL));
-    bv[0][size >> 6] = word;
-  }
+  write_bits_wordwise(0, size, bv[0], [&](uint64_t i) {
+    ++ctx.hist(levels, text[i]);
+    uint64_t const bit = ((text[i] >> (levels - 1)) & 1ULL);
+    return bit;
+  });
 }
 
 template<typename ctx_t>
@@ -62,31 +74,4 @@ inline void bottom_up_compute_hist_and_borders_and_optional_zeros(
       ctx.zeros()[level - 1] = ctx.borders(level, 1);
     }
   }
-}
-
-template<typename level_bv_t, typename loop_body_t>
-inline void write_bits_wordwise(uint64_t start,
-                                uint64_t size,
-                                level_bv_t const& level_bv,
-                                loop_body_t body) {
-    uint64_t cur_pos = start;
-    for (; cur_pos + 64 <= size; cur_pos += 64) {
-      uint64_t word = 0ULL;
-      for (uint64_t i = 0; i < 64; ++i) {
-        uint64_t const bit = body(cur_pos + i);
-        word <<= 1;
-        word |= bit;
-      }
-      level_bv[cur_pos >> 6] = word;
-    }
-    if (size & 63ULL) {
-      uint64_t word = 0ULL;
-      for (uint64_t i = cur_pos; i < size; ++i) {
-        uint64_t const bit = body(i);
-        word <<= 1;
-        word |= bit;
-      }
-      word <<= (64 - (size & 63ULL));
-      level_bv[size >> 6] = word;
-    }
 }
