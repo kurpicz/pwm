@@ -46,22 +46,7 @@ void pc(AlphabetType const* text, const uint64_t size, const uint64_t levels,
 
     // Compute the starting positions of characters with respect to their
     // bit prefixes and the bit-reversal permutation
-    borders[0] = 0;
-    for (uint64_t i = 1; i < cur_alphabet_size; ++i) {
-      auto const prev_rho = ctx.rho(level, i - 1);
-
-      borders[ctx.rho(level, i)] =
-        borders[prev_rho] + ctx.hist(level, prev_rho);
-
-      if (ContextType::compute_rho)  {
-        ctx.set_rho(level - 1, i - 1, prev_rho >> 1);
-      }
-    }
-
-    // The number of 0s is the position of the first 1 in the previous level
-    if (ContextType::compute_zeros) {
-      zeros[level - 1] = borders[1];
-    }
+    compute_borders_and_optional_zeros(level, cur_alphabet_size, ctx);
 
     // Now we insert the bits with respect to their bit prefixes
     for (uint64_t i = 0; i < size; ++i) {

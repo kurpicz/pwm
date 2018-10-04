@@ -24,7 +24,6 @@ void huff_ps(AlphabetType const* text,
              AlphabetType* const sorted_text,
              std::vector<uint64_t> const& level_sizes)
 {
-  auto& zeros = ctx.zeros();
   auto& borders = ctx.borders();
   auto& bv = ctx.bv();
 
@@ -39,29 +38,7 @@ void huff_ps(AlphabetType const* text,
 
     // Compute the starting positions of characters with respect to their
     // bit prefixes and the bit-reversal permutation
-    borders[0] = 0;
-    for (uint64_t i = 1; i < blocks; ++i) {
-      auto const prev_block = ctx.rho(level, i - 1);
-      auto const this_block = ctx.rho(level, i);
-
-      borders[this_block] = borders[prev_block] + ctx.hist(level, prev_block);
-      // NB: The above calulcation produces _wrong_ border offsets
-      // for huffman codes that are one-shorter than the current level.
-      //
-      // Since those codes will not be used in the loop below, this does not
-      // produce wrong or out-of-bound accesses.
-
-      if (ContextType::compute_rho)  {
-        ctx.set_rho(level - 1, i - 1, prev_block >> 1);
-      }
-    }
-
-    if (ContextType::compute_zeros) {
-      // If we compute zeros, we are working on a WM instead of a WT.
-      // For a WM, borders is permuted with rho such that
-      // borders[1] contains the position of the first 1-bit block.
-      zeros[level - 1] = borders[1];
-    }
+    compute_borders_and_optional_zeros(level, blocks, ctx);
 
     // Now we sort the text utilizing counting sort and the starting positions
     // that we have computed before

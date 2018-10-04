@@ -118,6 +118,10 @@ public:
         // TODO: Add this local borders to the "new" context, too.
         std::vector<uint64_t> borders(local_alphabet_size, 0);
 
+        // TODO: Address the previous comment, to allow replace the
+        // below code with this:
+        // compute_borders_and_optional_zeros(level, local_alphabet_size, ctx);
+
         borders[0] = 0;
         for (uint64_t i = 1; i < local_alphabet_size; ++i) {
           const auto prev_rho = ctx.rho(level, i - 1);
