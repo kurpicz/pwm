@@ -1,5 +1,5 @@
 /*******************************************************************************
- * include/huffman/huff_pc.hpp
+ * include/construction/building_blocks.hpp
  *
  * Copyright (C) 2018 Marvin Löbel <loebel.marvin@gmail.com>
  *

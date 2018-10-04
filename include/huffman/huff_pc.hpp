@@ -13,6 +13,7 @@
 #include <iostream>
 
 #include "huffman/huff_codes.hpp"
+#include "huffman/huff_building_blocks.hpp"
 
 template <typename AlphabetType, typename ContextType, typename HuffCodes>
 void huff_pc(AlphabetType const* text,
@@ -26,36 +27,9 @@ void huff_pc(AlphabetType const* text,
   auto& bv = ctx.bv();
 
   // While calculating the histogram, we also compute the first level
-  {
-    ctx.hist(0, 0) = size;
-
-    auto process_symbol = [&](auto& word, auto pos) {
-      const code_pair cp = codes.encode_symbol(text[pos]);
-      word <<= 1;
-      word |= cp[0];
-      for (size_t level = 1; level <= cp.code_length; level++) {
-        auto prefix = cp.prefix(level);
-        ctx.hist(level, prefix)++;
-      }
-    };
-
-    uint64_t cur_pos = 0;
-    for (; cur_pos + 64 <= size; cur_pos += 64) {
-      uint64_t word = 0ULL;
-      for (uint64_t i = 0; i < 64; ++i) {
-        process_symbol(word, cur_pos + i);
-      }
-      bv[0][cur_pos >> 6] = word;
-    }
-    if (size & 63ULL) {
-      uint64_t word = 0ULL;
-      for (uint64_t i = 0; i < size - cur_pos; ++i) {
-        process_symbol(word, cur_pos + i);
-      }
-      word <<= (64 - (size & 63ULL));
-      bv[0][size >> 6] = word;
-    }
-  }
+  huff_scan_text_compute_first_level_bv_and_full_hist(
+    text, size, bv, ctx, codes
+  );
 
   // Now we compute the WX top-down, since the histograms are already computed
   for (uint64_t level = 1; level < levels; level++) {
