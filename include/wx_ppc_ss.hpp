@@ -40,7 +40,7 @@ public:
     auto& bv = ctx.bv();
     auto& zeros = ctx.zeros();
 
-    const uint64_t max_char = (1 << levels);
+    const uint64_t alphabet_size = (1 << levels);
 
     std::vector<std::vector<uint64_t>> all_hists;
 
@@ -51,7 +51,7 @@ public:
 
       #pragma omp single
       all_hists = std::vector<std::vector<uint64_t>>(omp_size,
-        std::vector<uint64_t>(max_char + 1, 0));
+        std::vector<uint64_t>(alphabet_size + 1, 0));
 
       #pragma omp for
       for (uint64_t cur_pos = 0; cur_pos <= size - 64; cur_pos += 64) {
@@ -78,12 +78,12 @@ public:
     }
 
     for (uint64_t i = 0; i < all_hists.size(); ++i) {
-      for (uint64_t j = 0; j < max_char; ++j) {
+      for (uint64_t j = 0; j < alphabet_size; ++j) {
         ctx.hist(levels, j) += all_hists[i][j];
       }
     }
     if constexpr (ctx_t::compute_zeros) {
-      for (uint64_t i = 0; i < max_char; i += 2) {
+      for (uint64_t i = 0; i < alphabet_size; i += 2) {
         zeros[levels - 1] += ctx.hist(levels, i);
       }
     }

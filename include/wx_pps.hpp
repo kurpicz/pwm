@@ -44,7 +44,7 @@ public:
     {
       const auto omp_rank = omp_get_thread_num();
       const auto omp_size = omp_get_num_threads();
-      const uint64_t max_char = (1 << levels);
+      const uint64_t alphabet_size = (1 << levels);
 
       #pragma omp single
       ctx = ctx_t(size, levels, omp_size);
@@ -76,7 +76,7 @@ public:
 
       // The number of 0's at the last level is the number of "even" characters
       #pragma omp single
-      for (uint64_t i = 0; i < max_char; i += 2) {
+      for (uint64_t i = 0; i < alphabet_size; i += 2) {
         for (int32_t rank = 0; rank < omp_size; ++rank) {
           zeros[levels - 1] += ctx.hist(rank, i);
         }
@@ -91,7 +91,7 @@ public:
         // processor, i.e., for one fixed bit prefix we compute the prefix sum
         // over the number of occurrences at each processor
         #pragma omp for
-        for (uint64_t i = 0; i < max_char; i += (1ULL << prefix_shift)) {
+        for (uint64_t i = 0; i < alphabet_size; i += (1ULL << prefix_shift)) {
           ctx.borders(0, i) = 0;
           ctx.hist(0, i) += ctx.hist(0, i + (1ULL << cur_bit_shift));
           for (int32_t rank = 1; rank < omp_size; ++rank) {
@@ -124,7 +124,7 @@ public:
         // We add the offset to the borders (for performance)
         #pragma omp for
         for (int32_t rank = 0; rank < omp_size; ++rank) {
-          for (uint64_t i = 0; i < max_char; i += (1ULL << prefix_shift)) {
+          for (uint64_t i = 0; i < alphabet_size; i += (1ULL << prefix_shift)) {
             ctx.borders(rank, i) += offsets[i];
           }
         }
@@ -132,7 +132,7 @@ public:
         // We align the borders (in memory) to increase performance by reducing
         // the number of cache misses
         std::vector<uint64_t> borders_aligned(1ULL << level, 0);
-        for (uint64_t i = 0; i < max_char; i += (1ULL << prefix_shift)) {
+        for (uint64_t i = 0; i < alphabet_size; i += (1ULL << prefix_shift)) {
           borders_aligned[i >> prefix_shift] = ctx.borders(omp_rank, i);
         }
 
