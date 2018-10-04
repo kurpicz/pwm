@@ -20,7 +20,7 @@ void pc_ss(AlphabetType const* const text, uint64_t const size,
     text, size, levels, bv, ctx
   );
 
-  bottom_up_compute_hist_and_borders_and_optional_zeros(levels, ctx);
+  bottom_up_compute_hist_and_borders_and_optional_zeros(size, levels, ctx);
 
   for (uint64_t i = 0; i < size; ++i) {
     for (uint64_t level = levels - 1; level > 0; --level) {

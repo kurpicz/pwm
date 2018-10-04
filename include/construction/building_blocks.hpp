@@ -52,6 +52,7 @@ inline void scan_text_compute_first_level_bv_and_last_level_hist(
 
 template<typename ctx_t>
 inline void bottom_up_compute_hist_and_borders_and_optional_zeros(
+  uint64_t const size,
   uint64_t const levels,
   ctx_t& ctx
 ) {
