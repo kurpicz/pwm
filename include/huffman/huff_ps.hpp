@@ -73,6 +73,8 @@ void huff_ps(AlphabetType const* text,
       auto const cur_char = text[i];
       const code_pair cp = codes.encode_symbol(cur_char);
 
+      // TODO: Make use of previously reduced sorted_text to
+      // reduce iteration time?
       if (level < cp.code_length) {
         uint64_t const prefix = cp.prefix(level);
         uint64_t const pos = borders[prefix]++;
