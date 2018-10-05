@@ -37,6 +37,7 @@ public:
     const auto rho = rho_dispatch<is_tree>::create(levels);
     auto ctx = ctx_t(size, levels, rho);
     auto& bv = ctx.bv();
+    auto& zeros = ctx.zeros();
 
     const uint64_t max_char = (1 << levels);
     
@@ -78,6 +79,11 @@ public:
     for (uint64_t i = 0; i < all_hists.size(); ++i) {
       for (uint64_t j = 0; j < max_char; ++j) {
         ctx.hist(levels, j) += all_hists[i][j];
+      }
+    }
+    if constexpr (ctx_t::compute_zeros) {
+      for (uint64_t i = 0; i < max_char; i += 2) {
+        zeros[levels - 1] += ctx.hist(levels, i);
       }
     }
     ctx.fill_borders();
