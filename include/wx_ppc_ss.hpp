@@ -38,28 +38,48 @@ public:
     auto ctx = ctx_t(size, levels, rho);
     auto& bv = ctx.bv();
 
-    // While initializing the histogram, we also compute the first level
-    uint64_t cur_pos = 0;
-    for (; cur_pos + 64 <= size; cur_pos += 64) {
-      uint64_t word = 0ULL;
-      for (uint64_t i = 0; i < 64; ++i) {
-        ++ctx.hist(levels, text[cur_pos + i]);
-        word <<= 1;
-        word |= ((text[cur_pos + i] >> (levels - 1)) & 1ULL);
+    const uint64_t max_char = (1 << levels);
+    
+    std::vector<std::vector<uint64_t>> all_hists; 
+    
+    #pragma omp parallel
+    {
+      const auto omp_rank = omp_get_thread_num();
+      const auto omp_size = omp_get_num_threads();
+
+      #pragma omp single
+      all_hists = std::vector<std::vector<uint64_t>>(omp_size,
+        std::vector<uint64_t>(max_char + 1, 0));
+
+      #pragma omp for
+      for (uint64_t cur_pos = 0; cur_pos <= size - 64; cur_pos += 64) {
+        uint64_t word = 0ULL;
+        for (uint64_t i = 0; i < 64; ++i) {
+          //++ctx.hist(omp_rank, text[cur_pos + i]);
+          ++all_hists[omp_rank][text[cur_pos + i]];
+          word <<= 1;
+          word |= ((text[cur_pos + i] >> (levels - 1)) & 1ULL);
+        }
+        bv[0][cur_pos >> 6] = word;
       }
-      bv[0][cur_pos >> 6] = word;
-    }
-    if (size & 63ULL) {
-      uint64_t word = 0ULL;
-      for (uint64_t i = 0; i < size - cur_pos; ++i) {
-        ++ctx.hist(levels, text[cur_pos + i]);
-        word <<= 1;
-        word |= ((text[cur_pos + i] >> (levels - 1)) & 1ULL);
+      if ((size & 63ULL) && ((omp_rank + 1) == omp_size)) {
+        uint64_t word = 0ULL;
+        for (uint64_t i = 0; i < (size & 63ULL); ++i) {
+          //++ctx.hist(omp_rank, text[size - (size & 63ULL) + i]);
+          ++all_hists[omp_rank][text[size - (size & 63ULL) + i]];
+          word <<= 1;
+          word |= ((text[size - (size & 63ULL) + i] >> (levels - 1)) & 1ULL);
+        }
+        word <<= (64 - (size & 63ULL));
+        bv[0][size >> 6] = word;
       }
-      word <<= (64 - (size & 63ULL));
-      bv[0][size >> 6] = word;
     }
 
+    for (uint64_t i = 0; i < all_hists.size(); ++i) {
+      for (uint64_t j = 0; j < max_char; ++j) {
+        ctx.hist(levels, j) += all_hists[i][j];
+      }
+    }
     ctx.fill_borders();
 
     // TODO: Is this correct?
