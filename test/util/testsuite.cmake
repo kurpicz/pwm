@@ -44,6 +44,7 @@ macro(generic_run_test test_target test_file
       ${PROJECT_SOURCE_DIR}/src/register/huff_dd_pc.cpp
       ${PROJECT_SOURCE_DIR}/src/register/huff_ps.cpp
       ${PROJECT_SOURCE_DIR}/src/register/huff_dd_ps.cpp
+      ${PROJECT_SOURCE_DIR}/src/register/huff_pc_ss.cpp
       )
   else()
     unset(CONSTRUCTION_ALGORITHMS)
