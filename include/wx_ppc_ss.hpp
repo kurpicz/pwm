@@ -95,11 +95,11 @@ public:
     {
       uint64_t level = omp_get_thread_num();
       for (uint64_t i = 0; i < size; ++i) {
-          const uint64_t prefix_shift = (levels - level);
-          const uint64_t cur_bit_shift = prefix_shift - 1;
-          const uint64_t pos = ctx.borders(level, text[i] >> prefix_shift)++;
-          bv[level][pos >> 6] |= (((text[i] >> cur_bit_shift) & 1ULL)
-            << (63ULL - (pos & 63ULL)));
+        const uint64_t prefix_shift = (levels - level);
+        const uint64_t cur_bit_shift = prefix_shift - 1;
+        const uint64_t pos = ctx.borders(level, text[i] >> prefix_shift)++;
+        bv[level][pos >> 6] |= (((text[i] >> cur_bit_shift) & 1ULL)
+          << (63ULL - (pos & 63ULL)));
       }
     }
 
