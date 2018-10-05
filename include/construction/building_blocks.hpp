@@ -79,7 +79,7 @@ inline void bottom_up_compute_hist_and_borders_and_optional_zeros(
 }
 
 template<typename ctx_t>
-inline void compute_borders_and_optional_zeros(
+inline void compute_borders_and_optional_zeros_and_optional_rho(
     uint64_t level,
     uint64_t blocks,
     ctx_t& ctx

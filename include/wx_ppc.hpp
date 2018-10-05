@@ -120,7 +120,8 @@ public:
 
         // TODO: Address the previous comment, to allow replace the
         // below code with this:
-        // compute_borders_and_optional_zeros(level, local_alphabet_size, ctx);
+        // compute_borders_and_optional_zeros_and_optional_rho(
+        //   level, local_alphabet_size, ctx);
 
         borders[0] = 0;
         for (uint64_t i = 1; i < local_alphabet_size; ++i) {
