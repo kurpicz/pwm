@@ -1,12 +1,14 @@
 /*******************************************************************************
  * include/wx_ppc_ss.hpp
  *
- * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
+ * Copyright (C) 2017-2018 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
  *
  * All rights reserved. Published under the BSD-2 license in the LICENSE file.
  ******************************************************************************/
 
 #pragma once
+
+#include <omp.h>
 
 #include "construction/ctx_compute_borders.hpp"
 #include "construction/pc_ss.hpp"
@@ -63,15 +65,13 @@ public:
     // TODO: Is this correct?
     #pragma omp parallel num_threads(levels)
     {
+      uint64_t level = omp_get_thread_num();
       for (uint64_t i = 0; i < size; ++i) {
-        #pragma omp for nowait
-        for (uint64_t level = levels - 1; level > 0; --level) {
-          const uint64_t prefix_shift = (levels - level);
-          const uint64_t cur_bit_shift = prefix_shift - 1;
-          const uint64_t pos = ctx.borders(level, text[i] >> prefix_shift)++;
-          bv[level][pos >> 6] |= (((text[i] >> cur_bit_shift) & 1ULL)
-            << (63ULL - (pos & 63ULL)));
-        }
+        const uint64_t prefix_shift = (levels - level);
+        const uint64_t cur_bit_shift = prefix_shift - 1;
+        const uint64_t pos = ctx.borders(level, text[i] >> prefix_shift)++;
+        bv[level][pos >> 6] |= (((text[i] >> cur_bit_shift) & 1ULL)
+          << (63ULL - (pos & 63ULL)));
       }
     }
 
