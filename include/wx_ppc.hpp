@@ -13,6 +13,7 @@
 #include "construction/ctx_all_levels.hpp"
 #include "construction/wavelet_structure.hpp"
 #include "util/common.hpp"
+#include "construction/building_blocks.hpp"
 
 template <typename AlphabetType, bool is_tree_>
 class wx_ppc {
@@ -46,10 +47,10 @@ public:
     {
       const uint64_t omp_rank = uint64_t(omp_get_thread_num());
       const uint64_t omp_size = uint64_t(omp_get_num_threads());
-      const uint64_t max_char = (1 << levels);
+      const uint64_t alphabet_size = (1 << levels);
 
       auto* const initial_hist_ptr =
-        initial_hist.data() + (max_char * omp_rank);
+        initial_hist.data() + (alphabet_size * omp_rank);
 
       #pragma omp for
       for (uint64_t cur_pos = 0; cur_pos <= size - 64; cur_pos += 64) {
@@ -77,9 +78,9 @@ public:
 
       // Compute the historam with respect to the local slices of the text
       #pragma omp for
-      for (uint64_t i = 0; i < max_char; ++i) {
+      for (uint64_t i = 0; i < alphabet_size; ++i) {
         for (uint64_t rank = 0; rank < omp_size; ++rank) {
-          ctx.hist(levels, i) += *(initial_hist.data() + (max_char * rank) + i);
+          ctx.hist(levels, i) += *(initial_hist.data() + (alphabet_size * rank) + i);
         }
       }
 
@@ -87,7 +88,7 @@ public:
       {
         if constexpr (ctx_t::compute_zeros) {
           // The number of 0s at the last level is the number of "even" characters
-          for (uint64_t i = 0; i < max_char; i += 2) {
+          for (uint64_t i = 0; i < alphabet_size; i += 2) {
             zeros[levels - 1] += ctx.hist(levels, i);
           }
         }
@@ -96,9 +97,9 @@ public:
       // Compute the histogram for each level of the wavelet structure
       #pragma omp for
       for (uint64_t level = 1; level < levels; ++level) {
-        const uint64_t local_max_char = (1 << level);
+        const uint64_t local_alphabet_size = (1 << level);
         const uint64_t requierd_characters = (1 << (levels - level));
-        for (uint64_t i = 0; i < local_max_char; ++i) {
+        for (uint64_t i = 0; i < local_alphabet_size; ++i) {
           for (uint64_t j = 0; j < requierd_characters; ++j) {
             ctx.hist(level, i) +=
               ctx.hist(levels, (i * requierd_characters) + j);
@@ -110,15 +111,20 @@ public:
       #pragma omp for
       for (uint64_t level = 1; level < levels; ++level) {
 
-        const uint64_t local_max_char = (1 << level);
+        const uint64_t local_alphabet_size = (1 << level);
         const uint64_t prefix_shift = (levels - level);
         const uint64_t cur_bit_shift = prefix_shift - 1;
 
         // TODO: Add this local borders to the "new" context, too.
-        std::vector<uint64_t> borders(local_max_char, 0);
+        std::vector<uint64_t> borders(local_alphabet_size, 0);
+
+        // TODO: Address the previous comment, to allow replace the
+        // below code with this:
+        // compute_borders_and_optional_zeros_and_optional_rho(
+        //   level, local_alphabet_size, ctx);
 
         borders[0] = 0;
-        for (uint64_t i = 1; i < local_max_char; ++i) {
+        for (uint64_t i = 1; i < local_alphabet_size; ++i) {
           const auto prev_rho = ctx.rho(level, i - 1);
           borders[ctx.rho(level, i)] =
             borders[prev_rho] + ctx.hist(level, prev_rho);

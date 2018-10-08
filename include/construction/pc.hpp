@@ -8,41 +8,23 @@
 
 #pragma once
 
+#include "construction/building_blocks.hpp"
+
 template <typename AlphabetType, typename ContextType>
 void pc(AlphabetType const* text, const uint64_t size, const uint64_t levels,
   ContextType& ctx) {
-  uint64_t cur_max_char = (1 << levels);
+  uint64_t cur_alphabet_size = (1 << levels);
 
   auto& zeros = ctx.zeros();
   auto& borders = ctx.borders();
   auto& bv = ctx.bv();
 
-  // While initializing the histogram, we also compute the first level
-  uint64_t cur_pos = 0;
-  for (; cur_pos + 64 <= size; cur_pos += 64) {
-    uint64_t word = 0ULL;
-    for (uint64_t i = 0; i < 64; ++i) {
-      ++ctx.hist(levels, text[cur_pos + i]);
-      word <<= 1;
-      word |= ((text[cur_pos + i] >> (levels - 1)) & 1ULL);
-    }
-    bv[0][cur_pos >> 6] = word;
-  }
-  if (size & 63ULL) {
-    uint64_t word = 0ULL;
-    for (uint64_t i = 0; i < size - cur_pos; ++i) {
-      ++ctx.hist(levels, text[cur_pos + i]);
-      word <<= 1;
-      word |= ((text[cur_pos + i] >> (levels - 1)) & 1ULL);
-    }
-    word <<= (64 - (size & 63ULL));
-    bv[0][size >> 6] = word;
-  }
-
+  scan_text_compute_first_level_bv_and_last_level_hist(
+    text, size, levels, bv, ctx);
 
   // The number of 0s at the last level is the number of "even" characters
   if (ContextType::compute_zeros) {
-    for (uint64_t i = 0; i < cur_max_char; i += 2) {
+    for (uint64_t i = 0; i < cur_alphabet_size; i += 2) {
       zeros[levels - 1] += ctx.hist(levels, i);
     }
   }
@@ -54,8 +36,8 @@ void pc(AlphabetType const* text, const uint64_t size, const uint64_t levels,
 
     // Update the maximum value of a feasible a bit prefix and update the
     // histogram of the bit prefixes
-    cur_max_char >>= 1;
-    for (uint64_t i = 0; i < cur_max_char; ++i) {
+    cur_alphabet_size >>= 1;
+    for (uint64_t i = 0; i < cur_alphabet_size; ++i) {
       ctx.hist(level, i)
         = ctx.hist(level + 1, i << 1)
         + ctx.hist(level + 1, (i << 1) + 1);
@@ -63,22 +45,8 @@ void pc(AlphabetType const* text, const uint64_t size, const uint64_t levels,
 
     // Compute the starting positions of characters with respect to their
     // bit prefixes and the bit-reversal permutation
-    borders[0] = 0;
-    for (uint64_t i = 1; i < cur_max_char; ++i) {
-      auto const prev_rho = ctx.rho(level, i - 1);
-
-      borders[ctx.rho(level, i)] =
-        borders[prev_rho] + ctx.hist(level, prev_rho);
-
-      if (ContextType::compute_rho)  {
-        ctx.set_rho(level - 1, i - 1, prev_rho >> 1);
-      }
-    }
-
-    // The number of 0s is the position of the first 1 in the previous level
-    if (ContextType::compute_zeros) {
-      zeros[level - 1] = borders[1];
-    }
+    compute_borders_and_optional_zeros_and_optional_rho(
+      level, cur_alphabet_size, ctx);
 
     // Now we insert the bits with respect to their bit prefixes
     for (uint64_t i = 0; i < size; ++i) {
@@ -88,9 +56,7 @@ void pc(AlphabetType const* text, const uint64_t size, const uint64_t levels,
     }
   }
 
-  if (levels > 1) { // TODO check condition
-    ctx.hist(0, 0) = ctx.hist(1, 0) + ctx.hist(1, 1);
-  }
+  ctx.hist(0, 0) = size;
 }
 
 /******************************************************************************/

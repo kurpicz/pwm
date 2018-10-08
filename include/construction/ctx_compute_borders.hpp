@@ -30,26 +30,6 @@ public:
   static bool constexpr compute_zeros = !is_tree;
   static bool constexpr compute_rho = false;
 
-  void fill_borders() {
-    for (uint64_t level = levels_ - 1; level > 0; --level) {
-      for (uint64_t pos = 0; pos < hist_size(level); ++pos) {
-        hist_[level][pos] = hist_[level + 1][pos << 1] +
-          hist_[level + 1][(pos << 1) + 1];
-      }
-
-      borders_[level][0] = 0;
-      for (uint64_t pos = 1; pos < hist_size(level); ++pos) {
-        auto const prev_rho = rho(level, pos - 1);
-
-        borders_[level][rho(level, pos)] =
-          borders_[level][prev_rho] + hist_[level][prev_rho];
-      }
-
-      // The number of 0s is the position of the first 1 in the previous level
-      if constexpr (compute_zeros) { zeros_[level - 1] = borders_[level][1]; }
-    }
-  }
-
   inline uint64_t hist_size(uint64_t const level) {
     return 1ULL << level;
   }
