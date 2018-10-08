@@ -14,6 +14,7 @@
 
 struct huff_ps_disp {
   static constexpr bool needs_second_text_allocation = true;
+  static constexpr bool needs_all_borders = false;
 
   template <typename AlphabetType, typename ContextType, typename HuffCodes>
   static void calc_huff(AlphabetType const* text,

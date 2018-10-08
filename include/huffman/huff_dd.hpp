@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include <type_traits>
 #include <algorithm>
 #include <cstring>
 #include <omp.h>
@@ -21,6 +22,7 @@
 #include "huffman/huff_bit_vectors.hpp"
 #include "huffman/huff_codes.hpp"
 #include "huffman/ctx_huff_all_levels.hpp"
+#include "huffman/ctx_huff_all_levels_borders.hpp"
 #include "huffman/huff_parallel_level_sizes_builder.hpp"
 
 template <typename Algorithm, typename AlphabetType, bool is_tree_>
@@ -32,7 +34,10 @@ public:
   static constexpr uint8_t word_width  = sizeof(AlphabetType);
   static constexpr bool  is_huffman_shaped = true;
 
-  using ctx_t = ctx_huff_all_levels<is_tree>;
+  using ctx_t = std::conditional_t<Algorithm::needs_all_borders,
+    ctx_huff_all_levels_borders<is_tree>,
+    ctx_huff_all_levels<is_tree>
+  >;
 
   template <typename InputType>
   static wavelet_structure compute(const InputType& global_text_ptr,
