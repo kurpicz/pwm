@@ -11,16 +11,19 @@
 #include "construction/building_blocks.hpp"
 
 template <typename AlphabetType, typename ContextType>
-void ps(AlphabetType const* const text, uint64_t const size,
-  uint64_t const levels, ContextType& ctx, AlphabetType* const sorted_text) {
+void ps(AlphabetType const* const text,
+        uint64_t const size,
+        uint64_t const levels,
+        ContextType& ctx,
+        AlphabetType* const sorted_text) {
   uint64_t cur_alphabet_size = (1 << levels);
 
   auto& zeros = ctx.zeros();
   auto& borders = ctx.borders();
   auto& bv = ctx.bv();
 
-  scan_text_compute_first_level_bv_and_last_level_hist(
-    text, size, levels, bv, ctx);
+  scan_text_compute_first_level_bv_and_last_level_hist(text, size, levels, bv,
+                                                       ctx);
 
   // The number of 0s at the last level is the number of "even" characters
   if (ContextType::compute_zeros) {
@@ -35,15 +38,14 @@ void ps(AlphabetType const* const text, uint64_t const size,
     // histogram of the bit prefixes
     cur_alphabet_size >>= 1;
     for (uint64_t i = 0; i < cur_alphabet_size; ++i) {
-      ctx.hist(level, i)
-        = ctx.hist(level + 1, i << 1)
-        + ctx.hist(level + 1, (i << 1) + 1);
+      ctx.hist(level, i) =
+          ctx.hist(level + 1, i << 1) + ctx.hist(level + 1, (i << 1) + 1);
     }
 
     // Compute the starting positions of characters with respect to their
     // bit prefixes and the bit-reversal permutation
-    compute_borders_and_optional_zeros_and_optional_rho(
-      level, cur_alphabet_size, ctx);
+    compute_borders_and_optional_zeros_and_optional_rho(level,
+                                                        cur_alphabet_size, ctx);
 
     // Now we sort the text utilizing counting sort and the starting positions
     // that we have computed before
