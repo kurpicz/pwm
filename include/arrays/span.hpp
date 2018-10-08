@@ -14,13 +14,13 @@
 #include "util/common.hpp"
 #include "util/debug_assert.hpp"
 
-template<typename T>
+template <typename T>
 class span {
   T* m_ptr;
   size_t m_size;
+
 public:
-  inline span(T* ptr, size_t size):
-    m_ptr(ptr), m_size(size) {}
+  inline span(T* ptr, size_t size) : m_ptr(ptr), m_size(size) {}
   inline size_t size() const {
     return m_size;
   }
@@ -35,9 +35,8 @@ public:
     DCHECK(start <= m_size);
     DCHECK(end <= m_size);
     DCHECK(start <= end);
-    return span { m_ptr + start, end - start };
+    return span{m_ptr + start, end - start};
   }
 };
-
 
 /******************************************************************************/
