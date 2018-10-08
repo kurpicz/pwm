@@ -11,6 +11,7 @@
 
 #include "arrays/bit_vectors.hpp"
 #include "arrays/pow2_array.hpp"
+#include "huff_bit_vectors.hpp"
 
 /// Keep calculated information for individual levels around
 template <bool is_tree>
