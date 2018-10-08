@@ -14,8 +14,8 @@
 #include "construction/wavelet_structure.hpp"
 #include "util/debug.hpp"
 
-[[maybe_unused]]
-static std::string decode_wt(const base_bit_vectors& bv, uint64_t length) {
+[[maybe_unused]] static std::string decode_wt(const base_bit_vectors& bv,
+                                              uint64_t length) {
   auto ls = level_sizes(bv, 0, length, 0);
 
   for (auto& v : ls) {
@@ -52,9 +52,10 @@ static std::string decode_wt(const base_bit_vectors& bv, uint64_t length) {
   return std::string(r.begin(), r.end());
 }
 
-[[maybe_unused]]
-static std::string decode_wm(const base_bit_vectors& bv,
-  const std::vector<uint64_t>& zeros, const uint64_t length) {
+[[maybe_unused]] static std::string
+decode_wm(const base_bit_vectors& bv,
+          const std::vector<uint64_t>& zeros,
+          const uint64_t length) {
 
   if (bv.levels() == 0) {
     return {};
@@ -64,16 +65,16 @@ static std::string decode_wm(const base_bit_vectors& bv,
   auto rtmp = std::vector<uint8_t>(length, uint8_t(0));
   // print_bv_zeros(bv, zeros, length);
 
-  for(uint64_t level = bv.levels() - 1; level > 0; --level) {
+  for (uint64_t level = bv.levels() - 1; level > 0; --level) {
     uint64_t offset0 = 0;
     uint64_t offset1 = zeros[level - 1];
 
-    for(uint64_t i = 0; i < length; i++) {
+    for (uint64_t i = 0; i < length; i++) {
       r[i] |= (bit_at(bv[level], i) << (bv.levels() - level - 1));
     }
 
-    for(uint64_t i = 0; i < length; i++) {
-      if(bit_at(bv[level - 1], i) == 0) {
+    for (uint64_t i = 0; i < length; i++) {
+      if (bit_at(bv[level - 1], i) == 0) {
         rtmp[i] = r[offset0];
         offset0++;
       } else {
@@ -85,7 +86,7 @@ static std::string decode_wm(const base_bit_vectors& bv,
     r.swap(rtmp);
   }
 
-  for(uint64_t i = 0; i < length; i++) {
+  for (uint64_t i = 0; i < length; i++) {
     r[i] |= bit_at(bv[0], i) << (bv.levels() - 1);
   }
 

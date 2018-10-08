@@ -14,8 +14,8 @@
 #include "util/type_for_bytes.hpp"
 
 template <uint8_t BytesPerWord>
-static std::vector<typename type_for_bytes<BytesPerWord>::type> file_to_vector(
-  const std::string& file_name) {
+static std::vector<typename type_for_bytes<BytesPerWord>::type>
+file_to_vector(const std::string& file_name) {
   std::ifstream stream(file_name.c_str(), std::ios::in | std::ios::binary);
 
   if (!stream) {
