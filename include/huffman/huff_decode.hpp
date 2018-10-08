@@ -15,12 +15,13 @@
 #include "huffman/huff_codes.hpp"
 #include "util/debug.hpp"
 
-template<typename AlphabetType>
-std::string decode_wt_huff(const base_bit_vectors& bv,
-  const canonical_huff_codes<AlphabetType, true>& codes) {
+template <typename AlphabetType>
+std::string
+decode_wt_huff(const base_bit_vectors& bv,
+               const canonical_huff_codes<AlphabetType, true>& codes) {
 
   if (bv.levels() == 0) {
-    return { };
+    return {};
   }
 
   struct icp {
@@ -31,7 +32,7 @@ std::string decode_wt_huff(const base_bit_vectors& bv,
   // All codes have length greater or equal to 1. By choosing the initial length
   // to be 0, we can use the length to mark finished codes. To this end, we
   // interpret every code_length > 0 as the code_length of a finished code.
-  std::vector<icp> icps(bv.level_bit_size(0), { 0, { 0ULL, 0ULL } });
+  std::vector<icp> icps(bv.level_bit_size(0), {0, {0ULL, 0ULL}});
   for (uint64_t i = 0; i < icps.size(); ++i) {
     icps[i].index = i;
   }
@@ -46,17 +47,16 @@ std::string decode_wt_huff(const base_bit_vectors& bv,
       icps[bit_pos++].cp.code_length = level;
     }
     std::stable_sort(icps.begin(), icps.begin() + bv.level_bit_size(level),
-      [](const icp& a, const icp& b) {
-        return a.cp.code_word < b.cp.code_word;
-      });
+                     [](const icp& a, const icp& b) {
+                       return a.cp.code_word < b.cp.code_word;
+                     });
   }
   for (uint64_t i = 0; i < bv.level_bit_size(bv.levels() - 1); ++i) {
     icps[i].cp.code_length = bv.levels();
   }
 
-  std::sort(icps.begin(), icps.end(), [](const icp& a, const icp& b) {
-    return a.index < b.index;
-  });
+  std::sort(icps.begin(), icps.end(),
+            [](const icp& a, const icp& b) { return a.index < b.index; });
 
   std::string result;
   for (const auto& icp : icps) {
@@ -65,12 +65,13 @@ std::string decode_wt_huff(const base_bit_vectors& bv,
   return result;
 }
 
-template<typename AlphabetType>
-std::string decode_wm_huff(const base_bit_vectors& bv,
-  const canonical_huff_codes<AlphabetType, false>& codes) {
+template <typename AlphabetType>
+std::string
+decode_wm_huff(const base_bit_vectors& bv,
+               const canonical_huff_codes<AlphabetType, false>& codes) {
 
   if (bv.levels() == 0) {
-    return { };
+    return {};
   }
 
   struct icp {
@@ -81,7 +82,7 @@ std::string decode_wm_huff(const base_bit_vectors& bv,
   // All codes have length greater or equal to 1. By choosing the initial length
   // to be 0, we can use the length to mark finished codes. To this end, we
   // interpret every code_length > 0 as the code_length of a finished code.
-  std::vector<icp> icps(bv.level_bit_size(0), { 0, { 0ULL, 0ULL } });
+  std::vector<icp> icps(bv.level_bit_size(0), {0, {0ULL, 0ULL}});
   for (uint64_t i = 0; i < icps.size(); ++i) {
     icps[i].index = i;
   }
@@ -96,17 +97,16 @@ std::string decode_wm_huff(const base_bit_vectors& bv,
       icps[bit_pos++].cp.code_length = level;
     }
     std::stable_sort(icps.begin(), icps.begin() + bv.level_bit_size(level),
-      [](const icp& a, const icp& b) {
-        return (a.cp.code_word & 1ULL) < (b.cp.code_word & 1ULL);
-      });
+                     [](const icp& a, const icp& b) {
+                       return (a.cp.code_word & 1ULL) < (b.cp.code_word & 1ULL);
+                     });
   }
   for (uint64_t i = 0; i < bv.level_bit_size(bv.levels() - 1); ++i) {
     icps[i].cp.code_length = bv.levels();
   }
 
-  std::sort(icps.begin(), icps.end(), [](const icp& a, const icp& b) {
-    return a.index < b.index;
-  });
+  std::sort(icps.begin(), icps.end(),
+            [](const icp& a, const icp& b) { return a.index < b.index; });
 
   std::string result;
   for (const auto& icp : icps) {

@@ -13,7 +13,7 @@
 #include "arrays/pow2_array.hpp"
 
 /// Keep calculated information for individual levels around
-template<bool is_tree>
+template <bool is_tree>
 class ctx_huff_all_levels {
 
 public:
@@ -21,10 +21,14 @@ public:
 
   ctx_huff_all_levels() = default;
 
-  ctx_huff_all_levels(const std::vector<uint64_t>& sizes, uint64_t const levels,
-    rho_t const& rho)
-  : hist_(levels + 1), rho_(&rho),
-    borders_(1ULL << levels, 0), zeros_(levels, 0), bv_(levels, sizes) { }
+  ctx_huff_all_levels(const std::vector<uint64_t>& sizes,
+                      uint64_t const levels,
+                      rho_t const& rho)
+      : hist_(levels + 1),
+        rho_(&rho),
+        borders_(1ULL << levels, 0),
+        zeros_(levels, 0),
+        bv_(levels, sizes) {}
 
   static bool constexpr compute_zeros = !is_tree;
   static bool constexpr compute_rho = false;
