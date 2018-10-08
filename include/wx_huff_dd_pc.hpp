@@ -9,8 +9,8 @@
 
 #pragma once
 
-#include "huffman/huff_pc.hpp"
 #include "huffman/huff_dd.hpp"
+#include "huffman/huff_pc.hpp"
 
 struct huff_pc_disp {
   static constexpr bool needs_second_text_allocation = false;
@@ -21,8 +21,7 @@ struct huff_pc_disp {
                         uint64_t const size,
                         uint64_t const levels,
                         HuffCodes const& codes,
-                        ContextType& ctx)
-  {
+                        ContextType& ctx) {
     huff_pc(text, size, levels, codes, ctx);
   }
 };
