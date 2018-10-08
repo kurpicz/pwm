@@ -1,5 +1,5 @@
 /*******************************************************************************
- * include/wx_huff_dd_pc.hpp
+ * include/wx_huff_dd_pc_ss.hpp
  *
  * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
  * Copyright (C) 2017 Marvin Löbel <loebel.marvin@gmail.com>
@@ -9,12 +9,12 @@
 
 #pragma once
 
-#include "huffman/huff_pc.hpp"
+#include "huffman/huff_pc_ss.hpp"
 #include "huffman/huff_dd.hpp"
 
-struct huff_pc_disp {
+struct huff_pc_ss_disp {
   static constexpr bool needs_second_text_allocation = false;
-  static constexpr bool needs_all_borders = false;
+  static constexpr bool needs_all_borders = true;
 
   template <typename AlphabetType, typename ContextType, typename HuffCodes>
   static void calc_huff(AlphabetType const* text,
@@ -23,11 +23,11 @@ struct huff_pc_disp {
                         HuffCodes const& codes,
                         ContextType& ctx)
   {
-    huff_pc(text, size, levels, codes, ctx);
+    huff_pc_ss(text, size, levels, codes, ctx);
   }
 };
 
 template <typename AlphabetType, bool is_tree_>
-using wx_huff_dd_pc = huff_dd<huff_pc_disp, AlphabetType, is_tree_>;
+using wx_huff_dd_pc_ss = huff_dd<huff_pc_ss_disp, AlphabetType, is_tree_>;
 
 /******************************************************************************/
