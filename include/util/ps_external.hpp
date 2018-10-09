@@ -464,6 +464,7 @@ struct word_packed_reader_na {
 
 template <typename ValueType>
 struct word_packed_writer_na {
+  using value_type = ValueType;
   const uint8_t bits_per_value;
   const uint8_t values_per_word;
   const uint64_t mask;
@@ -540,6 +541,9 @@ struct buffered_wp_reader {
   value_type * front_buffer;
   value_type * back_buffer;
 
+  std::thread worker;
+  bool working = false;
+
   buffered_wp_reader(reader_type &reader, uint64_t bytes) :
       reader(reader),
       value_count(reader.size()),
@@ -550,23 +554,40 @@ struct buffered_wp_reader {
       it(values_per_buffer) {
     front_buffer = new value_type [values_per_buffer];
     back_buffer = new value_type [values_per_buffer];
-    if(swaps_left > 0) load_back_buffer();
+    if(swaps_left > 0) {
+//      std::cout << "Thread start." << std::endl;
+      worker = std::thread(&buffered_wp_reader::load_back_buffer, this, load_back_buffer_arg());
+      working = true;
+    }
   }
 
-  void load_back_buffer() {
-    const uint64_t count = (swaps_left == 1) ? tail_count : values_per_buffer;
+  uint64_t load_back_buffer_arg() const {
+    return (swaps_left == 1) ? tail_count : values_per_buffer;
+  }
+
+  void load_back_buffer(uint64_t count) {
     for(uint64_t i = 0; i < count; ++i) {
       back_buffer[i] = reader.next();
     }
+//    std::cout << "Thread done." << std::endl;
   }
 
   value_type next() {
     if(it < values_per_buffer) {
       return front_buffer[it++];
     } else {
+      if(working) {
+//        std::cout << "Thread join." << std::endl;
+        worker.join();
+        working = false;
+      }
       --swaps_left;
       std::swap(front_buffer, back_buffer);
-      if(swaps_left > 0) load_back_buffer();
+      if(swaps_left > 0) {
+//        std::cout << "Thread start." << std::endl;
+        worker = std::thread(&buffered_wp_reader::load_back_buffer, this, load_back_buffer_arg());
+        working = true;
+      }
       it = 1;
       return front_buffer[0];
     }
@@ -581,6 +602,89 @@ struct buffered_wp_reader {
   }
 
   ~buffered_wp_reader() {
+    if(working) {
+//      std::cout << "Thread join." << std::endl;
+      worker.join();
+      working = false;
+    }
+    delete [] front_buffer;
+    delete [] back_buffer;
+  }
+
+};
+
+
+template <typename writer_type>
+struct buffered_wp_writer {
+
+  using value_type = typename writer_type::value_type;
+  writer_type& writer;
+
+  const uint64_t values_per_buffer;
+  uint64_t swaps_done;
+  uint64_t it;
+
+  value_type * front_buffer;
+  value_type * back_buffer;
+
+  bool has_finished = false;
+
+  std::thread worker;
+  bool working = false;
+
+  buffered_wp_writer(writer_type &writer, uint64_t bytes) :
+      writer(writer),
+      values_per_buffer((bytes / sizeof(value_type)) / 2),
+      swaps_done(0),
+      it(0) {
+    front_buffer = new value_type [values_per_buffer];
+    back_buffer = new value_type [values_per_buffer];
+  }
+
+  void save_back_buffer(uint64_t count) {
+    for(uint64_t i = 0; i < count; ++i) {
+      writer.next(back_buffer[i]);
+    }
+//    std::cout << "Thread done." << std::endl;
+  }
+
+  void next(value_type value) {
+    if(it < values_per_buffer) {
+      front_buffer[it++] = value;
+    } else {
+      if(working) {
+//        std::cout << "Thread join." << std::endl;
+        worker.join();
+        working = false;
+      }
+      swaps_done++;
+      std::swap(front_buffer, back_buffer);
+//      std::cout << "Thread start." << std::endl;
+      worker = std::thread(&buffered_wp_writer::save_back_buffer, this, values_per_buffer);
+      working = true;
+      it = 1;
+      front_buffer[0] = value;
+    }
+  }
+
+  uint64_t size() const {
+    return swaps_done * values_per_buffer + it;
+  }
+
+  uint64_t finish() {
+    if(working) {
+//      std::cout << "Thread join." << std::endl;
+      worker.join();
+      working = false;
+    }
+    if(has_finished) return size();
+    std::swap(front_buffer, back_buffer);
+    save_back_buffer(it);
+    return size();
+  }
+
+  ~buffered_wp_writer() {
+    finish();
     delete [] front_buffer;
     delete [] back_buffer;
   }
@@ -724,7 +828,7 @@ external_bit_vectors ps_fully_external_matrix(const InputType& text, uint64_t co
   std::vector<uint64_t>& zeros = result.zeros();
   zeros.resize(levels);
 
-  uint64_t bytes_per_reader = 1024 * 1024 * 32;
+  uint64_t bytes_per_reader = 1024 * 1024 * 1024;
 
   using input_reader_type = typename InputType::bufreader_type;
   using out_vector_type = typename std::remove_reference<decltype(result.raw_data())>::type;
@@ -735,6 +839,7 @@ external_bit_vectors ps_fully_external_matrix(const InputType& text, uint64_t co
   using reader_type = word_packed_reader_na<value_type>;
   using writer_type = word_packed_writer_na<value_type>;
   using bufreader_type = buffered_wp_reader<reader_type>;
+  using bufwriter_type = buffered_wp_writer<writer_type>;
 
   out_vector_type& bv = result.raw_data();
 
@@ -757,8 +862,8 @@ external_bit_vectors ps_fully_external_matrix(const InputType& text, uint64_t co
 
   bufreader_type * leftReader;
   bufreader_type * rightReader;
-  writer_type * leftWriter;
-  writer_type * rightWriter;
+  bufwriter_type * leftWriter;
+  bufwriter_type * rightWriter;
 
   result_writer_type result_writer(bv);
 
@@ -771,8 +876,10 @@ external_bit_vectors ps_fully_external_matrix(const InputType& text, uint64_t co
     rightCur->reserve(size / (64 / levels) + 1);
 
     input_reader_type initialReader(text);
-    leftWriter = new writer_type(*leftCur, levels - 1);
-    rightWriter = new writer_type(*rightCur, levels - 1);
+    writer_type lWrite(*leftCur, levels - 1);
+    writer_type rWrite(*rightCur, levels - 1);
+    leftWriter = new bufwriter_type(lWrite, bytes_per_reader);
+    rightWriter = new bufwriter_type(rWrite, bytes_per_reader);
 
     uint64_t cur_pos = 0;
     for (; cur_pos + 64 <= size; cur_pos += 64) {
@@ -831,10 +938,12 @@ external_bit_vectors ps_fully_external_matrix(const InputType& text, uint64_t co
     zeros[i - 1] = left_size;
     reader_type lRead(*leftPrev, left_size, bits);
     reader_type rRead(*rightPrev, right_size, bits);
+    writer_type lWrite(*leftCur, bits - 1);
+    writer_type rWrite(*rightCur, bits - 1);
     leftReader = new bufreader_type(lRead, bytes_per_reader);
     rightReader = new bufreader_type(rRead, bytes_per_reader);
-    leftWriter = new writer_type(*leftCur, bits - 1);
-    rightWriter = new writer_type(*rightCur, bits - 1);
+    leftWriter = new bufwriter_type(lWrite, bytes_per_reader);
+    rightWriter = new bufwriter_type(rWrite, bytes_per_reader);
 
     //buffered_wp_reader<reader_type> testreader(*leftReader, 16);
 
