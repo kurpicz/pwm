@@ -8,12 +8,12 @@
 
 #pragma once
 
-/// If we let the 0s brach to the right and the 1s branch to the left (when 
+/// If we let the 0s brach to the right and the 1s branch to the left (when
 /// constructing Huffman-shaped wavelet trees and wavelet matrices) we can
 /// compute the codes easier.
 
-inline std::vector<uint64_t> huff_bit_reverse_permutation(
-  const uint64_t levels) {
+inline std::vector<uint64_t>
+huff_bit_reverse_permutation(const uint64_t levels) {
 
   std::vector<uint64_t> result(1 << levels);
   result[0] = 1;
@@ -30,19 +30,18 @@ inline std::vector<uint64_t> huff_bit_reverse_permutation(
 }
 
 inline auto huff_rho_identity(const uint64_t /*levels*/) {
-  return [=](auto level, auto i) -> uint64_t {
-    return (1ULL << level) - 1 - i;
-  };
+  return
+      [=](auto level, auto i) -> uint64_t { return (1ULL << level) - 1 - i; };
 }
 
 // TODO: Flatten vector
 inline auto huff_rho_bit_reverse(const uint64_t levels) {
   auto huff_bit_reverse = std::vector<std::vector<uint64_t>>(levels);
   huff_bit_reverse[levels - 1] = huff_bit_reverse_permutation(levels - 1);
-  for(uint64_t level = levels - 1; level > 0; level--) {
+  for (uint64_t level = levels - 1; level > 0; level--) {
     bit_reverse[level - 1] =
-      std::vector<uint64_t>(bit_reverse[level].size() >> 1);
-    for(uint64_t i = 0; i < bit_reverse[level - 1].size(); i++) {
+        std::vector<uint64_t>(bit_reverse[level].size() >> 1);
+    for (uint64_t i = 0; i < bit_reverse[level - 1].size(); i++) {
       bit_reverse[level - 1][i] = bit_reverse[level][i] >> 1;
     }
   }
@@ -53,7 +52,7 @@ inline auto huff_rho_bit_reverse(const uint64_t levels) {
 }
 
 template <bool is_matrix>
-struct huff_rho_dispatch { };
+struct huff_rho_dispatch {};
 
 template <>
 struct huff_rho_dispatch<true> {

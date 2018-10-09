@@ -1,0 +1,22 @@
+﻿---
+BasedOnStyle: LLVM
+AlignAfterOpenBracket: Align
+AllowAllParametersOfDeclarationOnNextLine: 'true'
+AllowShortFunctionsOnASingleLine: Empty
+AlwaysBreakTemplateDeclarations: 'true'
+BinPackParameters: 'false'
+BreakBeforeBraces: Attach
+ColumnLimit: '80'
+ConstructorInitializerAllOnOneLineOrOnePerLine: 'true'
+DerivePointerAlignment: 'false'
+IndentWidth: '2'
+Language: Cpp
+NamespaceIndentation: Inner
+PointerAlignment: Left
+SortIncludes: 'true'
+SpaceAfterCStyleCast: 'true'
+SpaceBeforeParens: ControlStatements
+Standard: Cpp11
+UseTab: Never
+
+...

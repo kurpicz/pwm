@@ -12,17 +12,16 @@
 #include <climits>
 #include <omp.h>
 
+#include "construction/merge.hpp"
 #include "huffman/huff_bit_vectors.hpp"
 #include "util/common.hpp"
 #include "util/macros.hpp"
-#include "construction/merge.hpp"
 
-template<typename ContextType, typename Rho>
+template <typename ContextType, typename Rho>
 inline auto huff_merge_bit_vectors(std::vector<uint64_t> const& level_sizes,
                                    uint64_t const shards,
                                    const std::vector<ContextType>& src_ctxs,
-                                   const Rho& rho)
-{
+                                   const Rho& rho) {
   assert(shards == src_ctxs.size());
   assert(shards > 1);
 
@@ -41,18 +40,17 @@ inline auto huff_merge_bit_vectors(std::vector<uint64_t> const& level_sizes,
     std::vector<MergeLevelCtx> levels;
   };
 
-  auto ctxs = std::vector<MergeCtx> { shards,
-    {
-      std::vector<MergeLevelCtx> { levels,
-        {
-          std::vector<uint64_t>(shards),
-          0,
-          0,
-          0,
-        }
-      },
-    }
-  };
+  auto ctxs = std::vector<MergeCtx>{
+      shards,
+      {
+          std::vector<MergeLevelCtx>{levels,
+                                     {
+                                         std::vector<uint64_t>(shards),
+                                         0,
+                                         0,
+                                         0,
+                                     }},
+      }};
 
   /*
     Visualization of ctxs for levels = 2 and shards = 2:
@@ -112,25 +110,26 @@ inline auto huff_merge_bit_vectors(std::vector<uint64_t> const& level_sizes,
   // Calculate end bit offset per merge shard (thread).
   // It is an multiple of 64, to ensure no interference
   // in writing bits to the left or right of it in parallel
-  for(size_t level = 0; level < levels; level++) {
+  for (size_t level = 0; level < levels; level++) {
     const size_t size = level_sizes[level];
     for (size_t shard = 1; shard < shards; shard++) {
-      const uint64_t offset = (shard * (word_size(size) / shards)) +
-        std::min<uint64_t>(shard, word_size(size) % shards);
+      const uint64_t offset =
+          (shard * (word_size(size) / shards)) +
+          std::min<uint64_t>(shard, word_size(size) % shards);
 
-      ctxs[shard - 1].levels[level].write_end_offset
-        = std::min<uint64_t>(offset * 64ull, size);
+      ctxs[shard - 1].levels[level].write_end_offset =
+          std::min<uint64_t>(offset * 64ull, size);
     }
-    ctxs[shards - 1].levels[level].write_end_offset
-      = std::min<uint64_t>(word_size(size) * 64ull, size);
+    ctxs[shards - 1].levels[level].write_end_offset =
+        std::min<uint64_t>(word_size(size) * 64ull, size);
   }
 
-  for(size_t level = 0; level < levels; level++) {
+  for (size_t level = 0; level < levels; level++) {
     // number of tree nodes on the current level
     const size_t blocks = 1ull << level;
 
     size_t write_offset = 0; // bit offset in destination bv
-    size_t merge_shard = 0; // index of merge thread
+    size_t merge_shard = 0;  // index of merge thread
 
     // iterate over all blocks of all shards on the current level
     //
@@ -144,17 +143,17 @@ inline auto huff_merge_bit_vectors(std::vector<uint64_t> const& level_sizes,
     // +----------+----------+---------+
     // | m. shard | m. shard |m. shard |
     //
-    for(size_t i = 0; i < blocks * shards; i++) {
+    for (size_t i = 0; i < blocks * shards; i++) {
       // std::cout << "[offsets]   i: " << i << "\n";
 
       // returns merge level context of merge_shard
       auto lctx = [&level, &ctxs](auto merge_shard) -> MergeLevelCtx& {
-          return ctxs[merge_shard].levels[level];
+        return ctxs[merge_shard].levels[level];
       };
 
       // returns merge level context of merge_shard+1
       auto nxt_lctx = [&level, &ctxs](auto merge_shard) -> MergeLevelCtx& {
-          return ctxs[merge_shard + 1].levels[level];
+        return ctxs[merge_shard + 1].levels[level];
       };
 
       // which block (node on current level of tree)
@@ -173,7 +172,6 @@ inline auto huff_merge_bit_vectors(std::vector<uint64_t> const& level_sizes,
       // advance global write offset by the number of bits assigned for
       // this block
       write_offset += block_size;
-
 
       // advance local read offset of next merge shard
       // for the curent read shard
@@ -200,8 +198,8 @@ inline auto huff_merge_bit_vectors(std::vector<uint64_t> const& level_sizes,
           // this loop iterates multiple times, to ensure right_block_size
           // did not also overlap the next write_end_offset
 
-          auto const left_block_size
-            = lctx(merge_shard).write_end_offset - write_offset;
+          auto const left_block_size =
+              lctx(merge_shard).write_end_offset - write_offset;
 
           // advance global and local read offsets to end exactly at
           // write_end_offset
@@ -218,9 +216,9 @@ inline auto huff_merge_bit_vectors(std::vector<uint64_t> const& level_sizes,
           // of the next merge shard, intialize
           // its local read offsets with those of the next shard
           if (merge_shard + 2 < shards) {
-            for(size_t s = 0; s < shards; s++) {
-              nxt_lctx(merge_shard + 1).read_offsets[s]
-                = nxt_lctx(merge_shard).read_offsets[s];
+            for (size_t s = 0; s < shards; s++) {
+              nxt_lctx(merge_shard + 1).read_offsets[s] =
+                  nxt_lctx(merge_shard).read_offsets[s];
             }
           }
 
@@ -235,7 +233,8 @@ inline auto huff_merge_bit_vectors(std::vector<uint64_t> const& level_sizes,
           // Iterate on remaining block, because one block might
           // span multiple threads
           block_size -= left_block_size;
-        } while ((write_offset + block_size) > lctx(merge_shard).write_end_offset);
+        } while ((write_offset + block_size) >
+                 lctx(merge_shard).write_end_offset);
 
         // Process remainder of block
         write_offset += block_size;
@@ -244,26 +243,25 @@ inline auto huff_merge_bit_vectors(std::vector<uint64_t> const& level_sizes,
         assert(write_offset <= lctx(merge_shard).write_end_offset);
       }
     }
-    triple_loop_exit:; // we are done
+  triple_loop_exit:; // we are done
   }
 
   // TODO: remove redundant argument
-  auto r =  huff_bit_vectors(levels, level_sizes);
+  auto r = huff_bit_vectors(levels, level_sizes);
   auto& _bv = r;
 
-  #pragma omp parallel for
-  for(size_t merge_shard = 0; merge_shard < shards; merge_shard++) {
+#pragma omp parallel for
+  for (size_t merge_shard = 0; merge_shard < shards; merge_shard++) {
     for (size_t level = 0; level < levels; level++) {
       auto& lctx = ctxs[merge_shard].levels[level];
 
-      const auto target_right = std::min(
-        lctx.write_end_offset,
-        level_sizes[level]);
-      const auto target_left = std::min(
-        (merge_shard > 0
-          ? ctxs[merge_shard - 1].levels[level].write_end_offset
-          : 0),
-        target_right);
+      const auto target_right =
+          std::min(lctx.write_end_offset, level_sizes[level]);
+      const auto target_left =
+          std::min((merge_shard > 0
+                        ? ctxs[merge_shard - 1].levels[level].write_end_offset
+                        : 0),
+                   target_right);
 
       uint64_t i = lctx.first_read_block;
       uint64_t write_offset = target_left;
@@ -276,25 +274,21 @@ inline auto huff_merge_bit_vectors(std::vector<uint64_t> const& level_sizes,
         const auto& local_bv = src_ctxs[read_shard].bv()[level];
         const auto& h = src_ctxs[read_shard];
         auto const permuted_block = rho(level, block);
-        uint64_t block_size = h.hist(level, permuted_block) - initial_read_offset;
+        uint64_t block_size =
+            h.hist(level, permuted_block) - initial_read_offset;
         uint64_t distance_to_end = target_right - write_offset;
 
         uint64_t copy_size;
         if (PWM_LIKELY(block_size <= distance_to_end)) {
-            copy_size = block_size;
+          copy_size = block_size;
         } else {
-            copy_size = distance_to_end;
+          copy_size = distance_to_end;
         }
 
         auto& local_cursor = lctx.read_offsets[read_shard];
 
-        copy_bits<uint64_t>(
-          _bv[level].data(),
-          local_bv.data(),
-          write_offset,
-          local_cursor,
-          copy_size
-        );
+        copy_bits<uint64_t>(_bv[level].data(), local_bv.data(), write_offset,
+                            local_cursor, copy_size);
       };
 
       if (write_offset < target_right) {

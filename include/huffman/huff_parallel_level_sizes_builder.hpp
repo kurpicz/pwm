@@ -10,7 +10,7 @@
 
 #include "util/common.hpp"
 
-template<typename AlphabetType>
+template <typename AlphabetType>
 class parallel_level_sizes_builder {
   histogram<AlphabetType> m_hist;
   std::vector<histogram<AlphabetType>> m_hists;
@@ -21,11 +21,12 @@ class parallel_level_sizes_builder {
   inline size_t shards() {
     return m_hists.size();
   }
+
 public:
   // init
   parallel_level_sizes_builder(histogram<AlphabetType>&& h,
-                               std::vector<histogram<AlphabetType>>&& hs):
-    m_hist(h), m_hists(hs) {}
+                               std::vector<histogram<AlphabetType>>&& hs)
+      : m_hist(h), m_hists(hs) {}
   inline void allocate_levels(size_t levels) {
     global_level_sizes = std::vector<uint64_t>(levels, 0);
     local_level_sizes.resize(shards());
@@ -59,7 +60,9 @@ public:
   }
 
   // final data
-  inline size_t levels() const { return level_sizes().size(); }
+  inline size_t levels() const {
+    return level_sizes().size();
+  }
   inline std::vector<uint64_t> const& level_sizes() const {
     return global_level_sizes;
   }

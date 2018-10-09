@@ -20,21 +20,26 @@ template <typename AlphabetType>
 class wx_naive<AlphabetType, true> {
 
 public:
-  static constexpr bool    is_parallel = false;
-  static constexpr bool    is_tree     = true;
-  static constexpr uint8_t word_width  = sizeof(AlphabetType);
-  static constexpr bool    is_huffman_shaped = false;
+  static constexpr bool is_parallel = false;
+  static constexpr bool is_tree = true;
+  static constexpr uint8_t word_width = sizeof(AlphabetType);
+  static constexpr bool is_huffman_shaped = false;
 
   static wavelet_structure compute(AlphabetType const* const text,
-    const uint64_t size, const uint64_t levels) {
+                                   const uint64_t size,
+                                   const uint64_t levels) {
 
-    if (size == 0) { return wavelet_structure_tree(); }
+    if (size == 0) {
+      return wavelet_structure_tree();
+    }
 
     auto bv = bit_vectors(levels, size);
 
     // TODO: When not semi_xternal, this can/should be done way nicer.
     std::vector<AlphabetType> local_text(size);
-    for(size_t i = 0; i < size; i++) { local_text[i] = text[i]; }
+    for (size_t i = 0; i < size; i++) {
+      local_text[i] = text[i];
+    }
 
     for (uint64_t level = 0; level < levels; ++level) {
       uint32_t cur_pos = 0;
@@ -58,8 +63,8 @@ public:
       if (level + 1 < levels) {
         std::vector<std::vector<AlphabetType>> buckets(1ULL << (level + 1));
         for (uint64_t i = 0; i < local_text.size(); ++i) {
-          buckets[local_text[i] >> (levels - (level + 1))]
-            .emplace_back(local_text[i]);
+          buckets[local_text[i] >> (levels - (level + 1))].emplace_back(
+              local_text[i]);
         }
         cur_pos = 0;
         for (const auto& bucket : buckets) {
@@ -77,22 +82,27 @@ template <typename AlphabetType>
 class wx_naive<AlphabetType, false> {
 
 public:
-  static constexpr bool    is_parallel = false;
-  static constexpr bool    is_tree     = false;
-  static constexpr uint8_t word_width  = sizeof(AlphabetType);
-  static constexpr bool    is_huffman_shaped = false;
+  static constexpr bool is_parallel = false;
+  static constexpr bool is_tree = false;
+  static constexpr uint8_t word_width = sizeof(AlphabetType);
+  static constexpr bool is_huffman_shaped = false;
 
   static wavelet_structure compute(AlphabetType const* const text,
-    const uint64_t size, const uint64_t levels) {
+                                   const uint64_t size,
+                                   const uint64_t levels) {
 
-    if (size == 0) { return wavelet_structure_matrix(); }
+    if (size == 0) {
+      return wavelet_structure_matrix();
+    }
 
     auto bv = bit_vectors(levels, size);
     auto _zeros = std::vector<size_t>(levels, 0);
 
     // TODO: When not semi_xternal, this can/should be done way nicer.
     std::vector<AlphabetType> local_text(size);
-    for (size_t i = 0; i < size; i++) { local_text[i] = text[i]; }
+    for (size_t i = 0; i < size; i++) {
+      local_text[i] = text[i];
+    }
 
     // Construct each level top-down
     for (uint64_t level = 0; level < levels; ++level) {
@@ -124,7 +134,9 @@ public:
       for (uint64_t i = 0; i < size; ++i) {
         if ((local_text[i] >> (levels - (level + 1))) & 1ULL) {
           text1.push_back(local_text[i]);
-        } else { text0.push_back(local_text[i]); }
+        } else {
+          text0.push_back(local_text[i]);
+        }
       }
       _zeros[level] = text0.size();
       if (level + 1 < levels) {

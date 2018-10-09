@@ -9,8 +9,8 @@
 
 #pragma once
 
-#include "huffman/huff_naive.hpp"
 #include "huffman/huff_dd.hpp"
+#include "huffman/huff_naive.hpp"
 
 struct huff_naive_disp {
   static constexpr bool needs_second_text_allocation = false;
@@ -21,8 +21,7 @@ struct huff_naive_disp {
                         uint64_t const size,
                         uint64_t const levels,
                         HuffCodes const& codes,
-                        ContextType& ctx)
-  {
+                        ContextType& ctx) {
     huff_naive(text, size, levels, codes, ctx);
   }
 };

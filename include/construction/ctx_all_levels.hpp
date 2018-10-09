@@ -16,7 +16,7 @@
 // TODO: WM/WT abstract that selects zeros and rho
 
 /// Keep calculated information for individual levels around
-template<bool is_tree>
+template <bool is_tree>
 class ctx_all_levels {
 
 public:
@@ -25,8 +25,11 @@ public:
   ctx_all_levels() = default;
 
   ctx_all_levels(uint64_t const size, uint64_t const levels, rho_t const& rho)
-  : hist_(levels + 1), rho_(&rho),
-    borders_(1ULL << levels, 0), zeros_(levels, 0), bv_(levels, size) { }
+      : hist_(levels + 1),
+        rho_(&rho),
+        borders_(1ULL << levels, 0),
+        zeros_(levels, 0),
+        bv_(levels, size) {}
 
   static bool constexpr compute_zeros = !is_tree;
   static bool constexpr compute_rho = false;

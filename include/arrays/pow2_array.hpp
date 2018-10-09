@@ -9,8 +9,8 @@
 
 #pragma once
 
-#include "util/common.hpp"
 #include "flat_two_dim_array.hpp"
+#include "util/common.hpp"
 
 struct pow2_level_size {
   static uint64_t level_size(const uint64_t level) {

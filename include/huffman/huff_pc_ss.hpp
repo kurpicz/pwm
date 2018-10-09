@@ -8,25 +8,24 @@
 
 #pragma once
 
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 #include <iostream>
 
-#include "huffman/huff_codes.hpp"
 #include "huffman/huff_building_blocks.hpp"
+#include "huffman/huff_codes.hpp"
 
 template <typename AlphabetType, typename ContextType, typename HuffCodes>
 void huff_pc_ss(AlphabetType const* text,
                 uint64_t const size,
                 uint64_t const levels,
                 HuffCodes const& codes,
-                ContextType& ctx)
-{
+                ContextType& ctx) {
   auto& bv = ctx.bv();
 
   // While calculating the histogram, we also compute the first level
-  huff_scan_text_compute_first_level_bv_and_full_hist(
-    text, size, bv, ctx, codes);
+  huff_scan_text_compute_first_level_bv_and_full_hist(text, size, bv, ctx,
+                                                      codes);
 
   for (uint64_t level = levels - 1; level > 0; --level) {
     ctx.borders(level, 0) = 0;
@@ -34,15 +33,15 @@ void huff_pc_ss(AlphabetType const* text,
       auto const prev_block = ctx.rho(level, pos - 1);
       auto const this_block = ctx.rho(level, pos);
 
-      ctx.borders(level, this_block) = ctx.borders(level, prev_block)
-                                     + ctx.hist(level, prev_block);
+      ctx.borders(level, this_block) =
+          ctx.borders(level, prev_block) + ctx.hist(level, prev_block);
       // NB: The above calulcation produces _wrong_ border offsets
       // for huffman codes that are one-shorter than the current level.
       //
       // Since those codes will not be used in the loop below, this does not
       // produce wrong or out-of-bound accesses.
 
-      if (ContextType::compute_rho)  {
+      if (ContextType::compute_rho) {
         ctx.set_rho(level - 1, pos - 1, prev_block >> 1);
       }
     }

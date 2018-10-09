@@ -9,8 +9,8 @@
 
 #pragma once
 
-#include "huffman/huff_ps.hpp"
 #include "huffman/huff_dd.hpp"
+#include "huffman/huff_ps.hpp"
 
 struct huff_ps_disp {
   static constexpr bool needs_second_text_allocation = true;
@@ -23,8 +23,7 @@ struct huff_ps_disp {
                         HuffCodes const& codes,
                         ContextType& ctx,
                         AlphabetType* const sorted_text,
-                        std::vector<uint64_t> const& level_sizes)
-  {
+                        std::vector<uint64_t> const& level_sizes) {
     huff_ps(text, size, levels, codes, ctx, sorted_text, level_sizes);
   }
 };

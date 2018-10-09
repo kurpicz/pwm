@@ -10,14 +10,14 @@
 
 #include "util/common.hpp"
 
-template<typename AlphabetType>
+template <typename AlphabetType>
 class level_sizes_builder {
   histogram<AlphabetType> m_hist;
   std::vector<uint64_t> m_level_sizes;
+
 public:
   // init
-  level_sizes_builder(histogram<AlphabetType>&& h):
-    m_hist(std::move(h)) {}
+  level_sizes_builder(histogram<AlphabetType>&& h) : m_hist(std::move(h)) {}
   inline void allocate_levels(size_t levels) {
     m_level_sizes = std::vector<uint64_t>(levels, 0);
   }
@@ -37,7 +37,9 @@ public:
   }
 
   // final data
-  inline size_t levels() const { return level_sizes().size(); }
+  inline size_t levels() const {
+    return level_sizes().size();
+  }
   inline std::vector<uint64_t> const& level_sizes() const {
     return m_level_sizes;
   }

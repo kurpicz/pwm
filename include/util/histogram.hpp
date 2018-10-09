@@ -19,10 +19,9 @@ struct histogram_entry {
   const AlphabetType symbol;
   uint64_t frequency;
 
-  histogram_entry(AlphabetType s, uint64_t f): symbol(s), frequency(f) {}
+  histogram_entry(AlphabetType s, uint64_t f) : symbol(s), frequency(f) {}
 
-  friend std::ostream& operator <<(std::ostream& os,
-    const histogram_entry& he) {
+  friend std::ostream& operator<<(std::ostream& os, const histogram_entry& he) {
 
     return os << "[ " << he.symbol << "(" << uint64_t(he.symbol) << ") | "
               << he.frequency << " ]";
@@ -37,13 +36,16 @@ class histogram {
 public:
   histogram() = default;
 
-  histogram(const AlphabetType* text, const uint64_t size,
-    const uint64_t reduced_sigma = 0) : max_symbol_(0){
+  histogram(const AlphabetType* text,
+            const uint64_t size,
+            const uint64_t reduced_sigma = 0)
+      : max_symbol_(0) {
 
     if (std::is_same<AlphabetType, uint8_t>::value) {
-      const uint64_t alphabet_size = std::max(
-        static_cast<std::remove_cv_t<decltype(reduced_sigma)>>(
-          std::numeric_limits<uint8_t>::max() + 1), reduced_sigma);
+      const uint64_t alphabet_size =
+          std::max(static_cast<std::remove_cv_t<decltype(reduced_sigma)>>(
+                       std::numeric_limits<uint8_t>::max() + 1),
+                   reduced_sigma);
       std::vector<uint64_t> hist(alphabet_size, 0);
       for (uint64_t pos = 0; pos < size; ++pos) {
         const AlphabetType cur_char = text[pos];
@@ -61,8 +63,11 @@ public:
         const AlphabetType cur_char = text[pos];
         max_symbol_ = std::max(max_symbol_, cur_char);
         auto result = symbol_list.find(cur_char);
-        if (result == symbol_list.end()) { symbol_list.emplace(cur_char, 1); }
-        else { ++(result->second); }
+        if (result == symbol_list.end()) {
+          symbol_list.emplace(cur_char, 1);
+        } else {
+          ++(result->second);
+        }
       }
       for (const auto& symbol : symbol_list) {
         data_.emplace_back(symbol.first, symbol.second);
@@ -70,8 +75,8 @@ public:
     }
   }
 
-  histogram(std::vector<histogram> const& others): max_symbol_(0) {
-    for (auto& o: others) {
+  histogram(std::vector<histogram> const& others) : max_symbol_(0) {
+    for (auto& o : others) {
       max_symbol_ = std::max(max_symbol_, o.max_symbol_);
       for (size_t j = 0; j < o.size(); j++) {
         bool found = false;
@@ -108,11 +113,11 @@ public:
     return 0;
   }
 
-  histogram_entry<AlphabetType>& operator [](const uint64_t index) {
+  histogram_entry<AlphabetType>& operator[](const uint64_t index) {
     return data_[index];
   }
 
-  histogram_entry<AlphabetType> operator [](const uint64_t index) const {
+  histogram_entry<AlphabetType> operator[](const uint64_t index) const {
     return data_[index];
   }
 

@@ -8,12 +8,12 @@
 
 #pragma once
 
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 #include <iostream>
 
-#include "huffman/huff_codes.hpp"
 #include "huffman/huff_building_blocks.hpp"
+#include "huffman/huff_codes.hpp"
 
 template <typename AlphabetType, typename ContextType, typename HuffCodes>
 void huff_ps(AlphabetType const* text,
@@ -22,15 +22,13 @@ void huff_ps(AlphabetType const* text,
              HuffCodes const& codes,
              ContextType& ctx,
              AlphabetType* const sorted_text,
-             std::vector<uint64_t> const& level_sizes)
-{
+             std::vector<uint64_t> const& level_sizes) {
   auto& borders = ctx.borders();
   auto& bv = ctx.bv();
 
   // While calculating the histogram, we also compute the first level
-  huff_scan_text_compute_first_level_bv_and_full_hist(
-    text, size, bv, ctx, codes
-  );
+  huff_scan_text_compute_first_level_bv_and_full_hist(text, size, bv, ctx,
+                                                      codes);
 
   // Now we compute the WX top-down, since the histograms are already computed
   for (uint64_t level = levels - 1; level > 0; --level) {

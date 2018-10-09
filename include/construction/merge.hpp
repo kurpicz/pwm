@@ -16,10 +16,14 @@
 #include "util/common.hpp"
 #include "util/macros.hpp"
 
-template<typename WordType>
-void copy_bits(WordType* const dst, WordType const* const src,
-  uint64_t& dst_off_ref, uint64_t& src_off_ref, uint64_t const block_size) {
-  if (block_size == 0) return;
+template <typename WordType>
+void copy_bits(WordType* const dst,
+               WordType const* const src,
+               uint64_t& dst_off_ref,
+               uint64_t& src_off_ref,
+               uint64_t const block_size) {
+  if (block_size == 0)
+    return;
 
   auto debug_ptr = [dst](WordType* const) {
     /*
@@ -31,7 +35,8 @@ void copy_bits(WordType* const dst, WordType const* const src,
 
     int64_t diff = ptr - dst;
     std::stringstream ss;
-    ss << "write [" << dst << "][" << diff << "]: " << std::bitset<64>(*ptr) << "\n";
+    ss << "write [" << dst << "][" << diff << "]: " << std::bitset<64>(*ptr) <<
+    "\n";
     // Using a stringstream to get a atomic write to cout
     std::cout << ss.str();
     */
@@ -65,7 +70,7 @@ void copy_bits(WordType* const dst, WordType const* const src,
     {
       auto const words = (dst_off_end - dst_off) >> SHIFT;
 
-      WordType*     ds = dst + (dst_off >> SHIFT);
+      WordType* ds = dst + (dst_off >> SHIFT);
       WordType const* sr = src + (src_off >> SHIFT);
 
       WordType const* const ds_end = ds + words;
@@ -110,12 +115,12 @@ void copy_bits(WordType* const dst, WordType const* const src,
       WordType const src_shift_a = src_off & MOD_MASK;
       WordType const src_shift_b = BITS - src_shift_a;
 
-      WordType*     ds = dst + (dst_off >> SHIFT);
+      WordType* ds = dst + (dst_off >> SHIFT);
       WordType const* sr = src + (src_off >> SHIFT);
       WordType const* const ds_end = ds + words;
 
       while (ds != ds_end) {
-        *ds++ = (*sr << src_shift_a) | (*(sr+1) >> src_shift_b);
+        *ds++ = (*sr << src_shift_a) | (*(sr + 1) >> src_shift_b);
         debug_ptr(ds);
         sr++;
       }
@@ -141,13 +146,12 @@ void copy_bits(WordType* const dst, WordType const* const src,
   src_off_ref += block_size;
 }
 
-template<typename ContextType, typename Rho>
+template <typename ContextType, typename Rho>
 inline auto merge_bit_vectors(uint64_t size,
                               uint64_t levels,
                               uint64_t shards,
                               const std::vector<ContextType>& src_ctxs,
-                              const Rho& rho)
-{
+                              const Rho& rho) {
   assert(shards == src_ctxs.size());
 
   // Allocate data structures centrally
@@ -163,16 +167,17 @@ inline auto merge_bit_vectors(uint64_t size,
     std::vector<MergeLevelCtx> levels;
   };
 
-  auto ctxs = std::vector<MergeCtx>{shards, {
-    0,
-    std::vector<MergeLevelCtx> {
-      levels, {
-        std::vector<uint64_t>(shards),
-        0,
-        0,
-      }
-    },
-  }};
+  auto ctxs = std::vector<MergeCtx>{
+      shards,
+      {
+          0,
+          std::vector<MergeLevelCtx>{levels,
+                                     {
+                                         std::vector<uint64_t>(shards),
+                                         0,
+                                         0,
+                                     }},
+      }};
 
   /*
     Visualization of ctxs for levels = 2 and shards = 2:
@@ -238,20 +243,21 @@ inline auto merge_bit_vectors(uint64_t size,
     const size_t omp_rank = rank;
     const size_t omp_size = shards;
 
-    const uint64_t offset = (omp_rank * (word_size(size) / omp_size)) +
-      std::min<uint64_t>(omp_rank, word_size(size) % omp_size);
+    const uint64_t offset =
+        (omp_rank * (word_size(size) / omp_size)) +
+        std::min<uint64_t>(omp_rank, word_size(size) % omp_size);
 
     ctxs[rank - 1].end_offset = offset * 64ull;
   }
   ctxs[shards - 1].end_offset = word_size(size) * 64ull;
 
   //#pragma omp parallel for
-  for(size_t level = 0; level < levels; level++) {
+  for (size_t level = 0; level < levels; level++) {
     // number of tree nodes on the current level
     const size_t blocks = 1ull << level;
 
     size_t write_offset = 0; // bit offset in destination bv
-    size_t merge_shard = 0; // index of merge thread
+    size_t merge_shard = 0;  // index of merge thread
 
     // iterate over all blocks of all shards on the current level
     //
@@ -265,10 +271,10 @@ inline auto merge_bit_vectors(uint64_t size,
     // +----------+----------+---------+
     // | m. shard | m. shard |m. shard |
     //
-    for(size_t i = 0; i < blocks * shards; i++) {
+    for (size_t i = 0; i < blocks * shards; i++) {
       // returns merge level context of merge_shard+1
       auto nxt_lctx = [&level, &ctxs](auto merge_shard) -> MergeLevelCtx& {
-          return ctxs[merge_shard + 1].levels[level];
+        return ctxs[merge_shard + 1].levels[level];
       };
 
       // which block (node on current level of tree)
@@ -313,8 +319,8 @@ inline auto merge_bit_vectors(uint64_t size,
           // this loop iterates multiple times, to ensure right_block_size
           // did not also overlap the next end_offset
 
-          auto const left_block_size
-            = ctxs[merge_shard].end_offset - write_offset;
+          auto const left_block_size =
+              ctxs[merge_shard].end_offset - write_offset;
 
           // advance global and local read offsets to end exactly at
           // end_offset
@@ -331,9 +337,9 @@ inline auto merge_bit_vectors(uint64_t size,
           // of the next merge shard, intialize
           // its local read offsets with those of the next shard
           if (merge_shard + 2 < shards) {
-            for(size_t s = 0; s < shards; s++) {
-              nxt_lctx(merge_shard + 1).read_offsets[s]
-                = nxt_lctx(merge_shard).read_offsets[s];
+            for (size_t s = 0; s < shards; s++) {
+              nxt_lctx(merge_shard + 1).read_offsets[s] =
+                  nxt_lctx(merge_shard).read_offsets[s];
             }
           }
 
@@ -357,14 +363,14 @@ inline auto merge_bit_vectors(uint64_t size,
         assert(write_offset <= ctxs[merge_shard].end_offset);
       }
     }
-    triple_loop_exit:; // we are done
+  triple_loop_exit:; // we are done
   }
 
   auto r = bit_vectors(levels, size);
   auto& _bv = r;
 
-  #pragma omp parallel
-  //for(size_t omp_rank = 0; omp_rank < shards; omp_rank++)
+#pragma omp parallel
+  // for(size_t omp_rank = 0; omp_rank < shards; omp_rank++)
   {
     assert(size_t(omp_get_num_threads()) == shards);
     const size_t omp_rank = omp_get_thread_num();
@@ -373,8 +379,8 @@ inline auto merge_bit_vectors(uint64_t size,
     auto& ctx = ctxs[merge_shard];
 
     const auto target_right = std::min(ctx.end_offset, size);
-    const auto target_left = std::min((merge_shard > 0 ?
-      ctxs[merge_shard - 1].end_offset : 0), target_right);
+    const auto target_left = std::min(
+        (merge_shard > 0 ? ctxs[merge_shard - 1].end_offset : 0), target_right);
 
     for (size_t level = 0; level < levels; level++) {
       auto i = ctx.levels[level].first_read_block;
@@ -392,19 +398,14 @@ inline auto merge_bit_vectors(uint64_t size,
 
         uint64_t copy_size;
         if (PWM_LIKELY(block_size <= distance_to_end)) {
-            copy_size = block_size;
+          copy_size = block_size;
         } else {
-            copy_size = distance_to_end;
+          copy_size = distance_to_end;
         }
 
         auto& local_cursor = ctx.levels[level].read_offsets[read_shard];
-        copy_bits<uint64_t>(
-          _bv[level].data(),
-          local_bv.data(),
-          write_offset,
-          local_cursor,
-          copy_size
-        );
+        copy_bits<uint64_t>(_bv[level].data(), local_bv.data(), write_offset,
+                            local_cursor, copy_size);
       };
 
       if (write_offset < target_right) {
