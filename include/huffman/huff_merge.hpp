@@ -250,7 +250,7 @@ inline auto huff_merge_bit_vectors(std::vector<uint64_t> const& level_sizes,
   auto r = huff_bit_vectors(levels, level_sizes);
   auto& _bv = r;
 
-#pragma omp parallel for
+  #pragma omp parallel for
   for (size_t merge_shard = 0; merge_shard < shards; merge_shard++) {
     for (size_t level = 0; level < levels; level++) {
       auto& lctx = ctxs[merge_shard].levels[level];

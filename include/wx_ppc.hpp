@@ -46,7 +46,7 @@ public:
 
     std::vector<uint64_t> initial_hist((1ULL << levels) * levels, 0);
 
-#pragma omp parallel num_threads(levels)
+    #pragma omp parallel num_threads(levels)
     {
       const uint64_t omp_rank = uint64_t(omp_get_thread_num());
       const uint64_t omp_size = uint64_t(omp_get_num_threads());
@@ -55,7 +55,7 @@ public:
       auto* const initial_hist_ptr =
           initial_hist.data() + (alphabet_size * omp_rank);
 
-#pragma omp for
+      #pragma omp for
       for (uint64_t cur_pos = 0; cur_pos <= size - 64; cur_pos += 64) {
         uint64_t word = 0ULL;
         for (uint64_t i = 0; i < 64; ++i) {
@@ -77,10 +77,10 @@ public:
         bv[0][size >> 6] = word;
       }
 
-#pragma omp barrier
+      #pragma omp barrier
 
-// Compute the historam with respect to the local slices of the text
-#pragma omp for
+      // Compute the historam with respect to the local slices of the text
+      #pragma omp for
       for (uint64_t i = 0; i < alphabet_size; ++i) {
         for (uint64_t rank = 0; rank < omp_size; ++rank) {
           ctx.hist(levels, i) +=
@@ -88,7 +88,7 @@ public:
         }
       }
 
-#pragma omp single
+      #pragma omp single
       {
         if constexpr (ctx_t::compute_zeros) {
           // The number of 0s at the last level is the number of "even"
@@ -99,8 +99,8 @@ public:
         }
       }
 
-// Compute the histogram for each level of the wavelet structure
-#pragma omp for
+      // Compute the histogram for each level of the wavelet structure
+      #pragma omp for
       for (uint64_t level = 1; level < levels; ++level) {
         const uint64_t local_alphabet_size = (1 << level);
         const uint64_t requierd_characters = (1 << (levels - level));
@@ -112,8 +112,9 @@ public:
         }
       }
 
-// Now we compute the wavelet structure bottom-up, i.e., the last level first
-#pragma omp for
+      // Now we compute the wavelet structure bottom-up, i.e., the last level
+      // first
+      #pragma omp for
       for (uint64_t level = 1; level < levels; ++level) {
 
         const uint64_t local_alphabet_size = (1 << level);
