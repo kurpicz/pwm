@@ -48,7 +48,7 @@ public:
     const auto rho = rho_dispatch<is_tree>::create(levels);
     auto ctx = ctx_t(size, levels, rho);
     auto& bv = ctx.bv();
-    auto& zeros = ctx.zeros();
+    auto&& zeros = ctx.zeros();
 
     const uint64_t alphabet_size = (1 << levels);
 
@@ -117,7 +117,7 @@ public:
 
     if constexpr (ctx_t::compute_zeros) {
       return wavelet_structure_matrix(std::move(ctx.bv()),
-                                      std::move(ctx.zeros()));
+                                      std::move(ctx.take_zeros()));
     } else {
       return wavelet_structure_tree(std::move(ctx.bv()));
     }
