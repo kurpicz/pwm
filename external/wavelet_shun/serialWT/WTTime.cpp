@@ -26,9 +26,10 @@
 #include <vector>
 
 #include "IO.hpp"
-#include "parseCommandLine.hpp"
 #include "WT.hpp"
 #include "sequence.hpp"
+
+#include <tlx/cmdline_parser.hpp>
 
 using namespace std;
 using namespace benchIO;
@@ -150,12 +151,25 @@ void timeWT(symbol* s, long n, int rounds, char* inFile, char* outFile,
 }
 
 int parallel_main(int argc, char* argv[]) {
-  commandLine P(argc,argv,"[-o <outFile>] [-r <rounds>] <inFile>");
-  char* iFile = P.getArgument(0);
-  char* oFile = P.getOptionValue("-o");
-  int rounds = P.getOptionIntValue("-r", 5);
-  bool binary = P.getOption("-b");
-  int check = P.getOptionIntValue("-c", 0);
+  std::string iFile;
+  std::string oFile;
+  int rounds = 5;
+  bool binary = false;
+  int check = 0;
+
+  tlx::CmdlineParser cp;
+  cp.add_param_string("input", iFile, "Path to the input text");
+  cp.add_string('o', "out_file", oFile,
+                "Optional file where the output is stored");
+  cp.add_int('r', "rounds", rounds, "Number of executions of the algorithm");
+  cp.add_flag('b', "binary", binary, "Accept binary input");
+  cp.add_int('c', "check", check,
+             "Number of queries used to verify correctness of the computation");
+
+  if (!cp.process(argc, argv)) {
+    return -1;
+  }
+
   if(binary) {
     ifstream in(iFile,ifstream::in |ios::binary);
     in.seekg(0,ios::end);
@@ -164,18 +178,19 @@ int parallel_main(int argc, char* argv[]) {
     char* s = newA(char, n);
     in.read(s,n);
     in.close(); 
-    timeWT((symbol*)s, n/sizeof(symbol), rounds, iFile, oFile, check);
+    timeWT((symbol*)s, n/sizeof(symbol), rounds, iFile.data(), oFile.data(),
+           check);
     free(s);
   }
   else {
 #ifdef INT
-    _seq<uintT> S = readIntArrayFromFile<uintT>(iFile);
+    _seq<uintT> S = readIntArrayFromFile<uintT>(iFile.data());
     uintT n = S.n;
     timeWT(S.A, n, rounds, iFile, oFile, check);
 #else
-    _seq<char> S = readStringFromFile(iFile);
+    _seq<char> S = readStringFromFile(iFile.data());
     uintT n = S.n;
-    timeWT((unsigned char*) S.A, n, rounds, iFile, oFile, check);
+    timeWT((unsigned char*) S.A, n, rounds, iFile.data(), oFile.data(), check);
 #endif
     S.del();
   }
