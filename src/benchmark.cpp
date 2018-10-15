@@ -38,6 +38,7 @@ int32_t main(int32_t argc, char const* argv[]) {
   std::string filter = "";
   unsigned int word_width = 1;
   unsigned int nr_runs = 5;
+  uint64_t prefix_size = 0;
   bool list_algorithms_only = false;
   bool run_only_parallel = false;
   bool run_only_sequential = false;
@@ -60,7 +61,10 @@ int32_t main(int32_t argc, char const* argv[]) {
   cp.add_uint('b', "byte", word_width, "Bytes per char in the input text.");
   cp.add_uint('r', "runs", nr_runs,
     "Number of repetitions of the construction algorithm.");
-  cp.add_flag('l', "list", list_algorithms_only,
+  cp.add_bytes('l', "length", prefix_size,
+    "Set the length of the prefix of the text that should be considered");
+
+  cp.add_flag('\0', "list", list_algorithms_only,
     "Print the name and description of all registered algorithms");
 
   cp.add_flag('p', "parallel", run_only_parallel,
@@ -109,25 +113,25 @@ int32_t main(int32_t argc, char const* argv[]) {
     malloc_count_reset_peak();
 #endif
     if (word_width == 1) {
-      text_uint8 = file_to_vector<1>(path);
+      text_uint8 = file_to_vector<1>(path, prefix_size);
       text_size = text_uint8.size();
       max_char = reduce_alphabet(text_uint8);
       levels = levels_for_max_char(max_char);
       txt_prt = &text_uint8;
     } else if (word_width == 2) {
-      text_uint16 = file_to_vector<2>(path);
+      text_uint16 = file_to_vector<2>(path, prefix_size);
       text_size = text_uint16.size();
       max_char = reduce_alphabet(text_uint16);
       levels = levels_for_max_char(max_char);
       txt_prt = &text_uint16;
     } else if (word_width == 4) {
-      text_uint32 = file_to_vector<4>(path);
+      text_uint32 = file_to_vector<4>(path, prefix_size);
       text_size = text_uint32.size();
       max_char = reduce_alphabet(text_uint32);
       levels = levels_for_max_char(max_char);
       txt_prt = &text_uint32;
     } else if (word_width == 8) {
-      text_uint64 = file_to_vector<8>(path);
+      text_uint64 = file_to_vector<8>(path, prefix_size);
       text_size = text_uint64.size();
       max_char = reduce_alphabet(text_uint64);
       levels = levels_for_max_char(max_char);

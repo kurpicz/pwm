@@ -137,7 +137,11 @@ public:
               .count()));
     }
     std::sort(times.begin(), times.end());
-    return times[runs >> 1];
+    if (runs % 2 == 0) {
+      return (times[runs >> 1] + times[(runs >> 1) - 1]) / 2;
+    } else {
+      return times[runs >> 1]; 
+    }
   }
 
   void memory_peak(const void* global_text,

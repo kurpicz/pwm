@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <fstream>
 #include <vector>
 
@@ -15,7 +16,7 @@
 
 template <uint8_t BytesPerWord>
 static std::vector<typename type_for_bytes<BytesPerWord>::type>
-file_to_vector(const std::string& file_name) {
+file_to_vector(const std::string& file_name, const size_t prefix_size = 0) {
   std::ifstream stream(file_name.c_str(), std::ios::in | std::ios::binary);
 
   if (!stream) {
@@ -25,6 +26,9 @@ file_to_vector(const std::string& file_name) {
 
   stream.seekg(0, std::ios::end);
   uint64_t size = stream.tellg() / BytesPerWord;
+  if (prefix_size > 0) {
+    size = std::min(prefix_size, size);
+  }
   stream.seekg(0);
   std::vector<typename type_for_bytes<BytesPerWord>::type> result(size);
   stream.read(reinterpret_cast<char*>(result.data()), size);
