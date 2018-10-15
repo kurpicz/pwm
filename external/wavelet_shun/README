@@ -1,0 +1,39 @@
+To compile with the Cilk Plus compiler in g++, define the environment
+variable GCILK. To compile with icpc, define the environment variable
+MKLROOT. For other options, see the parallelDefs file in the
+implementation directory.
+
+The input format is './WT <input file>'. An optional argument of "-r"
+followed by an integer before the input file can be passed, indicating
+the number of trials to run (the default is 1). For example, './WT -r
+3 <input file>' to run 3 trials on the input file. An optional
+argument of "-b" indicates that the file is in binary format;
+otherwise the file is in ASCII format. For example, './WT -b <input
+file>' to run a binary input file. To check for correctness, an
+optional argument of "-c" followed by an integer can be passed, which
+specifies the number of random access queries to perform on the
+wavelet tree.
+
+By default the program takes in an ASCII file representing a sequence
+as input (so the alphabet size is at most 256). To use integer
+alphabets, uncomment the line "#define INT 1" in common/WT.h. Integer
+files are represented in text format with the first line containing
+the word "sequenceInt", and one line per integer thereafter.
+
+For binary files, if the line "#define INT 1" in common/WT.h is
+uncommented, then the program expects a binary file of integers (4
+bytes per symbol, unless LONG is also defined, in which case 8 bytes
+per symbol). Otherwise, the program expects a binary file of
+characters (1 byte per symbol).
+
+By default, the program generates the pointers in the wavelet tree. To
+disable this, comment out the line "#define POINTERS 1" in
+common/WT.h.
+
+By default, the program uses 4 byte integers. To use 8 byte integers,
+compile with the LONG variable defined ("e.g. 'make clean; export
+LONG=1; make'"). Note that this also affects reading the input file
+(see above). If only the pointers into the bit array of the wavelet
+tree need to be 8 bytes, but the rest of the integers can be 4 bytes,
+then uncomment the line "typedef ulong intOffset;" and comment out the
+line "typedef uint intOffset;" in common/WT.h for better performance.

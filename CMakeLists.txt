@@ -71,6 +71,9 @@ add_subdirectory(test)
 # Add benchmarks and utility programs
 add_subdirectory(src)
 
+# Add competitors
+add_subdirectory(external/wavelet_shun)
+
 MESSAGE(STATUS "Built Type: " ${CMAKE_BUILD_TYPE} )
 
 ################################################################################

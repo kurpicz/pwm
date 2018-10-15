@@ -174,6 +174,7 @@ int32_t main(int32_t argc, char const* argv[]) {
       }
       std::cout << "input=" << path << ' '
                 << "characters=" << text_size << ' '
+                << "sigma=" << max_char + 1 << ' '
                 << "word_width=" << word_width << std::endl;
 
       if (debug_print || check) {
