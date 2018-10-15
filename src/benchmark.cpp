@@ -43,6 +43,7 @@ int32_t main(int32_t argc, char const* argv[]) {
   bool run_only_parallel = false;
   bool run_only_sequential = false;
   bool run_only_huffman = false;
+  bool run_no_huffman = false;
   bool no_trees = false;
   bool no_matrices = false;
   bool memory = false;
@@ -73,6 +74,8 @@ int32_t main(int32_t argc, char const* argv[]) {
     "Run only sequential construction algorithms.");
   cp.add_flag('h', "huffman", run_only_huffman,
     "Run only huffman-shaped construction algorithms.");
+  cp.add_flag('u', "no_huffman", run_no_huffman,
+    "Run only uncompressed (non-Huffman) construction algorithms");
   cp.add_flag('\0', "no_trees", no_trees,
     "Skip all wavelet trees construction algorithms.");
   cp.add_flag('\0', "no_matrices", no_matrices,
@@ -155,6 +158,7 @@ int32_t main(int32_t argc, char const* argv[]) {
       GUARD_LOOP(filter_sequential(run_only_sequential, a->is_parallel()));
       GUARD_LOOP(filter_wavelet_type(a->is_tree(), no_trees, no_matrices));
       GUARD_LOOP((!run_only_huffman) || a->is_huffman_shaped());
+      GUARD_LOOP((!run_no_huffman) || (!a->is_huffman_shaped()));
 
       std::cout << "RESULT " << "algo=" << a->name() << ' ';
       if (memory) {
