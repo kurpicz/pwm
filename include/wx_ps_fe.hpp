@@ -15,7 +15,7 @@
 #include "util/ps_external.hpp"
 #include "util/memory_types.hpp"
 
-template <typename AlphabetType, bool is_tree_>
+template <typename AlphabetType, bool is_tree_, int word_packing_mode>
 class wx_ps_fe {
 public:
 
@@ -25,13 +25,8 @@ public:
   static external_bit_vectors compute(const InputType& text, const uint64_t size,
     const uint64_t levels) {
 
-    using ctx_t = ctx_single_level_external<is_tree_>;
-
     if(size == 0) { return external_bit_vectors(); }
-
-    auto ctx = ctx_t(size, levels);
-    if(is_tree_) return ps_fully_external_tree<AlphabetType>(text, size, levels, ctx);
-    else return ps_fully_external_matrix<AlphabetType>(text, size, levels, ctx);
+    return wx_ps_fe_builder<InputType, is_tree_, word_packing_mode>::build(text, size, levels);
   }
 }; // class wx_ps
 
