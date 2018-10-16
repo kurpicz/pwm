@@ -72,7 +72,7 @@ add_subdirectory(test)
 add_subdirectory(src)
 
 # Add competitors
-add_subdirectory(external/wavelet_shun)
+add_subdirectory(external/wavelet_construction)
 
 MESSAGE(STATUS "Built Type: " ${CMAKE_BUILD_TYPE} )
 

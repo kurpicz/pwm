@@ -1,5 +1,5 @@
 ################################################################################
-# CMakeLists.txt
+# external/wavelet_construction/CMakeLists.txt
 #
 # Copyright (C) 2018 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
 #
