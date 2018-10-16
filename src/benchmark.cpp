@@ -54,39 +54,38 @@ int32_t main(int32_t argc, char const* argv[]) {
 
   cp.set_description("Parallel Wavelet Tree and Wavelet Matrix Construction");
   cp.set_author("Florian Kurpicz <florian.kurpicz@tu-dortmund.de>\n"
-    "        Marvin Löbel <loebel.marvin@gmail.com>");
+                "        Marvin Löbel <loebel.marvin@gmail.com>");
 
-  cp.add_stringlist('f', "file", file_paths, "Path(s) to the text file(s).");
+  cp.add_stringlist('f', "file", file_paths,
+                    "Path(s) to the text file(s).");
   cp.add_string('n', "name", filter,
-        "Runs all algorithms that contain the <name> in their name");
-  cp.add_uint('b', "byte", word_width, "Bytes per char in the input text.");
+                "Runs all algorithms that contain the <name> in their name");
+  cp.add_uint('b', "byte", word_width,
+              "Bytes per char in the input text.");
   cp.add_uint('r', "runs", nr_runs,
-    "Number of repetitions of the construction algorithm.");
+              "Number of repetitions of the construction algorithm.");
   cp.add_bytes('l', "length", prefix_size,
-    "Set the length of the prefix of the text that should be considered");
-
+               "Length of the prefix of the text that should be considered");
   cp.add_flag('\0', "list", list_algorithms_only,
-    "Print the name and description of all registered algorithms");
-
+              "Print the name and description of all registered algorithms");
   cp.add_flag('p', "parallel", run_only_parallel,
-    "Run only parallel construction algorithms.");
+              "Run only parallel construction algorithms.");
   cp.add_flag('s', "sequential", run_only_sequential,
-    "Run only sequential construction algorithms.");
+              "Run only sequential construction algorithms.");
   cp.add_flag('h', "huffman", run_only_huffman,
-    "Run only huffman-shaped construction algorithms.");
+              "Run only huffman-shaped construction algorithms.");
   cp.add_flag('u', "no_huffman", run_no_huffman,
-    "Run only uncompressed (non-Huffman) construction algorithms");
+              "Run only uncompressed (non-Huffman) construction algorithms");
   cp.add_flag('\0', "no_trees", no_trees,
-    "Skip all wavelet trees construction algorithms.");
+              "Skip all wavelet trees construction algorithms.");
   cp.add_flag('\0', "no_matrices", no_matrices,
-    "Skip all wavelet matrices construction algorithms.");
-
+              "Skip all wavelet matrices construction algorithms.");
   cp.add_flag('\0', "memory", memory,
-    "Compute peak memory during construction.");
+              "Compute peak memory during construction.");
   cp.add_flag('c', "check", check,
-    "Check the constructed wavelet structure for validity.");
+              "Check the constructed wavelet structure for validity.");
   cp.add_flag('d', "debug_print", debug_print,
-    "Output the bit vectors in a human readable format to stdout.");
+              "Output the bit vectors in a human readable format to stdout.");
 
   if (!cp.process(argc, argv)) {
     return -1;

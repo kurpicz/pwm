@@ -23,6 +23,7 @@
 #ifndef _BENCH_IO
 #define _BENCH_IO
 
+#include <algorithm>
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -174,7 +175,8 @@ namespace benchIO {
     return 0;
   }
 
-  _seq<char> readStringFromFile(char *fileName) {
+  _seq<char> readStringFromFile(char *fileName,
+                                const uint64_t prefix_size = 0) {
     ifstream file (fileName, ios::in | ios::binary | ios::ate);
     if (!file.is_open()) {
       std::cout << "Unable to open file: " << fileName << std::endl;
@@ -183,6 +185,9 @@ namespace benchIO {
     long end = file.tellg();
     file.seekg (0, ios::beg);
     long n = end - file.tellg();
+    if (prefix_size > 0) {
+      n = std::min<long>(prefix_size, n);
+    }
     char* bytes = newA(char,n+1);
     file.read (bytes,n);
     file.close();

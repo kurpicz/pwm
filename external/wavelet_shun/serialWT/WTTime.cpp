@@ -156,6 +156,7 @@ int parallel_main(int argc, char* argv[]) {
   int rounds = 5;
   bool binary = false;
   int check = 0;
+  uint64_t prefix_size = 0;
 
   tlx::CmdlineParser cp;
   cp.add_param_string("input", iFile, "Path to the input text");
@@ -165,6 +166,8 @@ int parallel_main(int argc, char* argv[]) {
   cp.add_flag('b', "binary", binary, "Accept binary input");
   cp.add_int('c', "check", check,
              "Number of queries used to verify correctness of the computation");
+  cp.add_bytes('l', "length", prefix_size,
+                "Length of the prefix of the text that should be considered");
 
   if (!cp.process(argc, argv)) {
     return -1;
@@ -188,7 +191,7 @@ int parallel_main(int argc, char* argv[]) {
     uintT n = S.n;
     timeWT(S.A, n, rounds, iFile, oFile, check);
 #else
-    _seq<char> S = readStringFromFile(iFile.data());
+    _seq<char> S = readStringFromFile(iFile.data(), prefix_size);
     uintT n = S.n;
     timeWT((unsigned char*) S.A, n, rounds, iFile.data(), oFile.data(), check);
 #endif
