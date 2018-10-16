@@ -1,7 +1,7 @@
 /*******************************************************************************
  * src/benchmark.cpp
  *
- * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
+ * Copyright (C) 2017-2018 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
  *
  * All rights reserved. Published under the BSD-2 license in the LICENSE file.
  ******************************************************************************/
@@ -166,8 +166,7 @@ int32_t main(int32_t argc, char const* argv[]) {
         a->memory_peak(txt_prt, text_size, levels);
         std::cout << "memory=" << malloc_count_peak() << ' ';
 #else
-        std::cout << "Memory measurement is NOT enabled."
-                  << std::endl;
+        std::cout << "memory=no ";
 #endif // MALLOC_COUNT
       }
       std::cout << "runs=" << nr_runs << " ";

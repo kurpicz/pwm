@@ -31,6 +31,10 @@
 
 #include <tlx/cmdline_parser.hpp>
 
+#ifdef MALLOC_COUNT
+#include "benchmark/malloc_count.h"
+#endif // MALLOC_COUNT
+
 using namespace std;
 using namespace benchIO;
 
@@ -95,14 +99,20 @@ void timeWT(symbol* s, long n, int rounds, char* inFile, char* outFile,
 
   parallel_for(long i=0;i<n;i++) s[i] = A[s[i]];
 
-  std::cout << "RESULT algo=wt_serial runs=" << rounds << ' ';
-  
-  free(A);
-
-  std::vector<float> times;
+  std::cout << "RESULT algo=wt_serial ";
 
   pair<WTnode*,long*> R;
+#ifdef MALLOC_COUNT
+  malloc_count_reset_peak();
   R = WT(s, n, sigma);
+  std::cout << "memory=" << malloc_count_peak() << ' ';
+#else
+  std::cout << "memory=no ";
+#endif // MALLOC_COUNT
+  free(A);
+
+  std::cout << "runs=" << rounds << ' ';
+  std::vector<float> times;
   for (int i=0; i < rounds; i++) {
     free(R.first); free(R.second);
     auto begin_time = std::chrono::high_resolution_clock::now();
