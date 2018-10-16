@@ -151,7 +151,7 @@ int32_t main(int32_t argc, char const* argv[]) {
     }
 #endif // MALLOC_COUNT
     for (const auto& a : algo_list) {
-      GUARD_LOOP(filter == "" || (a->name().find(filter) != std::string::npos));
+      GUARD_LOOP(filter == "" || (a->name().compare(filter) == 0));
       GUARD_LOOP(a->word_width() == word_width);
       GUARD_LOOP(filter_parallel(run_only_parallel, a->is_parallel()));
       GUARD_LOOP(filter_sequential(run_only_sequential, a->is_parallel()));
