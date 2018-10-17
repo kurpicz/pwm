@@ -182,11 +182,11 @@ namespace benchIO {
       std::cout << "Unable to open file: " << fileName << std::endl;
       abort();
     }
-    long end = file.tellg();
+    size_t end = file.tellg();
     file.seekg (0, ios::beg);
-    long n = end - file.tellg();
+    size_t n = end - file.tellg();
     if (prefix_size > 0) {
-      n = std::min<long>(prefix_size, n);
+      n = std::min(prefix_size, n);
     }
     char* bytes = newA(char,n+1);
     file.read (bytes,n);
