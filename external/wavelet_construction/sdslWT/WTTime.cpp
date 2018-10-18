@@ -25,15 +25,13 @@
 #include <chrono>
 #include <vector>
 
+#include "getmemory.hpp"
+#include "../parallel.hpp"
 #include "../IO.hpp"
 #include "WT.hpp"
 #include "../sequence.hpp"
 
 #include <tlx/cmdline_parser.hpp>
-
-#ifdef MALLOC_COUNT
-#include "benchmark/malloc_count.h"
-#endif // MALLOC_COUNT
 
 using namespace std;
 using namespace benchIO;
@@ -81,7 +79,7 @@ intT query(pair<WTnode*,long*> R, long index, long sigma,
   else return min;
 } 
 
-void timeWT(symbol* s, long n, int rounds, char* inFile, char* outFile,
+void timeWT(symbol* s, long n, int rounds,char* inFile, char* outFile,
             int check) {
   //sigma
   long k = 1 + sequence::reduce(s, n, utils::maxF<symbol>());
@@ -98,30 +96,49 @@ void timeWT(symbol* s, long n, int rounds, char* inFile, char* outFile,
     if(A[i] != A[i+1]) reverseMap[A[i]] = i;
 
   parallel_for(long i=0;i<n;i++) s[i] = A[s[i]];
-
-  std::cout << "RESULT algo=wt_serial ";
-
-  pair<WTnode*,long*> R;
-#ifdef MALLOC_COUNT
-  malloc_count_reset_peak();
-  R = WT(s, n, sigma);
-  std::cout << "memory=" << malloc_count_peak() << ' ';
-#else
-  std::cout << "memory=no ";
-#endif // MALLOC_COUNT
   free(A);
 
-  std::cout << "runs=" << rounds << ' ';
+  std::cout << "RESULT algo=wt_sdsl_pc ";
+
+  // Version for sdsl
+  typedef sdsl::int_vector<sizeof(symbol)*8> input_type;
+  input_type input(n, 0);
+  for (int64_t i = 0; i < n; i++) {
+	input[i] = s[i];
+  }
+#ifdef INT
+  typedef sdsl::wt_int<sdsl::bit_vector,
+      sdsl::rank_support_scan<>,
+      sdsl::select_support_scan<>,
+      sdsl::select_support_scan<0>> wt_type;
+#else
+  typedef sdsl::wt_pc<sdsl::balanced_shape,
+      sdsl::bit_vector,
+      sdsl::rank_support_scan<>,
+      sdsl::select_support_scan<>,
+      sdsl::select_support_scan<0>> wt_type;
+#endif
+  string input_file = "@input.sdsl"; 
+  sdsl::store_to_file(input, input_file);
+  input = input_type();
+  // Timing is done directly in construct method.
+  wt_type wt;
+  sdsl::construct(wt, input_file);
+  wt = wt_type();
   std::vector<float> times;
   for (int i=0; i < rounds; i++) {
-    free(R.first); free(R.second);
     auto begin_time = std::chrono::high_resolution_clock::now();
-    R = WT(s, n, sigma);
+    sdsl::construct(wt, input_file);
+    wt = wt_type();
     auto end_time = std::chrono::high_resolution_clock::now();
     times.emplace_back(static_cast<float>(
       std::chrono::duration_cast<std::chrono::milliseconds>(
         end_time - begin_time).count()));
   }
+
+  std::cout << "memory=" << getPeakRSS() << ' '
+            << "runs=" << rounds << ' ';
+
   std::sort(times.begin(), times.end());
   std::cout << "median_time=";
   if (rounds % 2 == 0) {
@@ -135,30 +152,14 @@ void timeWT(symbol* s, long n, int rounds, char* inFile, char* outFile,
             << "word_width=" << sizeof(symbol) << std::endl;
 
   if(check) {
-    cout << "checking...\n";
-    parallel_for(long i=0;i<check;i++) {
-      uintT index = utils::hash(i) % n;
-      uintT q = query(R,index,sigma,n);
-      if(q != s[index]) {
-        cout << "i = " << index << " query result = " << q 
-             << " expected result = " << (uintT) s[index] << endl;
-      }
-    }
-    cout << "done checking...\n";
+	  std::cout << "Checking is not implemented";
+	  //TODO 
   }
-
-  if(outFile != NULL) {
-    symbol* foo = newA(symbol,n); 
-    parallel_for(long i=0;i<n;i++) foo[i] = (symbol) s[i];
-    ofstream out(outFile, ofstream::out | ios::binary);
-    out.write((char*)foo, sizeof(symbol)*n);
-    free(foo);
-    out.close();
+  if (outFile != NULL) {
+	sdsl::store_to_file(wt, outFile);
   }
-
-  free(R.first);
-  free(R.second);
 }
+
 
 int parallel_main(int argc, char* argv[]) {
   std::string iFile;
@@ -199,12 +200,13 @@ int parallel_main(int argc, char* argv[]) {
 #ifdef INT
     _seq<uintT> S = readIntArrayFromFile<uintT>(iFile.data());
     uintT n = S.n;
-    timeWT(S.A, n, rounds, iFile, oFile, check);
+    timeWT(S.A, n, rounds, fFile.data(), oFile.data(), check);
 #else
-    _seq<char> S = readStringFromFile(iFile.data(), prefix_size);
+    _seq<char> S = readStringFromFile(iFile.data());
     uintT n = S.n;
     timeWT((unsigned char*) S.A, n, rounds, iFile.data(), oFile.data(), check);
 #endif
     S.del();
   }
 }
+

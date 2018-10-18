@@ -80,10 +80,6 @@ typedef unsigned long uintT;
 #define INT_T_MAX LONG_MAX
 #define UINT_T_MAX ULONG_MAX
 #else
-// typedef int intT;
-// typedef unsigned int uintT;
-// #define INT_T_MAX INT_MAX
-// #define UINT_T_MAX UINT_MAX
 typedef int64_t intT;
 typedef uint64_t uintT;
 constexpr intT INT_T_MAX = std::numeric_limits<intT>::max();

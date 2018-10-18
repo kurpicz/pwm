@@ -8,6 +8,7 @@
 ################################################################################
 
 cmake_minimum_required(VERSION 3.0.2 FATAL_ERROR)
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/misc/") 
 project (pwm)
 
 find_program(CCACHE_FOUND ccache)
