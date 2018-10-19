@@ -23,17 +23,12 @@
 #include <iostream>
 #include <algorithm>
 #include <chrono>
-#include <vector>
-
+#include "../parallel.hpp"
 #include "../IO.hpp"
 #include "WT.hpp"
 #include "../sequence.hpp"
 
 #include <tlx/cmdline_parser.hpp>
-
-#ifdef MALLOC_COUNT
-#include "benchmark/malloc_count.h"
-#endif // MALLOC_COUNT
 
 using namespace std;
 using namespace benchIO;
@@ -103,13 +98,13 @@ void timeWT(symbol* s, long n, int rounds, char* inFile, char* outFile,
   std::cout << "RESULT algo=wt_serial ";
 
   pair<WTnode*,long*> R;
-#ifdef MALLOC_COUNT
-  malloc_count_reset_peak();
-  R = WT(s, n, sigma);
-  std::cout << "memory=" << malloc_count_peak() << ' ';
-#else
-  std::cout << "memory=no ";
-#endif // MALLOC_COUNT
+// #ifdef MALLOC_COUNT
+//   malloc_count_reset_peak();
+//   R = WT(s, n, sigma);
+//   std::cout << "memory=" << malloc_count_peak() << ' ';
+// #else
+//   std::cout << "memory=no ";
+// #endif // MALLOC_COUNT
 
   std::cout << "runs=" << rounds << ' ';
   std::vector<float> times;

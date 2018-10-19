@@ -6,8 +6,10 @@
 # All rights reserved. Published under the BSD-2 license in the LICENSE file.
 ################################################################################
 
-add_subdirectory(serialWT)
+add_subdirectory(ddWT)
 add_subdirectory(sdslWT)
+add_subdirectory(serialWT)
+add_subdirectory(sortWTOpt)
 
 ################################################################################
 

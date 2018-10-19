@@ -56,6 +56,52 @@ static E* newArray(intT n, E v) {
 
 namespace sequence {
 
+  #define nblocks(_n,_bsize) (1 + ((_n)-1)/(_bsize))
+
+  #define blocked_for(_i, _s, _e, _bsize, _body)  {	\
+    intT _ss = _s;					\
+    intT _ee = _e;					\
+    intT _n = _ee-_ss;					\
+    intT _l = nblocks(_n,_bsize);			\
+    parallel_for (intT _i = 0; _i < _l; _i++) {		\
+      intT _s = _ss + _i * (_bsize);			\
+      intT _e = min(_s + (_bsize), _ee);		\
+      _body						\
+	}						\
+  }
+
+
+  template <class T>
+  T prefixSumSerial(T* data, intT s, intT e) {
+    T res = 0;
+    for (intT i = s; i < e; ++i) {
+      res += data[i];
+      data[i] = res - data[i];
+    }
+    return res;
+  }
+
+  template <class T>
+  void addSerial(T* data, intT s, intT e, T val) {
+    for (intT i = s; i < e; ++i) 
+      data[i] += val;
+  }
+
+  template <class T>
+  T prefixSum(T* data, intT s, intT e) {
+    intT l = nblocks(e-s, _SCAN_BSIZE);
+    if (l <= 1) return prefixSumSerial(data, s, e);
+    T* sums = newA(T, l);
+    blocked_for (i, s, e, _SCAN_BSIZE,
+                 sums[i] = prefixSumSerial<T>(data, s, e););
+    T res = prefixSumSerial(sums, 0, l);
+    blocked_for (i, s, e, _SCAN_BSIZE,
+                 addSerial(data, s, e, sums[i]););
+    return res;
+  }
+
+
+
   template <class intT>
   struct boolGetA {
     bool* A;
@@ -171,11 +217,11 @@ namespace sequence {
     ET r = zero;
 
     if (inclusive) {
-      if (back) for (long i = e-1; i >= s; i--) Out[i] = r = f(r,g(i));
+      if (back) for (intT i = e-1; i >= s; i--) Out[i] = r = f(r,g(i));
       else for (intT i = s; i < e; i++) Out[i] = r = f(r,g(i));
     } else {
       if (back) 
-	for (long i = e-1; i >= s; i--) {
+	for (intT i = e-1; i >= s; i--) {
 	  ET t = g(i);
 	  Out[i] = r;
 	  r = f(r,t);
@@ -249,7 +295,7 @@ namespace sequence {
     intT r = 0;
     if (n >= 128 && (n & 511) == 0 && ((long) Fl & 3) == 0) {
       int* IFl = (int*) Fl;
-      for (int k = 0; k < (n >> 9); k++) {
+      for (intT k = 0; k < (n >> 9); k++) {
 	int rr = 0;
 	for (int j=0; j < 128; j++) rr += IFl[j];
 	r += (rr&255) + ((rr>>8)&255) + ((rr>>16)&255) + ((rr>>24)&255);
