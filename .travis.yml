@@ -25,7 +25,11 @@ matrix:
             #- python
           sources:
             - ubuntu-toolchain-r-test
-
+before_install:
+  - git clone https://github.com/simongog/sdsl-lite.git
+  - cd sdsl-lite
+  - ./install.sh
+  - cd ..
 script:
   - mkdir build
   - cd build
