@@ -42,14 +42,14 @@ void serialWT(symbol* s, uintT n, uintT sigma, WTnode* nodes, long* wt) {
     *offsets2 = newA(chunkInfo,sigma);
   offsets[0].start=0; offsets[0].length=n; offsets[0].nodeID=0; offsets[0].range=1<<utils::log2Up(sigma);
   int levels = max(1,utils::log2Up(sigma));
-  for(long i=0;i<(n*levels+63)/64; i++) wt[i] = 0;
+  for(uintT i=0;i<(n*levels+63)/64; i++) wt[i] = 0;
   uintT numChunks = 1;
   for(int l = 0; l < levels; l++) {
     long currPos = l*n;
     int mask = (long)1 << (levels - l - 1);
     uintT nextNumChunks = 0;
     symbol* source = (l == 0) ? s : s1;
-    for(long j=0;j<numChunks;j++) {
+    for(uintT j=0;j<numChunks;j++) {
       uintT left = 0, right = 0, start = offsets[j].start, 
 	length = offsets[j].length, nodeID = offsets[j].nodeID, range = offsets[j].range;
       nodes[nodeID].bitmapPtr = currPos; nodes[nodeID].length = length;
@@ -129,7 +129,7 @@ pair<WTnode*,long*> WT(symbol* input_str, uintT n, uintT sigma) {
   long* wt = newA(long, ((long)n*levels+63)/64);
   // Bock_size is n/p rounded up and then rounded to next multiple of 64
   uintT block_size = ((n+num_threads-1)  / num_threads + 63) / 64 * 64;
-  parallel_for(long i=0;i<(n*levels+63)/64; i++) wt[i] = 0;
+  parallel_for(uintT i=0;i<(n*levels+63)/64; i++) wt[i] = 0;
   // Build wt per thread
   {
 	  // Every thread builds one wt

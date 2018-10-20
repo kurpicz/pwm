@@ -7,6 +7,8 @@
 ################################################################################
 
 add_subdirectory(ddWT)
+add_subdirectory(levelWT)
+add_subdirectory(recWT)
 add_subdirectory(sdslWT)
 add_subdirectory(serialWT)
 add_subdirectory(sortWTOpt)
