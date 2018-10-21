@@ -30,6 +30,10 @@
 
 #include <tlx/cmdline_parser.hpp>
 
+#ifdef MALLOC_COUNT
+#include "benchmark/malloc_count.h"
+#endif // MALLOC_COUNT
+
 using namespace std;
 using namespace benchIO;
 

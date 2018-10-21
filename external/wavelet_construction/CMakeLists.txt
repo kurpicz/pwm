@@ -6,8 +6,6 @@
 # All rights reserved. Published under the BSD-2 license in the LICENSE file.
 ################################################################################
 
-find_package(Cilk REQUIRED)
-
 add_subdirectory(ddWT)
 add_subdirectory(levelWT)
 add_subdirectory(recWT)
