@@ -9,6 +9,8 @@
 #include <tlx/cmdline_parser.hpp>
 #include <vector>
 
+#include <omp.h>
+
 #include "benchmark/algorithm.hpp"
 #include "util/alphabet_util.hpp"
 #include "util/file_util.hpp"
@@ -34,6 +36,13 @@ auto filter_wavelet_type(bool is_tree, bool no_trees, bool no_matrices) {
 }
 
 int32_t main(int32_t argc, char const* argv[]) {
+  int32_t number_threads;
+  #pragma omp parallel
+  {
+    #pragma omp single
+    number_threads = omp_get_num_threads();
+  }
+
   std::vector<std::string> file_paths;
   std::string filter = "";
   unsigned int word_width = 1;
@@ -177,7 +186,9 @@ int32_t main(int32_t argc, char const* argv[]) {
       std::cout << "input=" << path << ' '
                 << "characters=" << text_size << ' '
                 << "sigma=" << max_char + 1 << ' '
-                << "word_width=" << word_width << std::endl;
+                << "word_width=" << word_width << ' '
+                << "threads=" << (a->is_parallel() ? number_threads : 1)
+                << std::endl;
 
       if (debug_print || check) {
         auto structure =
