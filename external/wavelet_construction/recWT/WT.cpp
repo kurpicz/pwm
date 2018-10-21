@@ -56,7 +56,7 @@ void recursiveWT(symbol* s, long n, uintT sigma, chunkInfo& current_chunk, symbo
 	intOffset sourceOffset = start-myOffset;
       intOffset wtBegin = myOffset, wtEnd = myOffset+length-1;
       intOffset word = wtBegin/64;
-      cout << "range: " << range << endl;
+      //cout << "range: " << range << endl;
       if(range <= 2) {
 	if(length < 128) {
 	  for(intOffset i=wtBegin;i<=wtEnd;i++) {
@@ -100,8 +100,8 @@ void recursiveWT(symbol* s, long n, uintT sigma, chunkInfo& current_chunk, symbo
 	}
 #ifdef POINTERS
 	nodes[nodeID].leftChild = nodes[nodeID].rightChild = UINT_T_MAX;
-	cout << "set left_child.start: " << left_child.start << " vs. " << UINT_T_MAX << std::endl;
-	cout << "set right_child.start: " << right_child.start << " vs. " << UINT_T_MAX << std::endl;
+	//cout << "set left_child.start: " << left_child.start << " vs. " << UINT_T_MAX << std::endl;
+	//cout << "set right_child.start: " << right_child.start << " vs. " << UINT_T_MAX << std::endl;
 #endif
 	left_child.start = right_child.start = UINT_T_MAX;
       } else {
@@ -186,8 +186,8 @@ void recursiveWT(symbol* s, long n, uintT sigma, chunkInfo& current_chunk, symbo
 	  if (l == 1)
 		  swap(source,s);
 
-		cout << "left_child.start: " << left_child.start << " vs. " << UINT_T_MAX << std::endl;
-		cout << "right_child.start: " << right_child.start << " vs. " << UINT_T_MAX << std::endl;
+		//cout << "left_child.start: " << left_child.start << " vs. " << UINT_T_MAX << std::endl;
+		//cout << "right_child.start: " << right_child.start << " vs. " << UINT_T_MAX << std::endl;
 	  if (left_child.start != UINT_T_MAX)
 		  cilk_spawn recursiveWT(s, n, sigma, left_child, destination, source, nodes, wt, levels, l);
 	  if (right_child.start != UINT_T_MAX) 
