@@ -113,7 +113,7 @@ inline bool LCAS(long *ptr, long oldv, long newv) {
   return ret;
 }
 
-// compare and swap on 4 byte quantity
+// ompare and swap on 4 byte quantity
 inline bool SCAS(int *ptr, int oldv, int newv) {
   unsigned char ret;
   /* Note that sete sets a 'byte' not the word */

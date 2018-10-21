@@ -31,6 +31,8 @@ static void setWorkers(int n) { }
 static int getWorkers() {
   return __cilkrts_get_nworkers();
 }
+
+[[maybe_unused]]
 static void setWorkers(int n) {
   __cilkrts_end_cilk();
   //__cilkrts_init();

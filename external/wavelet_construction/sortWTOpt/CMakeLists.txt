@@ -10,7 +10,7 @@ add_executable(sortWTOpt
   WT.cpp
   WTTime.cpp)
 
-target_link_libraries(sortWTOpt tlx_command_line dl)
+target_link_libraries(sortWTOpt tlx_command_line cilkrts dl)
 
 if(ENABLE_MALLOC_COUNT)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ansi")
@@ -26,5 +26,7 @@ target_include_directories(sortWTOpt PUBLIC
   $<BUILD_INTERFACE:${CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CURRENT_SOURCE_DIR}>
 )
+
+target_compile_options(sortWTOpt PRIVATE -fcilkplus -mcx16 -mcx16 -DCILKP -DMCX16)
 
 ################################################################################

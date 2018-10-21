@@ -98,13 +98,13 @@ void timeWT(symbol* s, long n, int rounds, char* inFile, char* outFile,
   std::cout << "RESULT algo=wt_sort ";
 
   pair<WTnode*,long*> R;
-// #ifdef MALLOC_COUNT
-//   malloc_count_reset_peak();
-//   R = WT(s, n, sigma);
-//   std::cout << "memory=" << malloc_count_peak() << ' ';
-// #else
-//   std::cout << "memory=no ";
-// #endif // MALLOC_COUNT
+#ifdef MALLOC_COUNT
+  malloc_count_reset_peak();
+  R = WT(s, n, sigma);
+  std::cout << "memory=" << malloc_count_peak() << ' ';
+#else
+  std::cout << "memory=no ";
+#endif // MALLOC_COUNT
 
   std::cout << "runs=" << rounds << ' ';
   std::vector<float> times;
@@ -127,7 +127,8 @@ void timeWT(symbol* s, long n, int rounds, char* inFile, char* outFile,
   std::cout << " input=" << inFile << ' '
             << "characters=" << n << ' '
             << "sigma=" << sigma << ' '
-            << "word_width=" << sizeof(symbol) << std::endl;
+            << "word_width=" << sizeof(symbol) << ' '
+            << "threads=" << getWorkers() << std::endl;
 
   if(check) {
     cout << "checking...\n";

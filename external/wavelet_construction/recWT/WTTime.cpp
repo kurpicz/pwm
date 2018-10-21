@@ -132,7 +132,8 @@ void timeWT(symbol* s, long n, int rounds, char* inFile, char* outFile,
   std::cout << " input=" << inFile << ' '
             << "characters=" << n << ' '
             << "sigma=" << sigma << ' '
-            << "word_width=" << sizeof(symbol) << std::endl;
+            << "word_width=" << sizeof(symbol) << ' '
+            << "threads=" << getWorkers() << std::endl;
 
   if(check) {
     cout << "checking...\n";
