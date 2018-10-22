@@ -13,13 +13,17 @@ add_executable(recWT
 target_link_libraries(recWT tlx_command_line cilkrts dl)
 
 if(ENABLE_MALLOC_COUNT)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ansi")
-  target_sources(recWT PUBLIC ${PROJECT_SOURCE_DIR}/src/malloc_count)
-  target_compile_definitions(recWT PUBLIC MALLOC_COUNT)
-  target_include_directories(recWT PUBLIC
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-  )
+  if(USE_GET_RUSAGE_EXTERN)
+    target_compile_definitions(recWT PUBLIC GET_RUSAGE)
+  else() # Use malloc count instead
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ansi")
+    target_sources(recWT PUBLIC ${PROJECT_SOURCE_DIR}/src/malloc_count)
+    target_compile_definitions(recWT PUBLIC MALLOC_COUNT)
+    target_include_directories(recWT PUBLIC
+      $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+      $<INSTALL_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+    )
+  endif()
 endif(ENABLE_MALLOC_COUNT)
 
 target_include_directories(recWT PUBLIC

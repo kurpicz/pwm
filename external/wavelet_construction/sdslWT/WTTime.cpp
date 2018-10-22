@@ -25,7 +25,7 @@
 #include <chrono>
 #include <vector>
 
-#include "getmemory.hpp"
+#include "../getmemory.hpp"
 #include "../parallel.hpp"
 #include "../IO.hpp"
 #include "WT.hpp"

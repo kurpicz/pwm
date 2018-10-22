@@ -46,6 +46,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -ggdb")
 
 # Make malloc count optional
 option(ENABLE_MALLOC_COUNT "Enable memory measurement." OFF)
+option(USE_GET_RUSAGE_EXTERN "Use getrusage for memory measurement in external/wavelet_construction" ON)
 
 if( NOT EXISTS "${CMAKE_SOURCE_DIR}/external/googletest/.git" )
   execute_process(COMMAND  git submodule update --init

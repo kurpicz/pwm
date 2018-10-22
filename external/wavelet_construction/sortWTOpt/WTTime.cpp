@@ -32,6 +32,8 @@
 
 #ifdef MALLOC_COUNT
 #include "benchmark/malloc_count.h"
+#elif defined GET_RUSAGE
+#include "../getmemory.hpp"
 #endif // MALLOC_COUNT
 
 using namespace std;
@@ -106,9 +108,13 @@ void timeWT(symbol* s, long n, int rounds, char* inFile, char* outFile,
   malloc_count_reset_peak();
   R = WT(s, n, sigma);
   std::cout << "memory=" << malloc_count_peak() << ' ';
+#elif defined GET_RUSAGE
+  R = WT(s, n, sigma);
+  std::cout << "memory=" << getPeakRSS() << ' ';
 #else
   std::cout << "memory=no ";
-#endif // MALLOC_COUNT
+#endif
+
 
   std::cout << "runs=" << rounds << ' ';
   std::vector<float> times;
