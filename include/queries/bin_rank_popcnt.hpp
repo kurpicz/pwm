@@ -27,6 +27,7 @@
 #include <vector>
 
 #include "arrays/span.hpp"
+#include "queries/popcnt_traits.hpp"
 
 struct l12_entry {
   l12_entry() = default;
@@ -51,8 +52,8 @@ class bin_rank_popcnt {
 
 public:
   bin_rank_popcnt(span<uint64_t const> data)
-  : l0_((data.size() / l0_block_cover_) + 1, 0ULL),
-    l12_((data.size() / l1_block_cover_) + 1),
+  : l0_((data.size() / popcnt_traits::l0_block_cover) + 1, 0ULL),
+    l12_((data.size() / popcnt_traits::l1_block_cover) + 1),
     data_(data) {
 
     size_t l0_pos = 0;
@@ -63,18 +64,20 @@ public:
       uint32_t new_l1_entry = l1_entry;
       std::array<uint32_t, 3> l2_entries = { 0, 0, 0 };
       for (size_t i = 0; i < 3; ++i) {
-        for (size_t j = 0; j < l2_block_cover_ && pos < data_.size(); ++j) {
+        for (size_t j = 0; j < popcnt_traits::l2_block_cover &&
+             pos < data_.size(); ++j) {
           l2_entries[i] += __builtin_popcountll(data_[pos++]);
         }
         new_l1_entry += l2_entries[i];
       }
       l12_[l12_pos++] = l12_entry(l1_entry, l2_entries);
       l1_entry = new_l1_entry;
-      for (size_t j = 0; j < l2_block_cover_ && pos < data_.size(); ++j) {
+      for (size_t j = 0; j < popcnt_traits::l2_block_cover &&
+           pos < data_.size(); ++j) {
         l1_entry += __builtin_popcountll(data_[pos++]);
       }
 
-      if (l12_pos % l0_block_cover_ == 0) {
+      if (l12_pos % popcnt_traits::l0_block_cover == 0) {
         if (l0_pos > 0) { l0_[l0_pos] += l0_[l0_pos - 1]; }
         l0_[l0_pos++] += l1_entry;
         l1_entry = 0;
@@ -96,23 +99,24 @@ public:
     size_t result = 0;
     size_t remaining_bits = index;
     // Find L0 block
-    size_t l0_pos = remaining_bits / l0_bit_size_;
-    remaining_bits -= (l0_pos * l0_bit_size_);
+    size_t l0_pos = remaining_bits / popcnt_traits::l0_bit_size;
+    remaining_bits -= (l0_pos * popcnt_traits::l0_bit_size);
     if (l0_pos > 0) { result += l0_[l0_pos - 1]; }
 
     // Find L1/L2 block
-    size_t l1_pos = remaining_bits / l1_bit_size_;
-    remaining_bits -= (l1_pos * l1_bit_size_);
+    size_t l1_pos = remaining_bits / popcnt_traits::l1_bit_size;
+    remaining_bits -= (l1_pos * popcnt_traits::l1_bit_size);
     const l12_entry l12 = l12_[l1_pos];
     result += l12.l1_value;
 
-    size_t l2_pos = remaining_bits / l2_bit_size_;
-    remaining_bits -= (l2_pos * l2_bit_size_);
+    size_t l2_pos = remaining_bits / popcnt_traits::l2_bit_size;
+    remaining_bits -= (l2_pos * popcnt_traits::l2_bit_size);
     for (size_t i = 0; i < l2_pos; ++i) {
       result += l12[i];
     }
 
-    size_t offset = (l1_pos * l1_block_cover_) + (l2_pos * l2_block_cover_);
+    size_t offset = (l1_pos * popcnt_traits::l1_block_cover) +
+      (l2_pos * popcnt_traits::l2_block_cover);
     while (remaining_bits >= 64) {
       result += __builtin_popcountll(data_[offset++]);
       remaining_bits -= 64;
@@ -124,16 +128,6 @@ public:
   }
 
 private:
-  static constexpr size_t bits_per_word_ = sizeof(uint64_t) * 8;
-  static constexpr size_t l2_bit_size_ = 512;
-  static constexpr size_t l1_bit_size_ = 4 * l2_bit_size_;
-  static constexpr size_t l0_bit_size_ =
-    std::numeric_limits<uint32_t>::max();
-
-  static constexpr size_t l2_block_cover_ = l2_bit_size_ / bits_per_word_;
-  static constexpr size_t l1_block_cover_ = l1_bit_size_ / bits_per_word_;
-  static constexpr size_t l0_block_cover_ = l0_bit_size_ / bits_per_word_;
-
   std::vector<uint64_t> l0_;
   std::vector<l12_entry> l12_;
   

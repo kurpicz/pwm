@@ -79,10 +79,10 @@ private:
     //*
     size_t l0_pos = 0;
     while (l0_pos + 1 < l0_.size() &&
-      ((l0_pos + 1) * rank_support_.l0_bit_size_ ) - l0_[l0_pos + 1] < occ) {
+      ((l0_pos + 1) * popcnt_traits::l0_bit_size ) - l0_[l0_pos + 1] < occ) {
       ++l0_pos;
     }
-    occ -= (l0_pos * rank_support_.l0_bit_size_ ) - l0_[l0_pos];
+    occ -= (l0_pos * popcnt_traits::l0_bit_size ) - l0_[l0_pos];
     size_t l1_pos = 0;
     /*/
 
@@ -98,21 +98,21 @@ private:
     size_t l1_pos = bit_pos / rank_support_.l1_bit_size_;
     //*/
     while (l1_pos + 1 < l12_.size() &&
-           ((l1_pos + 1) * rank_support_.l1_bit_size_) -
+           ((l1_pos + 1) * popcnt_traits::l1_bit_size) -
            l12_[l1_pos + 1].l1_value < occ) {
       ++ l1_pos;
     }
-    occ -= (l1_pos * rank_support_.l1_bit_size_) - l12_[l1_pos].l1_value;
+    occ -= (l1_pos * popcnt_traits::l1_bit_size) - l12_[l1_pos].l1_value;
 
     size_t l2_pos = 0;
     while (l2_pos < 3 &&
-      occ > (rank_support_.l2_bit_size_ - l12_[l1_pos][l2_pos])) {
-      occ -= (rank_support_.l2_bit_size_ - l12_[l1_pos][l2_pos++]);
+      occ > (popcnt_traits::l2_bit_size - l12_[l1_pos][l2_pos])) {
+      occ -= (popcnt_traits::l2_bit_size - l12_[l1_pos][l2_pos++]);
     }
 
-    size_t last_pos = (rank_support_.l2_block_cover_ * l2_pos) +
-      (rank_support_.l1_block_cover_ * l1_pos) +
-      (rank_support_.l0_block_cover_ * l0_pos);
+    size_t last_pos = (popcnt_traits::l2_block_cover * l2_pos) +
+      (popcnt_traits::l1_block_cover * l1_pos) +
+      (popcnt_traits::l0_block_cover * l0_pos);
 
     size_t additional_words = 0;
     size_t popcnt = 0;
@@ -134,9 +134,9 @@ private:
 
     last_bits -= (last_bits > 0) ? 1 : 0;
 
-    return (rank_support_.l2_bit_size_ * l2_pos) +
-      (rank_support_.l1_bit_size_ * l1_pos) +
-      (rank_support_.l0_bit_size_ * l0_pos) +
+    return (popcnt_traits::l2_bit_size * l2_pos) +
+      (popcnt_traits::l1_bit_size * l1_pos) +
+      (popcnt_traits::l0_bit_size * l0_pos) +
       (additional_words * 64) + last_bits;
   }
 
@@ -156,9 +156,9 @@ private:
       occ -= l12_[l1_pos][l2_pos++];
     }
 
-    size_t last_pos = (rank_support_.l2_block_cover_ * l2_pos) +
-      (rank_support_.l1_block_cover_ * l1_pos) +
-      (rank_support_.l0_block_cover_ * l0_pos);
+    size_t last_pos = (popcnt_traits::l2_block_cover * l2_pos) +
+      (popcnt_traits::l1_block_cover * l1_pos) +
+      (popcnt_traits::l0_block_cover * l0_pos);
 
     size_t additional_words = 0;
     size_t popcnt = 0;
@@ -180,9 +180,9 @@ private:
 
     last_bits -= (last_bits > 0) ? 1 : 0;
 
-    return (rank_support_.l2_bit_size_ * l2_pos) +
-      (rank_support_.l1_bit_size_ * l1_pos) +
-      (rank_support_.l0_bit_size_ * l0_pos) +
+    return (popcnt_traits::l2_bit_size * l2_pos) +
+      (popcnt_traits::l1_bit_size * l1_pos) +
+      (popcnt_traits::l0_bit_size * l0_pos) +
       (additional_words * 64) + last_bits;
   }
 
