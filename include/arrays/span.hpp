@@ -16,27 +16,33 @@
 
 template <typename T>
 class span {
-  T* m_ptr;
-  size_t m_size;
 
 public:
-  inline span(T* ptr, size_t size) : m_ptr(ptr), m_size(size) {}
+  inline span(T* ptr, size_t size) : ptr_(ptr), size_(size) { }
+
   inline size_t size() const {
-    return m_size;
+    return size_;
   }
+
   inline T& operator[](size_t i) const {
     DCHECK(i < size());
-    return m_ptr[i];
+    return ptr_[i];
   }
+
   inline T* data() const {
-    return m_ptr;
+    return ptr_;
   }
+
   inline span slice(size_t start, size_t end) const {
     DCHECK(start <= m_size);
     DCHECK(end <= m_size);
     DCHECK(start <= end);
-    return span{m_ptr + start, end - start};
+    return span{ptr_ + start, end - start};
   }
+
+private:
+  T* ptr_;
+  size_t size_;
 };
 
 /******************************************************************************/

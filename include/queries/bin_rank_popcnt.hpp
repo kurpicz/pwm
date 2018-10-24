@@ -26,13 +26,15 @@
 #include <limits>
 #include <vector>
 
+#include "arrays/span.hpp"
+
 struct l12_entry {
   l12_entry() = default;
 
-  l12_entry(uint32_t l1, uint32_t l2_0, uint32_t l2_1, uint32_t l2_2)
-  : l1_value(l1), l2_values(uint32_t(0b1111111111) & l2_0) {
-    l2_values |= ((uint32_t(0b1111111111) & l2_1) << 10);
-    l2_values |= ((uint32_t(0b1111111111) & l2_2) << 20);
+  l12_entry(uint32_t l1, std::array<uint32_t, 3> const& l2) : l1_value(l1),
+    l2_values(uint32_t(0b1111111111) & l2[0]) {
+    l2_values |= ((uint32_t(0b1111111111) & l2[1]) << 10);
+    l2_values |= ((uint32_t(0b1111111111) & l2[2]) << 20);
   }
 
   inline uint32_t operator [](size_t index) const {
@@ -41,7 +43,6 @@ struct l12_entry {
 
   uint32_t l1_value;
   uint32_t l2_values;
-
 }; //struct l12_entry
 
 class bin_rank_popcnt {
@@ -49,46 +50,47 @@ class bin_rank_popcnt {
   friend class bin_select_popcnt;
 
 public:
-  bin_rank_popcnt(uint64_t const * data, const size_t size)
-  : l0_((size / l0_block_cover_) + 1, 0ULL),
-    l12_((size / l1_block_cover_) + 1),
-    data_(data), size_(size) {
-
-    auto cur_pos = data;
-    const auto end_pos = data + size;
+  bin_rank_popcnt(span<uint64_t const> data)
+  : l0_((data.size() / l0_block_cover_) + 1, 0ULL),
+    l12_((data.size() / l1_block_cover_) + 1),
+    data_(data) {
 
     size_t l0_pos = 0;
     size_t l12_pos = 0;
     uint32_t l1_entry = 0UL;
 
-    while (cur_pos < end_pos) {
+    for (size_t pos = 0; pos < data_.size();) {
       uint32_t new_l1_entry = l1_entry;
       std::array<uint32_t, 3> l2_entries = { 0, 0, 0 };
       for (size_t i = 0; i < 3; ++i) {
-        for (size_t j = 0; j < l2_block_cover_; ++j) {
-          l2_entries[i] += __builtin_popcountll(*(cur_pos++));
+        for (size_t j = 0; j < l2_block_cover_ && pos < data_.size(); ++j) {
+          l2_entries[i] += __builtin_popcountll(data_[pos++]);
         }
         new_l1_entry += l2_entries[i];
       }
-      l12_[l12_pos++] = l12_entry(l1_entry, l2_entries[0], l2_entries[1], l2_entries[2]);
+      l12_[l12_pos++] = l12_entry(l1_entry, l2_entries);
       l1_entry = new_l1_entry;
-      for (size_t j = 0; j < l2_block_cover_; ++j) {
-        l1_entry += __builtin_popcountll(*(cur_pos++));
+      for (size_t j = 0; j < l2_block_cover_ && pos < data_.size(); ++j) {
+        l1_entry += __builtin_popcountll(data_[pos++]);
       }
 
       if (l12_pos % l0_block_cover_ == 0) {
         if (l0_pos > 0) { l0_[l0_pos] += l0_[l0_pos - 1]; }
         l0_[l0_pos++] += l1_entry;
-        l1_entry = 0UL;
+        l1_entry = 0;
       }
     }
   }
 
-  bin_rank_popcnt() = default;
+  bin_rank_popcnt() = delete;
   bin_rank_popcnt(bin_rank_popcnt const&) = delete;
   bin_rank_popcnt& operator =(bin_rank_popcnt const&) = delete;
   bin_rank_popcnt(bin_rank_popcnt&&) = default;
   bin_rank_popcnt& operator =(bin_rank_popcnt&&) = default;
+
+  inline size_t rank0(size_t index) const {
+    return index - rank1(index);
+  }
 
   inline size_t rank1(const size_t index) const {
     size_t result = 0;
@@ -110,20 +112,15 @@ public:
       result += l12[i];
     }
 
-    uint64_t const * remaining_data = data_ + (l1_pos * l1_block_cover_) +
-      (l2_pos * l2_block_cover_);
+    size_t offset = (l1_pos * l1_block_cover_) + (l2_pos * l2_block_cover_);
     while (remaining_bits >= 64) {
-      result += __builtin_popcountll(*(remaining_data++));
+      result += __builtin_popcountll(data_[offset++]);
       remaining_bits -= 64;
     }
     if (remaining_bits > 0) {
-      result += __builtin_popcountll(*remaining_data >> (64 - remaining_bits));
+      result += __builtin_popcountll(data_[offset] >> (64 - remaining_bits));
     }
     return result;
-  }
-
-  inline size_t rank0(size_t index) const {
-    return index - rank1(index);
   }
 
 private:
@@ -139,8 +136,8 @@ private:
 
   std::vector<uint64_t> l0_;
   std::vector<l12_entry> l12_;
-  uint64_t const * data_;
-  size_t size_;
+  
+  span<uint64_t const> data_;
 }; // class bin_rank_popcnt
 
 /******************************************************************************/

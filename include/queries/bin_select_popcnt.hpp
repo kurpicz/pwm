@@ -38,27 +38,27 @@ public:
   : rank_support_(rank_support), l0_(rank_support_.l0_),
     l12_(rank_support_.l12_) {
 
-    uint64_t const * const data = rank_support_.data_;
-    size_t const size = rank_support_.size_;
+    // uint64_t const * const data = rank_support_.data_;
+    // size_t const size = rank_support_.size_;
 
-    uint64_t cur_count = 0;
-    uint64_t next_count = 0;
-    uint64_t next_sample = 1;
-    for (size_t i = 0; i < size; ++i) {
-      uint64_t cur_value = data[i];
+    // uint64_t cur_count = 0;
+    // uint64_t next_count = 0;
+    // uint64_t next_sample = 1;
+    // for (size_t i = 0; i < size; ++i) {
+    //   uint64_t cur_value = data[i];
 
-      if constexpr (select_value == 0) {
-        cur_value = ~cur_value;
-      }
+    //   if constexpr (select_value == 0) {
+    //     cur_value = ~cur_value;
+    //   }
 
-      next_count = cur_count + __builtin_popcountll(cur_value);
+    //   next_count = cur_count + __builtin_popcountll(cur_value);
 
-      if (next_count > next_sample) {
-        samples_.emplace_back((i * 64) + select1(cur_value, next_sample - cur_count));
-        next_sample += SAMPLE_RATE_;
-      }
-      cur_count = next_count;
-    }
+    //   if (next_count > next_sample) {
+    //     samples_.emplace_back((i * 64) + select1(cur_value, next_sample - cur_count));
+    //     next_sample += SAMPLE_RATE_;
+    //   }
+    //   cur_count = next_count;
+    // }
   }
 
   bin_select_popcnt() = delete;
@@ -117,13 +117,12 @@ private:
     size_t additional_words = 0;
     size_t popcnt = 0;
     while ((popcnt = __builtin_popcountll(
-      ~(*(rank_support_.data_ + last_pos + additional_words)))) < occ) {
+      ~(rank_support_.data_[last_pos + additional_words]))) < occ) {
       ++additional_words;
       occ -= popcnt;
     }
 
-    uint64_t final_word =
-      ~(*(rank_support_.data_ + last_pos + additional_words));
+    uint64_t final_word = ~rank_support_.data_[last_pos + additional_words];
 
     size_t last_bits = 0;
     uint64_t const mask = (1ULL << 63);
@@ -163,13 +162,13 @@ private:
 
     size_t additional_words = 0;
     size_t popcnt = 0;
-    while ((popcnt = __builtin_popcountll(
-      *(rank_support_.data_ + last_pos + additional_words))) < occ) {
+    while ((popcnt = __builtin_popcountll(rank_support_.data_[
+      last_pos + additional_words])) < occ) {
       ++additional_words;
       occ -= popcnt;
     }
 
-    uint64_t final_word = *(rank_support_.data_ + last_pos + additional_words);
+    uint64_t final_word = rank_support_.data_[last_pos + additional_words];
 
     size_t last_bits = 0;
     uint64_t const mask = (1ULL << 63);
