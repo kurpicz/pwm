@@ -9,6 +9,10 @@
 
 cmake_minimum_required(VERSION 3.0.2 FATAL_ERROR)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/misc/") 
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 project (pwm)
 
 find_program(CCACHE_FOUND ccache)
@@ -20,8 +24,6 @@ endif(CCACHE_FOUND)
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release")
 endif(NOT CMAKE_BUILD_TYPE)
-
-set(CXX_STANDARD c++17)
 
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
   # using Clang or AppleClang
@@ -39,7 +41,7 @@ endif()
 
 # Compiler flags
 set(CMAKE_CXX_FLAGS
-  "${CMAKE_CXX_FLAGS} -std=c++17 -fopenmp -Wall -Wextra -Wpedantic -fdiagnostics-color=auto")
+  "${CMAKE_CXX_FLAGS} -fopenmp -Wall -Wextra -Wpedantic -fdiagnostics-color=auto")
 set(CMAKE_CXX_FLAGS_RELEASE
   "${CMAKE_CXX_FLAGS_RELEASE} -O3 -funroll-loops -march=native")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -ggdb")

@@ -37,7 +37,7 @@ TEST(bin_rank_popcnt, rank) {
 }
 
 TEST(bin_select_popcnt, select) {
-  const size_t bit_vector_size = 1024*1024*128;
+  const size_t bit_vector_size = 1024 * 16;//*1024*128;
 
   bit_vectors bv(1, bit_vector_size);
 
@@ -53,11 +53,11 @@ TEST(bin_select_popcnt, select) {
 
   size_t one_count = 0;
   // TODO: Currently, this test is very slow, test for whole vector when implementation is better!
-  for (size_t i = 0; i < bit_vector_size / 100; ++i) {
+  for (size_t i = 0; i < bit_vector_size / 2; ++i) {
     if (bit_at(bv[0], i)) {
       ++one_count;
-      ASSERT_EQ(select1_support.select(one_count), i);
-    } else { ASSERT_EQ(select0_support.select(i - one_count + 1), i); }
+      EXPECT_EQ(select1_support.select(one_count), i);
+    } else { EXPECT_EQ(select0_support.select(i - one_count + 1), i); }
   }
 }
 

@@ -26,6 +26,24 @@
 #include <limits>
 #include <vector>
 
+struct l12_entry {
+  l12_entry() = default;
+
+  l12_entry(uint32_t l1, uint32_t l2_0, uint32_t l2_1, uint32_t l2_2)
+  : l1_value(l1), l2_values(uint32_t(0b1111111111) & l2_0) {
+    l2_values |= ((uint32_t(0b1111111111) & l2_1) << 10);
+    l2_values |= ((uint32_t(0b1111111111) & l2_2) << 20);
+  }
+
+  inline uint32_t operator [](size_t index) const {
+    return (l2_values >> 10 * index) & 0b1111111111;
+  }
+
+  uint32_t l1_value;
+  uint32_t l2_values;
+
+}; //struct l12_entry
+
 class bin_rank_popcnt {
   template <uint8_t select_value>
   friend class bin_select_popcnt;
@@ -33,7 +51,7 @@ class bin_rank_popcnt {
 public:
   bin_rank_popcnt(uint64_t const * data, const size_t size)
   : l0_((size / l0_block_cover_) + 1, 0ULL),
-    l12_((size / l1_block_cover_) + 1, 0ULL),
+    l12_((size / l1_block_cover_) + 1),
     data_(data), size_(size) {
 
     auto cur_pos = data;
@@ -44,26 +62,26 @@ public:
     uint32_t l1_entry = 0UL;
 
     while (cur_pos < end_pos) {
-      l12_[l12_pos] = set_l1_entry(l12_[l12_pos], l1_entry);
+      uint32_t new_l1_entry = l1_entry;
+      std::array<uint32_t, 3> l2_entries = { 0, 0, 0 };
       for (size_t i = 0; i < 3; ++i) {
-        uint32_t l2_entry = 0UL;
         for (size_t j = 0; j < l2_block_cover_; ++j) {
-          l2_entry += __builtin_popcountll(*(cur_pos++));
+          l2_entries[i] += __builtin_popcountll(*(cur_pos++));
         }
-        l1_entry += l2_entry;
-        l12_[l12_pos] = set_l2_entry(l12_[l12_pos], l2_entry, i);        
+        new_l1_entry += l2_entries[i];
       }
+      l12_[l12_pos++] = l12_entry(l1_entry, l2_entries[0], l2_entries[1], l2_entries[2]);
+      l1_entry = new_l1_entry;
       for (size_t j = 0; j < l2_block_cover_; ++j) {
         l1_entry += __builtin_popcountll(*(cur_pos++));
       }
-      ++l12_pos;
+
       if (l12_pos % l0_block_cover_ == 0) {
         if (l0_pos > 0) { l0_[l0_pos] += l0_[l0_pos - 1]; }
         l0_[l0_pos++] += l1_entry;
         l1_entry = 0UL;
       }
     }
-
   }
 
   bin_rank_popcnt() = default;
@@ -83,13 +101,13 @@ public:
     // Find L1/L2 block
     size_t l1_pos = remaining_bits / l1_bit_size_;
     remaining_bits -= (l1_pos * l1_bit_size_);
-    const uint64_t l12_block = l12_[l1_pos];
-    result += get_l1_entry(l12_block);
+    const l12_entry l12 = l12_[l1_pos];
+    result += l12.l1_value;
 
     size_t l2_pos = remaining_bits / l2_bit_size_;
     remaining_bits -= (l2_pos * l2_bit_size_);
     for (size_t i = 0; i < l2_pos; ++i) {
-      result += get_l2_entry(l12_block, i);
+      result += l12[i];
     }
 
     uint64_t const * remaining_data = data_ + (l1_pos * l1_block_cover_) +
@@ -109,33 +127,6 @@ public:
   }
 
 private:
-  // Note that we can only set the value once. If we want to set the value
-  // multiple times, we first have to set the first 32 bits to 0.
-  inline uint64_t set_l1_entry(const uint64_t word,
-    const uint32_t l1_entry) const {
-    uint64_t l1_entry_cast = static_cast<uint64_t>(l1_entry);
-    return word | (l1_entry_cast << 32); 
-  }
-
-  inline uint32_t get_l1_entry(const uint64_t word) const {
-    return word >> 32;
-  }
-
-  // Note that we can only set each value once. If we want to set any value
-  // multiple times, we firts ahve to the the corresponding bits to 0.
-  inline uint64_t set_l2_entry(uint64_t word, const uint32_t l2_entry,
-    const size_t entry_pos) const {
-    uint64_t l2_entry_cast = static_cast<uint64_t>(l2_entry);
-    return word | (l2_entry_cast << (22 - (entry_pos * 10)));
-  }
-
-  inline uint32_t get_l2_entry(const uint64_t word,
-    const size_t entry_pos) const {
-    return (word & ((~0ULL) >> (32 + (entry_pos * 10)))) >>
-      (22 - (entry_pos * 10));
-  }
-
-private:
   static constexpr size_t bits_per_word_ = sizeof(uint64_t) * 8;
   static constexpr size_t l2_bit_size_ = 512;
   static constexpr size_t l1_bit_size_ = 4 * l2_bit_size_;
@@ -147,7 +138,7 @@ private:
   static constexpr size_t l0_block_cover_ = l0_bit_size_ / bits_per_word_;
 
   std::vector<uint64_t> l0_;
-  std::vector<uint64_t> l12_;
+  std::vector<l12_entry> l12_;
   uint64_t const * data_;
   size_t size_;
 }; // class bin_rank_popcnt
