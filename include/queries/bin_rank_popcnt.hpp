@@ -130,7 +130,6 @@ public:
 private:
   std::vector<uint64_t> l0_;
   std::vector<l12_entry> l12_;
-  
   span<uint64_t const> data_;
 }; // class bin_rank_popcnt
 

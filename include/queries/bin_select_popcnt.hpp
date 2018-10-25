@@ -27,38 +27,55 @@
 #include <vector>
 
 #include "queries/bin_rank_popcnt.hpp"
+#include "queries/popcnt_traits.hpp"
 
-template <uint8_t select_value>
+template <uint8_t SelectValue>
 class bin_select_popcnt {
 
 static constexpr bool BRANCHLESS_SELECT = true;
 
 public:
-  bin_select_popcnt(bin_rank_popcnt& rank_support)
-  : rank_support_(rank_support), l0_(rank_support_.l0_),
-    l12_(rank_support_.l12_) {
+  bin_select_popcnt(bin_rank_popcnt& rank_support) : l0_(rank_support.l0_),
+    l12_(rank_support.l12_), data_(rank_support.data_) {
 
-    // uint64_t const * const data = rank_support_.data_;
-    // size_t const size = rank_support_.size_;
+    samples_offset_.push_back(0);
 
-    // uint64_t cur_count = 0;
-    // uint64_t next_count = 0;
-    // uint64_t next_sample = 1;
-    // for (size_t i = 0; i < size; ++i) {
-    //   uint64_t cur_value = data[i];
+    uint64_t next_sample = 1;
+    size_t l0_pos = 0;
+    // First, we implement it for SelectValue=1
+    for (size_t l1_pos = 0; l1_pos + 1 < l12_.size();) {
+      
+      // Each L1 block contains at most one sample
+      // TODO: We can skip 4 L1 blocks, because only then there can be another
+      //       sample position.
+      if (l12_[l1_pos + 1].l1_value > next_sample) {
+        uint32_t remaining = next_sample - l12_[l1_pos].l1_value;
+        size_t l2_pos = 0;
+        while (l2_pos < 3 && l12_[l1_pos][l2_pos] < remaining) {
+          remaining -= l12_[l1_pos][l2_pos++];
+        }
 
-    //   if constexpr (select_value == 0) {
-    //     cur_value = ~cur_value;
-    //   }
+        size_t word_pos = (l0_pos * popcnt_traits::l0_block_cover +
+                           l1_pos * popcnt_traits::l1_block_cover +
+                           l2_pos * popcnt_traits::l2_block_cover);
 
-    //   next_count = cur_count + __builtin_popcountll(cur_value);
+        while (word_pos < data_.size() &&
+               remaining > __builtin_popcountll(data_[word_pos])) {
+          remaining -= __builtin_popcountll(data_[word_pos++]);
+        }
 
-    //   if (next_count > next_sample) {
-    //     samples_.emplace_back((i * 64) + select1(cur_value, next_sample - cur_count));
-    //     next_sample += SAMPLE_RATE_;
-    //   }
-    //   cur_count = next_count;
-    // }
+        if (word_pos < data_.size()) {
+          samples_.emplace_back(select1(data_[word_pos], remaining) +
+            512 * (word_pos - (l0_pos * popcnt_traits::l0_block_cover)));
+          next_sample += SAMPLE_RATE_;
+        }
+      }
+
+      if (++l1_pos % popcnt_traits::l0_block_cover == 0) {
+        ++l0_pos;
+        samples_offset_.push_back(samples_.size());
+      }
+    }
   }
 
   bin_select_popcnt() = delete;
@@ -70,120 +87,20 @@ public:
   inline size_t select(size_t occ) const {
     if (occ == 0) { return 0; } 
 
-    if constexpr (select_value == 0) { return select0(occ); }
+    if constexpr (SelectValue == 0) { return select0(occ); }
     else { return select1(occ); }
   }
 
 private:
   inline size_t select0(size_t occ) const {
-    //*
-    size_t l0_pos = 0;
-    while (l0_pos + 1 < l0_.size() &&
-      ((l0_pos + 1) * popcnt_traits::l0_bit_size ) - l0_[l0_pos + 1] < occ) {
-      ++l0_pos;
-    }
-    occ -= (l0_pos * popcnt_traits::l0_bit_size ) - l0_[l0_pos];
-    size_t l1_pos = 0;
-    /*/
-
-    size_t sample_pos = ((occ - 1) / SAMPLE_RATE_);
-    
-    if (occ % SAMPLE_RATE_ == 0) {
-      return samples_[sample_pos];
-    }
-    occ %= SAMPLE_RATE_;
-
-    size_t bit_pos = samples_.size() > 0 ? samples_[sample_pos] : 0;
-    size_t l0_pos = bit_pos / rank_support_.l0_bit_size_;
-    size_t l1_pos = bit_pos / rank_support_.l1_bit_size_;
-    //*/
-    while (l1_pos + 1 < l12_.size() &&
-           ((l1_pos + 1) * popcnt_traits::l1_bit_size) -
-           l12_[l1_pos + 1].l1_value < occ) {
-      ++ l1_pos;
-    }
-    occ -= (l1_pos * popcnt_traits::l1_bit_size) - l12_[l1_pos].l1_value;
-
-    size_t l2_pos = 0;
-    while (l2_pos < 3 &&
-      occ > (popcnt_traits::l2_bit_size - l12_[l1_pos][l2_pos])) {
-      occ -= (popcnt_traits::l2_bit_size - l12_[l1_pos][l2_pos++]);
-    }
-
-    size_t last_pos = (popcnt_traits::l2_block_cover * l2_pos) +
-      (popcnt_traits::l1_block_cover * l1_pos) +
-      (popcnt_traits::l0_block_cover * l0_pos);
-
-    size_t additional_words = 0;
-    size_t popcnt = 0;
-    while ((popcnt = __builtin_popcountll(
-      ~(rank_support_.data_[last_pos + additional_words]))) < occ) {
-      ++additional_words;
-      occ -= popcnt;
-    }
-
-    uint64_t final_word = ~rank_support_.data_[last_pos + additional_words];
-
-    size_t last_bits = 0;
-    uint64_t const mask = (1ULL << 63);
-    while (occ > 0) {
-      if (final_word & mask) { --occ; }
-      ++last_bits;
-      final_word <<= 1;
-    }
-
-    last_bits -= (last_bits > 0) ? 1 : 0;
-
-    return (popcnt_traits::l2_bit_size * l2_pos) +
-      (popcnt_traits::l1_bit_size * l1_pos) +
-      (popcnt_traits::l0_bit_size * l0_pos) +
-      (additional_words * 64) + last_bits;
+    return 0;   
   }
 
   inline size_t select1(size_t occ) const {
     size_t l0_pos = 0;
-    while (l0_pos + 1 < l0_.size() && l0_[l0_pos + 1] < occ) { ++l0_pos; }
-    occ -= l0_[l0_pos];
+    while (l0_pos < l0_.size() && l0_[l0_pos] < occ) { ++l0_pos; }
 
-    size_t l1_pos = 0;
-    while (l1_pos + 1 < l12_.size() && l12_[l1_pos + 1].l1_value < occ) {
-      ++ l1_pos;
-    }
-    occ -= l12_[l1_pos].l1_value;
-
-    size_t l2_pos = 0;
-    while (l2_pos < 3 && occ > l12_[l1_pos][l2_pos]) {
-      occ -= l12_[l1_pos][l2_pos++];
-    }
-
-    size_t last_pos = (popcnt_traits::l2_block_cover * l2_pos) +
-      (popcnt_traits::l1_block_cover * l1_pos) +
-      (popcnt_traits::l0_block_cover * l0_pos);
-
-    size_t additional_words = 0;
-    size_t popcnt = 0;
-    while ((popcnt = __builtin_popcountll(rank_support_.data_[
-      last_pos + additional_words])) < occ) {
-      ++additional_words;
-      occ -= popcnt;
-    }
-
-    uint64_t final_word = rank_support_.data_[last_pos + additional_words];
-
-    size_t last_bits = 0;
-    uint64_t const mask = (1ULL << 63);
-    while (occ > 0) {
-      if (final_word & mask) { --occ; }
-      ++last_bits;
-      final_word <<= 1;
-    }
-
-    last_bits -= (last_bits > 0) ? 1 : 0;
-
-    return (popcnt_traits::l2_bit_size * l2_pos) +
-      (popcnt_traits::l1_bit_size * l1_pos) +
-      (popcnt_traits::l0_bit_size * l0_pos) +
-      (additional_words * 64) + last_bits;
+    
   }
 
   inline uint32_t select1(uint64_t data, uint32_t rank) {
@@ -232,11 +149,12 @@ private:
 private:
   static constexpr size_t SAMPLE_RATE_ = 8192;
 
-  bin_rank_popcnt& rank_support_;
   std::vector<uint64_t>& l0_;
   std::vector<l12_entry>& l12_;
+  span<uint64_t const>& data_;
 
-  std::vector<uint64_t> samples_;
+  std::vector<uint32_t> samples_;
+  std::vector<uint64_t> samples_offset_;
 }; // class bin_select_popcnt
 
 using bin_select0_popcnt = bin_select_popcnt<0>;
