@@ -42,32 +42,60 @@ public:
 
     uint64_t next_sample = 1;
     size_t l0_pos = 0;
-    // First, we implement it for SelectValue=1
     for (size_t l1_pos = 0; l1_pos + 1 < l12_.size();) {
       
       // Each L1 block contains at most one sample
       // TODO: We can skip 4 L1 blocks, because only then there can be another
       //       sample position.
-      if (l12_[l1_pos + 1].l1_value > next_sample) {
-        uint32_t remaining = next_sample - l12_[l1_pos].l1_value;
-        size_t l2_pos = 0;
-        while (l2_pos < 3 && l12_[l1_pos][l2_pos] < remaining) {
-          remaining -= l12_[l1_pos][l2_pos++];
+      if constexpr (SelectValue == 0) {
+        if (((l1_pos + 1) * popcnt_traits::l1_bit_size) -
+            l12_[l1_pos + 1].l1_value > next_sample) {
+
+          uint32_t remaining = next_sample -
+            ((l1_pos * popcnt_traits::l1_bit_size) - l12_[l1_pos].l1_value);
+          size_t l2_pos = 0;
+          while (l2_pos < 3 && (popcnt_traits::l2_bit_size -
+                                l12_[l1_pos][l2_pos]) < remaining) {
+            remaining -= (popcnt_traits::l2_bit_size - l12_[l1_pos][l2_pos++]);
+          }
+
+          size_t word_pos = (l0_pos * popcnt_traits::l0_block_cover +
+                             l1_pos * popcnt_traits::l1_block_cover +
+                             l2_pos * popcnt_traits::l2_block_cover);
+
+          while (word_pos < data_.size() &&
+                 remaining > __builtin_popcountll(~data_[word_pos])) {
+            remaining -= __builtin_popcountll(~data_[word_pos++]);
+          }
+
+
+          if (word_pos < data_.size()) {
+            samples_.emplace_back(word_select1(~data_[word_pos], remaining) +
+              64 * (word_pos - (l0_pos * popcnt_traits::l0_bit_size)));
+            next_sample += SAMPLE_RATE_;
+          }
         }
+      } else {
+        if (l12_[l1_pos + 1].l1_value > next_sample) {
+          uint32_t remaining = next_sample - l12_[l1_pos].l1_value;
+          size_t l2_pos = 0;
+          while (l2_pos < 3 && l12_[l1_pos][l2_pos] < remaining) {
+            remaining -= l12_[l1_pos][l2_pos++];
+          }
 
-        size_t word_pos = (l0_pos * popcnt_traits::l0_block_cover +
-                           l1_pos * popcnt_traits::l1_block_cover +
-                           l2_pos * popcnt_traits::l2_block_cover);
+          size_t word_pos = (l0_pos * popcnt_traits::l0_block_cover +
+                             l1_pos * popcnt_traits::l1_block_cover +
+                             l2_pos * popcnt_traits::l2_block_cover);
 
-        while (word_pos < data_.size() &&
-               remaining > __builtin_popcountll(data_[word_pos])) {
-          remaining -= __builtin_popcountll(data_[word_pos++]);
-        }
-
-        if (word_pos < data_.size()) {
-          samples_.emplace_back(select1(data_[word_pos], remaining) +
-            512 * (word_pos - (l0_pos * popcnt_traits::l0_block_cover)));
-          next_sample += SAMPLE_RATE_;
+          while (word_pos < data_.size() &&
+                 remaining > __builtin_popcountll(data_[word_pos])) {
+            remaining -= __builtin_popcountll(data_[word_pos++]);
+          }
+          if (word_pos < data_.size()) {
+            samples_.emplace_back(word_select1(data_[word_pos], remaining) +
+              64 * (word_pos - (l0_pos * popcnt_traits::l0_bit_size)));
+            next_sample += SAMPLE_RATE_;
+          }
         }
       }
 
@@ -92,18 +120,7 @@ public:
   }
 
 private:
-  inline size_t select0(size_t occ) const {
-    return 0;   
-  }
-
-  inline size_t select1(size_t occ) const {
-    size_t l0_pos = 0;
-    while (l0_pos < l0_.size() && l0_[l0_pos] < occ) { ++l0_pos; }
-
-    
-  }
-
-  inline uint32_t select1(uint64_t data, uint32_t rank) {
+  inline uint32_t word_select1(uint64_t data, uint32_t rank) const {
     // Select the bit position
     // From: https://graphics.stanford.edu/~seander/bithacks.html
     uint64_t v = data;     // Input value to find position with rank r
@@ -143,7 +160,84 @@ private:
       if (r > t) s--;
     }
     // s = 65 - s;
-    return 65 - s;
+    return 64 - s; // We want the rank to be in [0..64)
+  }
+
+  inline size_t select0(size_t occ) const {
+    size_t l0_pos = 0;
+    while (l0_pos + 1 < l0_.size() && l0_[l0_pos + 1] < occ) { ++l0_pos; }
+    occ -= l0_[l0_pos];
+
+    size_t l1_pos = samples_[occ / SAMPLE_RATE_];
+    if ((occ - 1) % SAMPLE_RATE_ == 0) { return l1_pos; }
+    else { l1_pos /= popcnt_traits::l1_bit_size; }
+    while (l1_pos + 1 < l12_.size() &&
+           (((l1_pos + 1) * popcnt_traits::l1_bit_size) - l12_[l1_pos + 1].l1_value) < occ) {
+      ++l1_pos;
+    }
+
+    occ -= (l1_pos * popcnt_traits::l1_bit_size) - l12_[l1_pos].l1_value;
+
+    size_t l2_pos = 0;
+    while (l2_pos < 3 && occ > popcnt_traits::l2_bit_size - l12_[l1_pos][l2_pos]) {
+      occ -= popcnt_traits::l2_bit_size - l12_[l1_pos][l2_pos++];
+    }
+
+    size_t last_pos = (popcnt_traits::l2_block_cover * l2_pos) +
+                      (popcnt_traits::l1_block_cover * l1_pos) +
+                      (popcnt_traits::l0_block_cover * l0_pos);
+
+    size_t additional_words = 0;
+    size_t popcnt = 0;
+    while ((popcnt =
+           __builtin_popcountll(~data_[last_pos + additional_words])) < occ) {
+      ++additional_words;
+      occ -= popcnt;
+    }
+
+    return (popcnt_traits::l2_bit_size * l2_pos) +
+      (popcnt_traits::l1_bit_size * l1_pos) +
+      (popcnt_traits::l0_bit_size * l0_pos) +
+      (additional_words * 64) +
+      word_select1(~data_[last_pos + additional_words], uint32_t(occ)); 
+  }
+
+  inline size_t select1(size_t occ) const {
+    size_t l0_pos = 0;
+    while (l0_pos + 1 < l0_.size() && l0_[l0_pos + 1] < occ) { ++l0_pos; }
+    occ -= l0_[l0_pos];
+
+    size_t l1_pos = samples_[occ / SAMPLE_RATE_];
+    if ((occ - 1) % SAMPLE_RATE_ == 0) { return l1_pos; }
+    else { l1_pos /= popcnt_traits::l1_bit_size; }
+    while (l1_pos + 1 < l12_.size() && l12_[l1_pos + 1].l1_value < occ) {
+      ++l1_pos;
+    }
+
+    occ -= l12_[l1_pos].l1_value;
+
+    size_t l2_pos = 0;
+    while (l2_pos < 3 && occ > l12_[l1_pos][l2_pos]) {
+      occ -= l12_[l1_pos][l2_pos++];
+    }
+
+    size_t last_pos = (popcnt_traits::l2_block_cover * l2_pos) +
+                      (popcnt_traits::l1_block_cover * l1_pos) +
+                      (popcnt_traits::l0_block_cover * l0_pos);
+
+    size_t additional_words = 0;
+    size_t popcnt = 0;
+    while ((popcnt =
+           __builtin_popcountll(data_[last_pos + additional_words])) < occ) {
+      ++additional_words;
+      occ -= popcnt;
+    }
+
+    return (popcnt_traits::l2_bit_size * l2_pos) +
+      (popcnt_traits::l1_bit_size * l1_pos) +
+      (popcnt_traits::l0_bit_size * l0_pos) +
+      (additional_words * 64) +
+      word_select1(data_[last_pos + additional_words], uint32_t(occ));
   }
 
 private:
