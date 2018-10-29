@@ -4,14 +4,12 @@ cache:
   apt: true
   ccache: true
 
-language: generic
-matrix:
-  include:
-    - os: linux
-      env:
-        - COMPILER_NAME=gcc
-        - CXX=g++-7
-        - CC=gcc-7
+# Use YAML anchors (&) and aliases (*) to more easily define
+# a product of build configurations by merging the env tables into a predefined
+# table (<<:)
+yaml_aliases:
+    - &base_linux_config
+      os: linux
       dist: trusty
       addons:
         apt:
@@ -25,6 +23,23 @@ matrix:
             #- python
           sources:
             - ubuntu-toolchain-r-test
+
+language: generic
+matrix:
+  include:
+    - <<: *base_linux_config
+      env:
+        - COMPILER_NAME=gcc
+        - CXX=g++-7
+        - CC=gcc-7
+        - BUILDMODE=Debug
+    - <<: *base_linux_config
+      env:
+        - COMPILER_NAME=gcc
+        - CXX=g++-7
+        - CC=gcc-7
+        - BUILDMODE=Release
+
 before_install:
   - git clone https://github.com/simongog/sdsl-lite.git
   - cd sdsl-lite
@@ -33,6 +48,6 @@ before_install:
 script:
   - mkdir build
   - cd build
-  - cmake -DCMAKE_BUILD_TYPE=Release ..
+  - cmake -DCMAKE_BUILD_TYPE=$BUILDMODE ..
   - make check
   - make
