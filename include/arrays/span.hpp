@@ -34,8 +34,8 @@ public:
   }
 
   inline span slice(size_t start, size_t end) const {
-    DCHECK(start <= m_size);
-    DCHECK(end <= m_size);
+    DCHECK(start <= size_);
+    DCHECK(end <= size_);
     DCHECK(start <= end);
     return span{ptr_ + start, end - start};
   }
