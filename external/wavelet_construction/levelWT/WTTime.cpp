@@ -102,7 +102,7 @@ void timeWT(symbol* s, long n, int rounds, char* inFile, char* outFile,
   parallel_for(long i=0;i<n;i++) s[i] = A[s[i]];
   free(A);
 
-  std::cout << "RESULT algo=wt_serial ";
+  std::cout << "RESULT algo=wt_level ";
 
   pair<WTnode*,long*> R;
 #ifdef MALLOC_COUNT
