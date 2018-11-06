@@ -37,11 +37,9 @@ public:
 
     auto bv = bit_vectors(levels, size);
 
-    // TODO: When not semi_xternal, this can/should be done way nicer.
+    // TODO: When not semi_external, this can/should be done way nicer.
     std::vector<AlphabetType> local_text(size);
-    for (size_t i = 0; i < size; i++) {
-      local_text[i] = text[i];
-    }
+    memcpy(local_text.data(), text, size * sizeof(AlphabetType));
 
     for (uint64_t level = 0; level < levels; ++level) {
       uint32_t cur_pos = 0;

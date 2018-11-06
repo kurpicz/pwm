@@ -49,16 +49,16 @@ public:
 
     std::vector<std::vector<uint64_t>> all_hists;
 
-#pragma omp parallel
+    #pragma omp parallel
     {
       const auto omp_rank = omp_get_thread_num();
       const auto omp_size = omp_get_num_threads();
 
-#pragma omp single
+      #pragma omp single
       all_hists = std::vector<std::vector<uint64_t>>(
           omp_size, std::vector<uint64_t>(alphabet_size + 1, 0));
 
-#pragma omp for
+      #pragma omp for
       for (uint64_t cur_pos = 0; cur_pos <= size - 64; cur_pos += 64) {
         uint64_t word = 0ULL;
         for (uint64_t i = 0; i < 64; ++i) {
@@ -95,8 +95,8 @@ public:
 
     bottom_up_compute_hist_and_borders_and_optional_zeros(size, levels, ctx);
 
-// TODO: Is this correct?
-#pragma omp parallel num_threads(levels)
+    // TODO: Is this correct?
+    #pragma omp parallel num_threads(levels)
     {
       uint64_t level = omp_get_thread_num();
       for (uint64_t i = 0; i < size; ++i) {

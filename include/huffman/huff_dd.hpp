@@ -62,7 +62,7 @@ public:
       return slice.slice(offset, offset + local_size);
     };
 
-#pragma omp parallel for
+    #pragma omp parallel for
     for (size_t shard = 0; shard < shards; shard++) {
       auto text = get_local_slice(shard, global_text);
 
@@ -104,7 +104,7 @@ public:
         global_sorted_text_allocation.data(),
         global_sorted_text_allocation.size()};
 
-#pragma omp parallel for
+    #pragma omp parallel for
     for (size_t shard = 0; shard < shards; shard++) {
       std::vector<uint64_t> const& local_level_sizes =
           builder.level_sizes_shards()[shard];

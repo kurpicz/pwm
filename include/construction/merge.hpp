@@ -369,7 +369,7 @@ inline auto merge_bit_vectors(uint64_t size,
   auto r = bit_vectors(levels, size);
   auto& _bv = r;
 
-#pragma omp parallel
+  #pragma omp parallel
   // for(size_t omp_rank = 0; omp_rank < shards; omp_rank++)
   {
     assert(size_t(omp_get_num_threads()) == shards);

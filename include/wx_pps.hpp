@@ -45,20 +45,20 @@ public:
     std::vector<AlphabetType> sorted_text(size);
     std::vector<uint64_t> offsets(1 << levels, 0);
 
-#pragma omp parallel
+    #pragma omp parallel
     {
       const auto omp_rank = omp_get_thread_num();
       const auto omp_size = omp_get_num_threads();
       const uint64_t alphabet_size = (1 << levels);
 
-#pragma omp single
+      #pragma omp single
       ctx = ctx_t(size, levels, omp_size);
 
       auto& bv = ctx.bv();
       auto& zeros = ctx.zeros();
 
-// While initializing the histogram, we also compute the first level
-#pragma omp for
+      // While initializing the histogram, we also compute the first level
+      #pragma omp for
       for (uint64_t cur_pos = 0; cur_pos <= size - 64; cur_pos += 64) {
         uint64_t word = 0ULL;
         for (uint64_t i = 0; i < 64; ++i) {
@@ -79,8 +79,8 @@ public:
         bv[0][size >> 6] = word;
       }
 
-// The number of 0's at the last level is the number of "even" characters
-#pragma omp single
+      // The number of 0's at the last level is the number of "even" characters
+      #pragma omp single
       for (uint64_t i = 0; i < alphabet_size; i += 2) {
         for (int32_t rank = 0; rank < omp_size; ++rank) {
           zeros[levels - 1] += ctx.hist(rank, i);
@@ -93,10 +93,10 @@ public:
         const uint64_t prefix_shift = (levels - level);
         const uint64_t cur_bit_shift = prefix_shift - 1;
 
-// Compute the histogram and the border for each bit prefix and
-// processor, i.e., for one fixed bit prefix we compute the prefix sum
-// over the number of occurrences at each processor
-#pragma omp for
+        // Compute the histogram and the border for each bit prefix and
+        // processor, i.e., for one fixed bit prefix we compute the prefix sum
+        // over the number of occurrences at each processor
+        #pragma omp for
         for (uint64_t i = 0; i < alphabet_size; i += (1ULL << prefix_shift)) {
           ctx.borders(0, i) = 0;
           ctx.hist(0, i) += ctx.hist(0, i + (1ULL << cur_bit_shift));
@@ -107,9 +107,9 @@ public:
           }
         }
 
-// Now we compute the offset for each bit prefix, i.e., the number of
-// lexicographically smaller characters
-#pragma omp single
+        // Now we compute the offset for each bit prefix, i.e., the number of
+        // lexicographically smaller characters
+        #pragma omp single
         {
           for (uint64_t i = 1; i < (1ULL << level); ++i) {
             const auto prev_rho = ctx.rho(level, i - 1);
@@ -127,8 +127,8 @@ public:
             zeros[level - 1] = offsets[1ULL << prefix_shift];
           }
         }
-// We add the offset to the borders (for performance)
-#pragma omp for
+        // We add the offset to the borders (for performance)
+        #pragma omp for
         for (int32_t rank = 0; rank < omp_size; ++rank) {
           for (uint64_t i = 0; i < alphabet_size; i += (1ULL << prefix_shift)) {
             ctx.borders(rank, i) += offsets[i];
@@ -142,8 +142,8 @@ public:
           borders_aligned[i >> prefix_shift] = ctx.borders(omp_rank, i);
         }
 
-// Sort the text using the computed (and aligned) borders
-#pragma omp for
+        // Sort the text using the computed (and aligned) borders
+        #pragma omp for
         for (uint64_t i = 0; i <= size - 64; i += 64) {
           for (uint64_t j = 0; j < 64; ++j) {
             const AlphabetType considerd_char = (text[i + j] >> cur_bit_shift);
@@ -159,12 +159,12 @@ public:
           }
         }
 
-#pragma omp barrier
+        #pragma omp barrier
 
-// Since we have sorted the text, we can simply scan it from left to
-// right and for the character at position $i$ we set the $i$-th bit in
-// the bit vector accordingly
-#pragma omp for
+        // Since we have sorted the text, we can simply scan it from left to
+        // right and for the character at position $i$ we set the $i$-th bit in
+        // the bit vector accordingly
+        #pragma omp for
         for (uint64_t cur_pos = 0; cur_pos <= size - 64; cur_pos += 64) {
           uint64_t word = 0ULL;
           for (uint64_t i = 0; i < 64; ++i) {

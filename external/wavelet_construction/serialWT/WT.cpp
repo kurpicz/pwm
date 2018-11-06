@@ -21,8 +21,8 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <iostream>
 
-#include "parallel.hpp"
-#include "utils.hpp"
+#include "../parallel.hpp"
+#include "../utils.hpp"
 #include "WT.hpp"
 
 using namespace std;

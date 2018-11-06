@@ -57,7 +57,7 @@ public:
       ctxs[shard] = ctx_t(local_size, levels, rho);
     }
 
-#pragma omp parallel
+    #pragma omp parallel
     {
       const uint64_t omp_rank = omp_get_thread_num();
       const uint64_t omp_size = omp_get_num_threads();
@@ -81,7 +81,7 @@ public:
     if constexpr (ctx_t::compute_zeros) {
       auto _zeros = std::vector<uint64_t>(levels, 0);
 
-#pragma omp parallel for
+      #pragma omp parallel for
       for (size_t level = 0; level < levels; level++) {
         for (size_t shard = 0; shard < ctxs.size(); shard++) {
           _zeros[level] += ctxs[shard].zeros()[level];

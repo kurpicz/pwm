@@ -10,6 +10,8 @@
 #include <tlx/cmdline_parser.hpp>
 #include <vector>
 
+#include <omp.h>
+
 #include "benchmark/algorithm.hpp"
 #include "util/alphabet_util.hpp"
 #include "util/file_util.hpp"
@@ -49,6 +51,8 @@ struct {
   bool memory = false;
   bool check = false;
   bool debug_print = false;
+  
+  int32_t number_threads;
 
   auto filter_parallel(bool is_parallel) {
     return (!run_only_parallel || is_parallel);
@@ -110,7 +114,9 @@ struct {
       } else {
         stxxl::syscall_file stxxl_file(path, stxxl::file::open_mode::RDONLY);
         const stxxlvector<uint_t> unreduced_vector(&stxxl_file);
-        text_size = std::min(uint64_t(unreduced_vector.size()), global_settings.prefix_size);
+        text_size = unreduced_vector.size();
+        if(global_settings.prefix_size > 0)
+          text_size = std::min(global_settings.prefix_size, text_size);
         input_for_algo = stxxlvector<uint_t>();
         max_char = reduce_alphabet<uint_t>(unreduced_vector, input_for_algo);
         levels = levels_for_max_char(max_char);
@@ -148,7 +154,9 @@ struct {
         std::cout << "input=" << path << ' '
                   << "characters=" << text_size << ' '
                   << "sigma=" << max_char + 1 << ' '
-                  << "word_width=" << global_settings.word_width << std::endl;
+                  << "word_width=" << global_settings.word_width << ' '
+                  << "threads=" << (a->is_parallel() ? global_settings.number_threads : 1)
+                  << std::endl;
 
         if constexpr (!ext_in && !ext_out){
           if (global_settings.debug_print || global_settings.check) {
@@ -399,6 +407,12 @@ int32_t main(int32_t argc, char const* argv[]) {
 
   if (!cp.process(argc, argv)) {
     return -1;
+  }
+  
+  #pragma omp parallel
+  {
+    #pragma omp single
+    global_settings.number_threads = omp_get_num_threads();
   }
 
   if (global_settings.external) {

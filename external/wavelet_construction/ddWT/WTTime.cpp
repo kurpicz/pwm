@@ -102,7 +102,7 @@ void timeWT(symbol* s, long n, int rounds, char* inFile, char* outFile,
   parallel_for(long i=0;i<n;i++) s[i] = A[s[i]];
   free(A);
 
-  std::cout << "RESULT algo=wt_serial ";
+  std::cout << "RESULT algo=wt_dd ";
 
   pair<WTnode*,long*> R;
 #ifdef MALLOC_COUNT
@@ -115,7 +115,6 @@ void timeWT(symbol* s, long n, int rounds, char* inFile, char* outFile,
 #else
   std::cout << "memory=no ";
 #endif
-
 
   std::cout << "runs=" << rounds << ' ';
   std::vector<float> times;
@@ -139,7 +138,7 @@ void timeWT(symbol* s, long n, int rounds, char* inFile, char* outFile,
             << "characters=" << n << ' '
             << "sigma=" << sigma << ' '
             << "word_width=" << sizeof(symbol) << ' '
-            << "threads=1" << std::endl;
+            << "threads=" << getWorkers() << std::endl;
 
   if(check) {
     cout << "checking...\n";
@@ -215,3 +214,4 @@ int parallel_main(int argc, char* argv[]) {
     S.del();
   }
 }
+

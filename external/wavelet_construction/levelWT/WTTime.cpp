@@ -116,7 +116,6 @@ void timeWT(symbol* s, long n, int rounds, char* inFile, char* outFile,
   std::cout << "memory=no ";
 #endif
 
-
   std::cout << "runs=" << rounds << ' ';
   std::vector<float> times;
   for (int i=0; i < rounds; i++) {
@@ -139,7 +138,7 @@ void timeWT(symbol* s, long n, int rounds, char* inFile, char* outFile,
             << "characters=" << n << ' '
             << "sigma=" << sigma << ' '
             << "word_width=" << sizeof(symbol) << ' '
-            << "threads=1" << std::endl;
+            << "threads=" << getWorkers() << std::endl;
 
   if(check) {
     cout << "checking...\n";
