@@ -48,3 +48,4 @@ Then, we create WTs and WMs with all our algorithms, use them to reconstruct the
 - Florian Kurpicz (author)
 - Johannes Fischer
 - Marvin Löbel
+- Jonas Ellert
