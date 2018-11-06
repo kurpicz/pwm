@@ -158,8 +158,9 @@ struct {
                   << "threads=" << (a->is_parallel() ? global_settings.number_threads : 1)
                   << std::endl;
 
-        if constexpr (!ext_in && !ext_out){
-          if (global_settings.debug_print || global_settings.check) {
+
+        if (global_settings.debug_print || global_settings.check) {
+          if constexpr (!ext_in && !ext_out){
             auto structure =
                 a->compute_bitvector(input_for_algo, text_size, levels);
             if (global_settings.debug_print) {
@@ -278,6 +279,11 @@ struct {
               }
               std::cout << std::endl;
             }
+          }
+          else {
+            std::cout << "WARNING: "
+                      << "debug_print and check are only available "
+                      << "for internal memory algorithms." << std::endl;
           }
         }
       }
