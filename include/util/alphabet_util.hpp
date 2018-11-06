@@ -46,12 +46,17 @@ static uint64_t reduce_alphabet(std::vector<AlphabetType>& text) {
 
 template <typename AlphabetType>
 static uint64_t reduce_alphabet(const stxxlvector<AlphabetType>& text,
-                                stxxlvector<AlphabetType>& result) {
+                                stxxlvector<AlphabetType>& result,
+                                uint64_t text_size) {
+  if(text_size <= 0) text_size = text.size();
+  else text_size = std::min(text_size, uint64_t(text.size()));
+
   uint64_t max_char = uint64_t(0);
   result.resize(0);
-  result.reserve(text.size());
+  result.reserve(text_size);
   stxxlreader<AlphabetType> reader(text);
   stxxlwriter<AlphabetType> writer(result);
+  uint64_t counter = 0;
 
   if constexpr (std::is_same<AlphabetType, uint8_t>::value) {
     std::array<uint64_t, std::numeric_limits<uint8_t>::max()> occ;
@@ -61,6 +66,7 @@ static uint64_t reduce_alphabet(const stxxlvector<AlphabetType>& text,
         occ[c] = ++max_char;
       }
       writer << occ[c] - 1;
+      if(++counter == text_size) break;
     }
     --max_char;
   } else {
@@ -71,6 +77,7 @@ static uint64_t reduce_alphabet(const stxxlvector<AlphabetType>& text,
         word_list.emplace(c, max_char++);
       }
       writer << static_cast<AlphabetType>(word_list.find(c)->second);
+      if(++counter == text_size) break;
     }
     --max_char;
   }

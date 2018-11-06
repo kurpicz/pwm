@@ -114,11 +114,12 @@ struct {
       } else {
         stxxl::syscall_file stxxl_file(path, stxxl::file::open_mode::RDONLY);
         const stxxlvector<uint_t> unreduced_vector(&stxxl_file);
-        text_size = unreduced_vector.size();
-        if(global_settings.prefix_size > 0)
-          text_size = std::min(global_settings.prefix_size, text_size);
         input_for_algo = stxxlvector<uint_t>();
-        max_char = reduce_alphabet<uint_t>(unreduced_vector, input_for_algo);
+        max_char = reduce_alphabet<uint_t>(
+            unreduced_vector,
+            input_for_algo,
+            global_settings.prefix_size);
+        text_size = input_for_algo.size();
         levels = levels_for_max_char(max_char);
       }
       std::cout << "Characters: " << text_size << std::endl;
