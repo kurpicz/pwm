@@ -20,10 +20,10 @@
 #include "util/decode.hpp"
 #include "util/file_util.hpp"
 
-using in_internal = typename input_type<memory_mode2::internal, 1>::type;
-using in_external = typename input_type<memory_mode2::external, 1>::type;
-using out_internal = typename output_type<memory_mode2::internal>::type;
-using out_external = typename output_type<memory_mode2::external>::type;
+using in_internal = typename input_type<memory_mode::internal, 1>::type;
+using in_external = typename input_type<memory_mode::external, 1>::type;
+using out_internal = typename output_type<memory_mode::internal>::type;
+using out_external = typename output_type<memory_mode::external>::type;
 
 TEST(wavelet, no_alphabet_reduction) {
   auto& algo_list = algorithm_list<in_internal, out_internal>::get_algorithm_list();
