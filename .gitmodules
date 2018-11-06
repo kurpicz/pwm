@@ -1,6 +1,6 @@
-[submodule "external/tclap"]
-	path = external/tclap
-	url = git://git.code.sf.net/p/tclap/code
 [submodule "external/googletest"]
 	path = external/googletest
 	url = https://github.com/google/googletest
+[submodule "external/tlx"]
+	path = external/tlx
+	url = https://github.com/tlx/tlx.git

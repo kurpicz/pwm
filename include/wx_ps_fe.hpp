@@ -9,17 +9,20 @@
 #pragma once
 
 #include <vector>
+
+#include "arrays/memory_types.hpp"
+#include "construction/wavelet_structure.hpp"
+#include "construction/ps_external.hpp"
+
 #include "wx_base.hpp"
-#include "util/ctx_single_level_external.hpp"
-#include "util/wavelet_structure.hpp"
-#include "util/ps_external.hpp"
-#include "util/memory_types.hpp"
 
 template <typename AlphabetType, bool is_tree_, int word_packing_mode>
-class wx_ps_fe {
+class wx_ps_fe : public wx_in_out_external<true, true>  {
 public:
-
-  WX_BASE(AlphabetType, is_tree_, false, false, memory_mode::external)
+  static constexpr bool  is_parallel = false;
+  static constexpr bool  is_tree   = is_tree_;
+  static constexpr uint8_t word_width  = sizeof(AlphabetType);
+  static constexpr bool  is_huffman_shaped = false;
 
   template <typename InputType>
   static external_bit_vectors compute(const InputType& text, const uint64_t size,

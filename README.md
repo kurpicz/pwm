@@ -7,21 +7,24 @@ We implemented different simple but very fast sequential and parallel wavelet tr
 The are based on two ideas, namely *prefix counting* (*pc*) and *prefix sorting* (*ps*).
 
 Using these ideas, we have implemented:
-1. a sequential version of the algorithms (*wx_ps* and *wx_ps*),
-2. a parallel version of the algorithms (*wx_pps* and *wx_pps*) and
-3. a parallel version of the algorithms using *domain decomposition* (*wx_dd_ps* and *wx_dd_ps*).
+1. a sequential version of the algorithms (*wx_pc* and *wx_ps*),
+2. a parallel version of the algorithms (*wx_ppc* and *wx_pps*) and
+3. a parallel version of the algorithms using *domain decomposition* (*wx_dd_pc* and *wx_dd_ps*).
 4. a version of *pc* that scans the text just twice and fills all levels but the first level at once (indicated by an *_ss*-suffix).
 
 In addition, there are also a naive construction algorithms (*wx_naive*).
 Replace _wx_ with either _wt_ or _wm_ for the corresponding WT- or WM-construction algorithm.
 
-### More Details
-A detailed description and benchmarks of the implemented algorithms can be found in this [arXiv preprint](https://arxiv.org/abs/1702.07578).
+A detailed description and benchmarks of the implemented algorithms can be found [here](https://doi.org/10.1137/1.9781611975055.2) ([arXiv preprint](https://arxiv.org/abs/1702.07578)).
 
-### Additional (*not yet described in detail*) Features
-#### Semi-External Construction
-The input ~~and output~~ of our algorithms (i.e., the text ~~and the final WT/WM~~) can be written to files directly, which greatly reduces the space required for construction.
-This feature can be enabled by calling our algorithms by adding the command line argument `-e`.
+    @inproceedings{Fischer2018WT,
+      author    = {Johannes Fischer and Florian Kurpicz and Marvin L{\"{o}}bel},
+      title     = {Simple, Fast and Lightweight Parallel Wavelet Tree Construction},
+      booktitle = {Proceedings of the 20th Workshop on Algorithm Engineering and Experiments ({ALENEX})},
+      pages     = {9--20},
+      publisher = {{SIAM}},
+      year      = {2018}
+    }
 
 ## How to get it?
 First clone this repository, then build all executables.

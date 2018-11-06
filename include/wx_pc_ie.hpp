@@ -10,20 +10,22 @@
 
 #include <vector>
 
-#include "util/ctx_single_level.hpp"
-#include "util/pc_external.hpp"
-#include "util/wavelet_structure.hpp"
-#include "util/memory_types.hpp"
+#include "arrays/memory_types.hpp"
+#include "construction/ctx_single_level.hpp"
+#include "construction/wavelet_structure.hpp"
+#include "construction/pc_external.hpp"
+
+#include "wx_base.hpp"
+
 
 template <typename AlphabetType, bool is_tree_>
-class wx_pc_ie {
+class wx_pc_ie : public wx_in_out_external<true, false> {
 
 public:
   static constexpr bool  is_parallel = false;
   static constexpr bool  is_tree   = is_tree_;
   static constexpr uint8_t word_width  = sizeof(AlphabetType);
   static constexpr bool  is_huffman_shaped = false;
-  static constexpr memory_mode mem_mode = memory_mode::external_input;
 
   template <typename InputType>
   static wavelet_structure compute(const InputType& text, const uint64_t size,
@@ -32,18 +34,21 @@ public:
     using ctx_t = ctx_single_level<is_tree>;
 
     if(size == 0) {
-      return wavelet_structure();
+      if constexpr (is_tree_)
+        return wavelet_structure_tree();
+      else
+        return wavelet_structure_matrix();
     }
 
     auto ctx = ctx_t(size, levels);
 
     pc_in_external(text, size, levels, ctx);
 
-    if (ctx_t::compute_zeros) {
-      return wavelet_structure(
-        std::move(ctx.bv()), std::move(ctx.zeros()));
+    if constexpr (ctx_t::compute_zeros) {
+      return wavelet_structure_matrix(std::move(ctx.bv()),
+                                      std::move(ctx.zeros()));
     } else {
-      return wavelet_structure(std::move(ctx.bv()));
+      return wavelet_structure_tree(std::move(ctx.bv()));
     }
   }
 }; // class wx_pc

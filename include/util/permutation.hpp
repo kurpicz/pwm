@@ -28,32 +28,32 @@ inline std::vector<uint64_t> bit_reverse_permutation(const uint64_t levels) {
   return result;
 }
 
-inline auto rho_identity(uint64_t /*levels*/) {
-  return [](auto /*level*/, auto i) -> uint64_t {
-    return i;
-  };
+inline auto rho_identity(const uint64_t /*levels*/) {
+  return [](const auto /*level*/, const auto i) -> uint64_t { return i; };
 }
 
-inline auto rho_bit_reverse(uint64_t levels) {
+// TODO: Flatten vector
+inline auto rho_bit_reverse(const uint64_t levels) {
   auto bit_reverse = std::vector<std::vector<uint64_t>>(levels);
   bit_reverse[levels - 1] = bit_reverse_permutation(levels - 1);
-  for(uint64_t level = levels - 1; level > 0; level--) {
+  for (uint64_t level = levels - 1; level > 0; level--) {
     bit_reverse[level - 1] =
-      std::vector<uint64_t>(bit_reverse[level].size() >> 1);
-    for(uint64_t i = 0; i < bit_reverse[level - 1].size(); i++) {
+        std::vector<uint64_t>(bit_reverse[level].size() >> 1);
+    for (uint64_t i = 0; i < bit_reverse[level - 1].size(); i++) {
       bit_reverse[level - 1][i] = bit_reverse[level][i] >> 1;
     }
   }
 
-  return [rho = std::move(bit_reverse)](auto level, auto i) -> uint64_t {
+  return [rho = std::move(bit_reverse)](const auto level,
+                                        const auto i) -> uint64_t {
     return rho[level][i];
   };
 }
 
-template<bool is_tree>
+template <bool is_tree>
 struct rho_dispatch {};
 
-template<>
+template <>
 struct rho_dispatch<true> {
   using type = decltype(rho_identity(0));
 
@@ -62,7 +62,7 @@ struct rho_dispatch<true> {
   }
 };
 
-template<>
+template <>
 struct rho_dispatch<false> {
   using type = decltype(rho_bit_reverse(0));
 

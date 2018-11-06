@@ -9,37 +9,46 @@
 #pragma once
 
 #include <vector>
-#include <cmath>
-#include "wx_base.hpp"
-#include "util/ctx_single_level.hpp"
-#include "util/wavelet_structure.hpp"
-#include "util/ps.hpp"
-#include "util/memory_types.hpp"
 
+#include "construction/ctx_single_level.hpp"
+#include "construction/ps.hpp"
+#include "construction/wavelet_structure.hpp"
+
+#include "wx_base.hpp"
 
 template <typename AlphabetType, bool is_tree_>
-class wx_ps {
-public:
+class wx_ps : public wx_in_out_external<false, false>  {
 
-  WX_BASE(AlphabetType, is_tree_, false, false, memory_mode::internal)
+public:
+  static constexpr bool is_parallel = false;
+  static constexpr bool is_tree = is_tree_;
+  static constexpr uint8_t word_width = sizeof(AlphabetType);
+  static constexpr bool is_huffman_shaped = false;
+
+  using ctx_t = ctx_single_level<is_tree>;
 
   template <typename InputType>
-  static wavelet_structure compute(const InputType& text, const uint64_t size,
-    const uint64_t levels) {
+  static wavelet_structure
+  compute(const InputType& text, const uint64_t size, const uint64_t levels) {
 
-    using ctx_t = ctx_single_level<is_tree_>;
-
-    if(size == 0) { return wavelet_structure(); }
+    if (size == 0) {
+      if constexpr (ctx_t::compute_zeros) {
+        return wavelet_structure_matrix();
+      } else {
+        return wavelet_structure_tree();
+      }
+    }
 
     auto ctx = ctx_t(size, levels);
 
     auto sorted_text = std::vector<AlphabetType>(size);
     ps(text, size, levels, ctx, sorted_text.data());
 
-    if (ctx_t::compute_zeros)  {
-      return wavelet_structure(std::move(ctx.bv()), std::move(ctx.zeros()));
+    if constexpr (ctx_t::compute_zeros) {
+      return wavelet_structure_matrix(std::move(ctx.bv()),
+                                      std::move(ctx.zeros()));
     } else {
-      return wavelet_structure(std::move(ctx.bv()));
+      return wavelet_structure_tree(std::move(ctx.bv()));
     }
   }
 }; // class wx_ps

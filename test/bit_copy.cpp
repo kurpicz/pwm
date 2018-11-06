@@ -8,8 +8,8 @@
 
 #include <gtest/gtest.h>
 
-#include "test/util.hpp"
-#include "util/merge.hpp"
+#include "construction/merge.hpp"
+#include "util/util.hpp"
 #include "util/debug.hpp"
 
 void bit_compare(
