@@ -12,6 +12,8 @@
 #include <mutex>
 #include <condition_variable>
 
+#define PSE_VERBOSE if (false)
+
 template <typename AlphabetType, typename ContextType, typename InputType>
 external_bit_vectors ps_out_external(const InputType& text, uint64_t const size, const uint64_t levels,
   ContextType& ctx) {
@@ -430,7 +432,7 @@ struct wx_ps_fe_builder<InputType, true, 0> {
 template <typename InputType, int word_packing_mode>
 external_bit_vectors wx_ps_fe_builder<InputType, false, word_packing_mode>::build(const InputType& text, uint64_t const size, const uint64_t levels) {
 
-  std::cout << "PS external (MATRIX, WORDPACKING " << word_packing_mode << ")" << std::endl;
+  PSE_VERBOSE std::cout << "PS external (MATRIX, WORDPACKING " << word_packing_mode << ")" << std::endl;
   external_bit_vectors result(levels, size, 0);
   std::vector<uint64_t>& zeros = result.zeros();
   zeros.resize(levels);
@@ -473,7 +475,7 @@ external_bit_vectors wx_ps_fe_builder<InputType, false, word_packing_mode>::buil
   uint64_t left_size = 0;
   uint64_t right_size = 0;
 
-  std::cout << "Level 1 of " << levels << " (initial scan)... " << std::endl;
+  PSE_VERBOSE std::cout << "Level 1 of " << levels << " (initial scan)... " << std::endl;
   {
     leftCur->reserve(size / (64 / levels) + 1);
     rightCur->reserve(size / (64 / levels) + 1);
@@ -523,7 +525,7 @@ external_bit_vectors wx_ps_fe_builder<InputType, false, word_packing_mode>::buil
 
   // scans (top down WT construction in left-right-buffers)
   for(unsigned i = 1; i < levels - 1; i++) {
-    std::cout << "Level " << i + 1 << " of " << levels << "... " << std::endl;
+    PSE_VERBOSE std::cout << "Level " << i + 1 << " of " << levels << "... " << std::endl;
 
     const unsigned bits = levels - i;
     const unsigned values_per_word = 64 / bits;
@@ -592,7 +594,7 @@ external_bit_vectors wx_ps_fe_builder<InputType, false, word_packing_mode>::buil
     delete rightWriter;
   }
 
-  std::cout << "Level " << levels << " of " << levels << " (final scan)... " << std::endl;
+  PSE_VERBOSE std::cout << "Level " << levels << " of " << levels << " (final scan)... " << std::endl;
 
   zeros[levels - 2] = left_size;
   leftReader = new reader_type(*leftCur, left_size, 1);
@@ -630,7 +632,7 @@ external_bit_vectors wx_ps_fe_builder<InputType, false, word_packing_mode>::buil
 
   result_writer.finish();
 
-  std::cout << "Done." << std::endl << std::endl;
+  PSE_VERBOSE std::cout << "Done." << std::endl << std::endl;
 
   return result;
 }
@@ -639,7 +641,7 @@ external_bit_vectors wx_ps_fe_builder<InputType, false, word_packing_mode>::buil
 template <typename InputType, int word_packing_mode>
 external_bit_vectors wx_ps_fe_builder<InputType, true, word_packing_mode>::build(const InputType& text, uint64_t const size, const uint64_t levels) {
 
-  std::cout << "PS external (TREE, WORDPACKING " << word_packing_mode << ")" << std::endl;
+  PSE_VERBOSE std::cout << "PS external (TREE, WORDPACKING " << word_packing_mode << ")" << std::endl;
   external_bit_vectors result(levels, size, 0);
 
   using input_reader_type = typename InputType::bufreader_type;
@@ -684,7 +686,7 @@ external_bit_vectors wx_ps_fe_builder<InputType, true, word_packing_mode>::build
   for(unsigned i = 0; i <= levels; i++)
     hist[i].resize(pow(2, i));
 
-  std::cout << "Level 1 of " << levels << " (initial scan)... " << std::endl;
+  PSE_VERBOSE std::cout << "Level 1 of " << levels << " (initial scan)... " << std::endl;
   // Initial Scan:
   {
     leftCur->reserve(size / (64 / levels) + 1);
@@ -744,7 +746,7 @@ external_bit_vectors wx_ps_fe_builder<InputType, true, word_packing_mode>::build
 
   // scans (top down WT construction in left-right-buffers)
   for(unsigned i = 1; i < levels - 1; i++) {
-    std::cout << "Level " << i + 1 << " of " << levels << "... " << std::endl;
+    PSE_VERBOSE std::cout << "Level " << i + 1 << " of " << levels << "... " << std::endl;
 
     const unsigned bits = levels - i;
     const unsigned values_per_word = 64 / bits;
@@ -824,7 +826,7 @@ external_bit_vectors wx_ps_fe_builder<InputType, true, word_packing_mode>::build
     delete rightWriter;
   }
 
-  std::cout << "Level " << levels << " of " << levels << " (final scan)... " << std::endl;
+  PSE_VERBOSE std::cout << "Level " << levels << " of " << levels << " (final scan)... " << std::endl;
 
   leftReader = new reader_type(*leftCur, left_size, 1);
   rightReader = new reader_type(*rightCur, right_size, 1);
@@ -875,7 +877,7 @@ external_bit_vectors wx_ps_fe_builder<InputType, true, word_packing_mode>::build
 
   result_writer.finish();
 
-  std::cout << "Done." << std::endl << std::endl;
+  PSE_VERBOSE std::cout << "Done." << std::endl << std::endl;
 
   return result;
 }
@@ -884,7 +886,7 @@ external_bit_vectors wx_ps_fe_builder<InputType, true, word_packing_mode>::build
 template <typename InputType>
 external_bit_vectors wx_ps_fe_builder<InputType, false, 0>::build(const InputType& text, uint64_t const size, const uint64_t levels) {
 
-  std::cout << "PS external (MATRIX, NO WORDPACKING)" << std::endl;
+  PSE_VERBOSE std::cout << "PS external (MATRIX, NO WORDPACKING)" << std::endl;
   external_bit_vectors result(levels, size, 0);
   std::vector<uint64_t>& zeros = result.zeros();
   zeros.resize(levels);
@@ -924,7 +926,7 @@ external_bit_vectors wx_ps_fe_builder<InputType, false, 0>::build(const InputTyp
 
   result_writer_type result_writer(bv);
 
-  std::cout << "Level 1 of " << levels << " (initial scan)... " << std::endl;
+  PSE_VERBOSE std::cout << "Level 1 of " << levels << " (initial scan)... " << std::endl;
   {
     leftCur->reserve(size);
     rightCur->reserve(size);
@@ -972,7 +974,7 @@ external_bit_vectors wx_ps_fe_builder<InputType, false, 0>::build(const InputTyp
 
   // scans (top down WT construction in left-right-buffers)
   for(unsigned i = 1; i < levels - 1; i++) {
-    std::cout << "Level " << i + 1 << " of " << levels << "... " << std::endl;
+    PSE_VERBOSE std::cout << "Level " << i + 1 << " of " << levels << "... " << std::endl;
 
     std::swap(leftCur, leftPrev);
     std::swap(rightCur, rightPrev);
@@ -1038,7 +1040,7 @@ external_bit_vectors wx_ps_fe_builder<InputType, false, 0>::build(const InputTyp
     delete rightWriter;
   }
 
-  std::cout << "Level " << levels << " of " << levels << " (final scan)... " << std::endl;
+  PSE_VERBOSE std::cout << "Level " << levels << " of " << levels << " (final scan)... " << std::endl;
 
   zeros[levels - 2] = leftCur->size();
   leftReader = new reader_type(*leftCur);
@@ -1078,7 +1080,7 @@ external_bit_vectors wx_ps_fe_builder<InputType, false, 0>::build(const InputTyp
 
   result_writer.finish();
 
-  std::cout << "Done." << std::endl << std::endl;
+  PSE_VERBOSE std::cout << "Done." << std::endl << std::endl;
 
   return result;
 }
@@ -1087,7 +1089,7 @@ external_bit_vectors wx_ps_fe_builder<InputType, false, 0>::build(const InputTyp
 template <typename InputType>
 external_bit_vectors wx_ps_fe_builder<InputType, true, 0>::build(const InputType& text, uint64_t const size, const uint64_t levels) {
 
-  std::cout << "PS external (TREE, NO WORDPACKING)" << std::endl;
+  PSE_VERBOSE std::cout << "PS external (TREE, NO WORDPACKING)" << std::endl;
   external_bit_vectors result(levels, size, 0);
 
   using input_reader_type = typename InputType::bufreader_type;
@@ -1129,7 +1131,7 @@ external_bit_vectors wx_ps_fe_builder<InputType, true, 0>::build(const InputType
   for(unsigned i = 0; i <= levels; i++)
     hist[i].resize(pow(2, i));
 
-  std::cout << "Level 1 of " << levels << " (initial scan)... " << std::endl;
+  PSE_VERBOSE std::cout << "Level 1 of " << levels << " (initial scan)... " << std::endl;
   // Initial Scan:
   {
     leftCur->reserve(size / (64 / levels) + 1);
@@ -1187,7 +1189,7 @@ external_bit_vectors wx_ps_fe_builder<InputType, true, 0>::build(const InputType
 
   // scans (top down WT construction in left-right-buffers)
   for(unsigned i = 1; i < levels - 1; i++) {
-    std::cout << "Level " << i + 1 << " of " << levels << "... " << std::endl;
+    PSE_VERBOSE std::cout << "Level " << i + 1 << " of " << levels << "... " << std::endl;
 
     std::swap(leftCur, leftPrev);
     std::swap(rightCur, rightPrev);
@@ -1264,7 +1266,7 @@ external_bit_vectors wx_ps_fe_builder<InputType, true, 0>::build(const InputType
     delete rightWriter;
   }
 
-  std::cout << "Level " << levels << " of " << levels << " (final scan)... " << std::endl;
+  PSE_VERBOSE std::cout << "Level " << levels << " of " << levels << " (final scan)... " << std::endl;
 
   leftReader = new reader_type(*leftCur);
   rightReader = new reader_type(*rightCur);
@@ -1317,7 +1319,7 @@ external_bit_vectors wx_ps_fe_builder<InputType, true, 0>::build(const InputType
 
   result_writer.finish();
 
-  std::cout << "Done." << std::endl << std::endl;
+  PSE_VERBOSE std::cout << "Done." << std::endl << std::endl;
 
   return result;
 }

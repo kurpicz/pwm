@@ -68,14 +68,16 @@ public:
 
   // may return a non empty vector
   template <typename vector_type>
-  static vector_type getVector(unsigned id) {
+  static vector_type getVector(unsigned id, bool verbose = false) {
     bool exists = id < files().size();
     if(exists && !used()[id]) {
       return vector_type(files()[id]);
     } else {
-      std::cerr << "Trying to use EM buffer file with ID \"" << id << "\", ";
-      if(!exists) std::cerr << "which has not been specified." << std::endl;
-      else std::cerr << "which is already in use." << std::endl;
+      if(verbose) {
+        std::cerr << "Trying to use EM buffer file with ID \"" << id << "\", ";
+        if (!exists) std::cerr << "which has not been specified." << std::endl;
+        else std::cerr << "which is already in use." << std::endl;
+      }
       return vector_type();
     }
   }
