@@ -8,9 +8,9 @@
 
 #pragma once
 
+#include "stxxl_helper.hpp"
 #include <cstring>
 #include <iostream>
-#include "stxxl_helper.hpp"
 
 template <typename IndexType, class size_function>
 class flat_two_dim_array_external {
@@ -18,10 +18,12 @@ class flat_two_dim_array_external {
 public:
   flat_two_dim_array_external() {}
 
-  flat_two_dim_array_external(const uint64_t levels, const uint64_t size, const int fileid = -1)
-  : levels_(levels) {
+  flat_two_dim_array_external(const uint64_t levels,
+                              const uint64_t size,
+                              const int fileid = -1)
+      : levels_(levels) {
     assert(levels > 0);
-    if(fileid > -1)
+    if (fileid > -1)
       data_ = stxxl_files::getVector<stxxlvector<IndexType>>(fileid);
     data_.clear();
     level_sizes_.reserve(levels + 1);
@@ -41,7 +43,7 @@ public:
   }
 
   flat_two_dim_array_external(flat_two_dim_array_external&& other)
-  : levels_(other.levels_), data_size_(other.data_size_) { 
+      : levels_(other.levels_), data_size_(other.data_size_) {
     level_sizes_.swap(other.level_sizes_);
     level_offsets_.swap(other.level_offsets_);
     zeros_.swap(other.zeros_);
@@ -49,12 +51,13 @@ public:
   }
 
   flat_two_dim_array_external(const flat_two_dim_array_external&) = delete;
-  flat_two_dim_array_external& operator =(const flat_two_dim_array_external&) = delete;
+  flat_two_dim_array_external&
+  operator=(const flat_two_dim_array_external&) = delete;
 
   inline uint64_t levels() const {
     return levels_;
   }
-  
+
   inline uint64_t data_size() const {
     return data_size_;
   }
@@ -63,25 +66,26 @@ public:
     return level_sizes_[level];
   }
 
-  inline std::vector<uint64_t> &level_sizes() {
+  inline std::vector<uint64_t>& level_sizes() {
     return level_sizes_;
   }
 
-  inline std::vector<uint64_t> &level_offsets() {
+  inline std::vector<uint64_t>& level_offsets() {
     return level_offsets_;
   }
 
-  inline const stxxlvector_offset<IndexType> operator [](const uint64_t level) const {
+  inline const stxxlvector_offset<IndexType>
+  operator[](const uint64_t level) const {
     return stxxlvector_offset<IndexType>(data_, level_offsets_[level]);
   }
 
-  inline stxxlvector_offset<IndexType> operator [](const uint64_t level) {
+  inline stxxlvector_offset<IndexType> operator[](const uint64_t level) {
     return stxxlvector_offset<IndexType>(data_, level_offsets_[level]);
   }
 
-/*  inline const stxxlvector<IndexType>& raw_data() const {
-    return data_;
-  }*/
+  /*  inline const stxxlvector<IndexType>& raw_data() const {
+      return data_;
+    }*/
 
   inline stxxlvector<IndexType>& raw_data() {
     return data_;
@@ -91,10 +95,10 @@ public:
     data_ = raw;
   }
 
-  inline std::vector<uint64_t>& zeros()  {
+  inline std::vector<uint64_t>& zeros() {
     return zeros_;
   }
-  
+
   inline void setZeros(const std::vector<uint64_t>& vec) {
     zeros_ = vec;
   }
@@ -105,7 +109,7 @@ private:
   std::vector<uint64_t> level_sizes_;
   std::vector<uint64_t> level_offsets_;
   stxxlvector<IndexType> data_;
-  
+
   std::vector<uint64_t> zeros_;
 }; // class flat_two_dim_array
 

@@ -17,19 +17,19 @@
 #include <memory>
 #include <vector>
 
+#include "arrays/memory_types.hpp"
+#include "arrays/stxxl_helper.hpp"
 #include "construction/wavelet_structure.hpp"
 #include "util/common.hpp"
 #include "util/type_for_bytes.hpp"
-#include "arrays/stxxl_helper.hpp"
-#include "arrays/memory_types.hpp"
 
-template<typename in_type, typename out_type>
+template <typename in_type, typename out_type>
 class construction_algorithm;
 
-template<typename Algorithm>
+template <typename Algorithm>
 class concrete_algorithm;
 
-template<typename in_type, typename out_type>
+template <typename in_type, typename out_type>
 class algorithm_list {
 public:
   algorithm_list(const algorithm_list& other) = delete;
@@ -42,7 +42,8 @@ public:
     return list;
   }
 
-  inline void register_algorithm(construction_algorithm<in_type, out_type> const* algo) {
+  inline void
+  register_algorithm(construction_algorithm<in_type, out_type> const* algo) {
     algorithms_.push_back(algo);
   }
 
@@ -71,38 +72,40 @@ private:
   std::vector<construction_algorithm<in_type, out_type> const*> algorithms_;
 }; // class algorithm_list
 
-template<typename in_type, typename out_type>
+template <typename in_type, typename out_type>
 class construction_algorithm {
 public:
   construction_algorithm(std::string name, std::string description)
       : name_(name), description_(description) {
-    algorithm_list<in_type, out_type>::get_algorithm_list().register_algorithm(this);
+    algorithm_list<in_type, out_type>::get_algorithm_list().register_algorithm(
+        this);
   }
 
-  virtual out_type compute_bitvector(const in_type &global_text,
+  virtual out_type compute_bitvector(const in_type& global_text,
                                      const uint64_t size,
                                      const uint64_t levels) const = 0;
 
-  inline float median_time(const in_type &global_text,
-                    const uint64_t size,
-                    const uint64_t levels,
-                    const uint64_t runs) const {
+  inline float median_time(const in_type& global_text,
+                           const uint64_t size,
+                           const uint64_t levels,
+                           const uint64_t runs) const {
     std::vector<float> times;
     for (uint64_t run = 0; run < runs; ++run) {
       auto begin_time = std::chrono::high_resolution_clock::now();
       compute_bitvector(global_text, size, levels);
       auto end_time = std::chrono::high_resolution_clock::now();
       auto duration = end_time - begin_time;
-      auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
+      auto millis =
+          std::chrono::duration_cast<std::chrono::milliseconds>(duration);
       times.emplace_back(static_cast<float>(millis.count()));
     }
     std::sort(times.begin(), times.end());
     return (times[(runs - 1) >> 1] + times[(runs >> 1)]) / 2;
   }
 
-  inline void memory_peak(const in_type &global_text,
-                   const uint64_t size,
-                   const uint64_t levels) const {
+  inline void memory_peak(const in_type& global_text,
+                          const uint64_t size,
+                          const uint64_t levels) const {
     compute_bitvector(global_text, size, levels);
   }
 
@@ -131,13 +134,12 @@ private:
   std::string description_;
 }; // class construction_algorithm
 
-//TODO: merge concrete algorithm, construction algorithm
+// TODO: merge concrete algorithm, construction algorithm
 
 template <typename Algorithm>
 class concrete_algorithm
-    : construction_algorithm<
-        typename algo_type<Algorithm>::in,
-        typename algo_type<Algorithm>::out> {
+    : construction_algorithm<typename algo_type<Algorithm>::in,
+                             typename algo_type<Algorithm>::out> {
 public:
   using in_type = typename algo_type<Algorithm>::in;
   using out_type = typename algo_type<Algorithm>::out;
@@ -145,7 +147,7 @@ public:
   concrete_algorithm(std::string name, std::string description)
       : construction_algorithm<in_type, out_type>(name, description) {}
 
-  out_type compute_bitvector(const in_type &global_text,
+  out_type compute_bitvector(const in_type& global_text,
                              const uint64_t size,
                              const uint64_t levels) const {
     return Algorithm::compute(global_text, size, levels);

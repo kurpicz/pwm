@@ -11,14 +11,13 @@
 #include "util/common.hpp"
 #include "util/type_for_bytes.hpp"
 
-#include "memory_modes.hpp"
 #include "bit_vectors.hpp"
 #include "flat_two_dim_array.hpp"
-#include "stxxl_helper.hpp"
 #include "flat_two_dim_array_external.hpp"
+#include "memory_modes.hpp"
+#include "stxxl_helper.hpp"
 
 #include "construction/wavelet_structure.hpp"
-
 
 template <bool external, int word_width>
 struct input_type;
@@ -28,7 +27,7 @@ struct output_type;
 
 template <int word_width>
 struct input_type<memory_mode::internal, word_width> {
-  using type = typename type_for_bytes<word_width>::type *;
+  using type = typename type_for_bytes<word_width>::type*;
 };
 
 template <int word_width>
@@ -48,11 +47,9 @@ struct output_type<memory_mode::external> {
 
 template <typename Algorithm>
 struct algo_type {
-  using in = typename input_type<
-      Algorithm::external_in,
-      Algorithm::word_width>::type;
-  using out = typename output_type<
-      Algorithm::external_out>::type;
+  using in =
+      typename input_type<Algorithm::external_in, Algorithm::word_width>::type;
+  using out = typename output_type<Algorithm::external_out>::type;
 };
 
 /******************************************************************************/

@@ -10,8 +10,8 @@
 
 enum memory_mode : bool { internal = false, external = true };
 
-//template <bool value>
-//struct boolToMemMode {
+// template <bool value>
+// struct boolToMemMode {
 //  static constexpr memory_mode result =
 //      value ? memory_mode::external : memory_mode::internal;
 //};

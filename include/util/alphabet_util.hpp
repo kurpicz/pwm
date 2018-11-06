@@ -45,7 +45,8 @@ static uint64_t reduce_alphabet(std::vector<AlphabetType>& text) {
 }
 
 template <typename AlphabetType>
-static uint64_t reduce_alphabet(const stxxlvector<AlphabetType>& text, stxxlvector<AlphabetType>& result) {
+static uint64_t reduce_alphabet(const stxxlvector<AlphabetType>& text,
+                                stxxlvector<AlphabetType>& result) {
   uint64_t max_char = uint64_t(0);
   result.resize(0);
   result.reserve(text.size());
@@ -55,7 +56,7 @@ static uint64_t reduce_alphabet(const stxxlvector<AlphabetType>& text, stxxlvect
   if constexpr (std::is_same<AlphabetType, uint8_t>::value) {
     std::array<uint64_t, std::numeric_limits<uint8_t>::max()> occ;
     occ.fill(0);
-    for(const auto &c : reader) {
+    for (const auto& c : reader) {
       if (occ[c] == 0) {
         occ[c] = ++max_char;
       }
@@ -64,7 +65,7 @@ static uint64_t reduce_alphabet(const stxxlvector<AlphabetType>& text, stxxlvect
     --max_char;
   } else {
     std::unordered_map<AlphabetType, uint64_t> word_list;
-    for(const auto &c : reader) {
+    for (const auto& c : reader) {
       auto result = word_list.find(c);
       if (result == word_list.end()) {
         word_list.emplace(c, max_char++);

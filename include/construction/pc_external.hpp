@@ -5,26 +5,29 @@
  *
  * All rights reserved. Published under the BSD-2 license in the LICENSE file.
  ******************************************************************************/
- 
+
 #pragma once
 
 template <typename InputType, typename ContextType>
-void pc_in_external(const InputType& text, const uint64_t size, const uint64_t levels,
-  ContextType& ctx) {
+void pc_in_external(const InputType& text,
+                    const uint64_t size,
+                    const uint64_t levels,
+                    ContextType& ctx) {
 
   using stxxl_vector_type = InputType;
   using stxxl_reader_type = typename stxxl_vector_type::bufreader_type;
-  using borders_type = typename std::remove_reference<decltype(ctx.borders())>::type;
+  using borders_type =
+      typename std::remove_reference<decltype(ctx.borders())>::type;
   uint64_t borders_size = ctx.borders().size();
 
   uint64_t cur_max_char = (1 << levels);
   uint64_t cur_pos = 0;
-  
+
   auto& zeros = ctx.zeros();
   auto& bv = ctx.bv();
   std::vector<borders_type> borders_v(levels);
-  borders_type * borders = borders_v.data();
-    
+  borders_type* borders = borders_v.data();
+
   stxxl_reader_type reader(text);
   // While initializing the histogram, we also compute the first level
   for (; cur_pos + 64 <= size; cur_pos += 64) {
@@ -67,9 +70,8 @@ void pc_in_external(const InputType& text, const uint64_t size, const uint64_t l
     // histogram of the bit prefixes
     cur_max_char >>= 1;
     for (uint64_t i = 0; i < cur_max_char; ++i) {
-      ctx.hist(level, i)
-        = ctx.hist(level + 1, i << 1)
-        + ctx.hist(level + 1, (i << 1) + 1);
+      ctx.hist(level, i) =
+          ctx.hist(level + 1, i << 1) + ctx.hist(level + 1, (i << 1) + 1);
     }
 
     borders[level].resize(borders_size);
@@ -80,9 +82,9 @@ void pc_in_external(const InputType& text, const uint64_t size, const uint64_t l
       auto const prev_rho = ctx.rho(level, i - 1);
 
       borders[level][ctx.rho(level, i)] =
-        borders[level][prev_rho] + ctx.hist(level, prev_rho);
+          borders[level][prev_rho] + ctx.hist(level, prev_rho);
 
-      if (ContextType::compute_rho)  {
+      if (ContextType::compute_rho) {
         ctx.set_rho(level - 1, i - 1, prev_rho >> 1);
       }
     }
@@ -102,8 +104,8 @@ void pc_in_external(const InputType& text, const uint64_t size, const uint64_t l
       const uint64_t prefix_shift = (levels - level);
       const uint64_t cur_bit_shift = prefix_shift - 1;
       const uint64_t pos = borders[level][cur_char >> prefix_shift]++;
-      bv[level][pos >> 6] |= (((cur_char >> cur_bit_shift) & 1ULL)
-        << (63ULL - (pos & 63ULL)));
+      bv[level][pos >> 6] |=
+          (((cur_char >> cur_bit_shift) & 1ULL) << (63ULL - (pos & 63ULL)));
     }
   }
 
