@@ -8,10 +8,13 @@
 
 #pragma once
 
-#include "util/type_for_bytes.hpp"
+#include <chrono>
+#include <sstream>
 #include <stxxl/bits/io/linuxaio_file.h>
 #include <stxxl/bits/io/syscall_file.h>
 #include <stxxl/vector>
+#include "util/type_for_bytes.hpp"
+#include "util/filesystem_util.hpp"
 
 template <typename value_type>
 using stxxlvector = typename stxxl::VECTOR_GENERATOR<value_type>::result;
@@ -33,8 +36,9 @@ private:
                               stxxl::file::open_mode::CREAT |
                               stxxl::file::open_mode::TRUNC;
 
+  std::string instance_id;
+  std::vector<std::string> instance_directories;
   std::vector<stxxl::syscall_file*> instance_files;
-  std::vector<bool> instance_file_status;
 
   static stxxl_files& getInstance() {
     static stxxl_files instance;
@@ -45,11 +49,30 @@ private:
     return getInstance().instance_files;
   }
 
-  static auto& used() {
-    return getInstance().instance_file_status;
+  static auto& directories() {
+    return getInstance().instance_directories;
   }
 
-  stxxl_files(){};
+  static auto& id() {
+    return getInstance().instance_id;
+  }
+
+  static std::string toBase36(uint64_t id) {
+    std::ostringstream result;
+    while(id > 0) {
+      char c = id % 36;
+      result << ((c < 10) ? char(c + 48) : char(c - 10 + 97));
+      id /= 36;
+    }
+    return result.str();
+  }
+
+  stxxl_files(){
+    auto now = std::chrono::high_resolution_clock::now();
+    auto now_ms = std::chrono::time_point_cast<std::chrono::milliseconds>(now);
+    auto epoch = now_ms.time_since_epoch();
+    instance_id = toBase36(epoch.count());
+  };
 
   ~stxxl_files() {
     for (auto ptr : instance_files) {
@@ -61,34 +84,35 @@ public:
   stxxl_files(const stxxl_files&) = delete;
   void operator=(const stxxl_files&) = delete;
 
-  static void addFile(const std::string& path) {
-    files().push_back(new stxxl::syscall_file(path, mode));
-    used().push_back(false);
+  static bool addDirectory(const std::string& path, bool verbose = false) {
+    directories().push_back(path);
+    if(!createDirectory(path)) {
+      if(verbose) std::cerr << "Cannot use given EM directory: " << path << std::endl;
+      return false;
+    }
+    else if(verbose) std::cout << "Using EM directory: " << path << std::endl;
+    return true;
   }
 
   // may return a non empty vector
   template <typename vector_type>
-  static vector_type getVector(unsigned id, bool verbose = false) {
-    bool exists = id < files().size();
-    if (exists && !used()[id]) {
-      return vector_type(files()[id]);
+  static vector_type getVector(unsigned dir_id, bool verbose = false) {
+    if(dir_id < directories().size()) {
+      std::ostringstream file_stream;
+      file_stream << directories()[dir_id] << "/" << id() << "."
+                  << "vec" << sizeof(typename vector_type::value_type) * 8 << "."
+                  << files().size();
+      std::string file = file_stream.str();
+      stxxl::syscall_file* stxxl_file = new stxxl::syscall_file(file, mode);
+      files().push_back(stxxl_file);
+      return vector_type(stxxl_file);
     } else {
       if (verbose) {
-        std::cerr << "Trying to use EM buffer file with ID \"" << id << "\", ";
-        if (!exists)
-          std::cerr << "which has not been specified." << std::endl;
-        else
-          std::cerr << "which is already in use." << std::endl;
+        std::cerr << "Trying to use EM directory with ID \"" << dir_id << "\", ";
+        std::cerr << "which has not been specified." << std::endl;
       }
       return vector_type();
     }
-  }
-
-  // only reset counter, if all vectors created by nextVector() have been
-  // destroyed
-  static void reset_usage() {
-    for (unsigned i = 0; i < used().size(); ++i)
-      used()[i] = false;
   }
 };
 

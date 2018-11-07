@@ -41,12 +41,12 @@ struct {
   bool external = false;
   bool external_in = false;
   bool external_out = false;
-  std::string em_file1;
-  std::string em_file2;
-  std::string em_file3;
-  std::string em_file4;
-  std::string em_file5;
-  std::string em_file6;
+  std::string em_dir1;
+  std::string em_dir2;
+  std::string em_dir3;
+  std::string em_dir4;
+  std::string em_dir5;
+  std::string em_dir6;
 
   bool memory = false;
   bool check = false;
@@ -296,29 +296,29 @@ struct {
   int32_t startStep2() {
 
     if constexpr (ext_in || ext_out) {
-      std::vector<std::string> em_files;
-      if(!global_settings.em_file1.empty())
-        em_files.push_back(global_settings.em_file1);
-      if(!global_settings.em_file2.empty())
-        em_files.push_back(global_settings.em_file2);
-      if(!global_settings.em_file3.empty())
-        em_files.push_back(global_settings.em_file3);
-      if(!global_settings.em_file4.empty())
-        em_files.push_back(global_settings.em_file4);
-      if(!global_settings.em_file5.empty())
-        em_files.push_back(global_settings.em_file5);
-      if(!global_settings.em_file6.empty())
-        em_files.push_back(global_settings.em_file6);
+      std::vector<std::string> em_dirs;
+      if(!global_settings.em_dir1.empty())
+        em_dirs.push_back(global_settings.em_dir1);
+      if(!global_settings.em_dir2.empty())
+        em_dirs.push_back(global_settings.em_dir2);
+      if(!global_settings.em_dir3.empty())
+        em_dirs.push_back(global_settings.em_dir3);
+      if(!global_settings.em_dir4.empty())
+        em_dirs.push_back(global_settings.em_dir4);
+      if(!global_settings.em_dir5.empty())
+        em_dirs.push_back(global_settings.em_dir5);
+      if(!global_settings.em_dir6.empty())
+        em_dirs.push_back(global_settings.em_dir6);
 
       std::cout << "Setting up external memory...";
-      if(em_files.size() > 0) {
+      if(em_dirs.size() > 0) {
         std::cout << std::endl;
-        for(unsigned i = 0; i < em_files.size(); ++i) {
-          std::cout << "EM buffer file " << (i + 1) << ": " << em_files[i] << std::endl;
-          stxxl_files::addFile(em_files[i]);
+        for(unsigned i = 0; i < em_dirs.size(); ++i) {
+          std::cout << "EM buffer directory " << (i + 1) << ": " << em_dirs[i] << std::endl;
+          stxxl_files::addDirectory(em_dirs[i]);
         }
       } else {
-        std::cout << " No EM buffer files given." << std::endl;
+        std::cout << " No EM directories files given." << std::endl;
       }
     }
 
@@ -392,17 +392,17 @@ int32_t main(int32_t argc, char const* argv[]) {
               "Run only semi-external algorithms (stream input from disk).");
   cp.add_flag('\0', "external_out", global_settings.external_out,
               "Run only semi-external algorithms (stream output to disk).");
-  cp.add_string('\0', "em_file1", global_settings.em_file1,
+  cp.add_string('\0', "em_dir1", global_settings.em_dir1,
                 "Use specified file as external memory");
-  cp.add_string('\0', "em_file2", global_settings.em_file2,
+  cp.add_string('\0', "em_dir2", global_settings.em_dir2,
                 "Use specified file as external memory");
-  cp.add_string('\0', "em_file3", global_settings.em_file3,
+  cp.add_string('\0', "em_dir3", global_settings.em_dir3,
                 "Use specified file as external memory");
-  cp.add_string('\0', "em_file4", global_settings.em_file4,
+  cp.add_string('\0', "em_dir4", global_settings.em_dir4,
                 "Use specified file as external memory");
-  cp.add_string('\0', "em_file5", global_settings.em_file5,
+  cp.add_string('\0', "em_dir5", global_settings.em_dir5,
                 "Use specified file as external memory");
-  cp.add_string('\0', "em_file6", global_settings.em_file6,
+  cp.add_string('\0', "em_dir6", global_settings.em_dir6,
                 "Use specified file as external memory");
 
   cp.add_flag('\0', "memory", global_settings.memory,

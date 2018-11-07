@@ -35,7 +35,7 @@ set(INTERNAL_SRCS
 set(INTERNAL_LIBS rt dl)
 
 add_executable(benchmark ${INTERNAL_SRCS})
-target_link_libraries(benchmark tlx_command_line stxxl ${INTERNAL_LIBS})
+target_link_libraries(benchmark tlx_command_line stxxl stdc++fs ${INTERNAL_LIBS})
 
 if(ENABLE_MALLOC_COUNT)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ansi")

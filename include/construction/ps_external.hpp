@@ -289,7 +289,7 @@ struct word_packed_reader_without_padding {
         current_shift(-bits) {
 
     assert((size * bits_per_value) / 64 <= vec.size());
-    assert((size * bits_per_value) / 64 + 1 >= size);
+    assert((size * bits_per_value) / 64 + 1 >= vec.size());
   }
 
   inline ValueType next() {
@@ -450,7 +450,6 @@ wx_ps_fe_builder<InputType, false, word_packing_mode>::build(
 
   out_vector_type& bv = result.raw_data();
 
-  stxxl_files::reset_usage();
   word_packed_vector_type v1 =
       stxxl_files::getVector<word_packed_vector_type>(1);
   word_packed_vector_type v2 =
@@ -670,7 +669,6 @@ wx_ps_fe_builder<InputType, true, word_packing_mode>::build(
 
   out_vector_type& bv = result.raw_data();
 
-  stxxl_files::reset_usage();
   word_packed_vector_type v1 =
       stxxl_files::getVector<word_packed_vector_type>(1);
   word_packed_vector_type v2 =
@@ -934,7 +932,6 @@ external_bit_vectors wx_ps_fe_builder<InputType, false, 0>::build(
 
   out_vector_type& bv = result.raw_data();
 
-  stxxl_files::reset_usage();
   vector_type v1 = stxxl_files::getVector<vector_type>(1);
   vector_type v2 = stxxl_files::getVector<vector_type>(2);
   vector_type v3 = stxxl_files::getVector<vector_type>(3);
@@ -1140,7 +1137,6 @@ external_bit_vectors wx_ps_fe_builder<InputType, true, 0>::build(
 
   out_vector_type& bv = result.raw_data();
 
-  stxxl_files::reset_usage();
   vector_type v1 = stxxl_files::getVector<vector_type>(1);
   vector_type v2 = stxxl_files::getVector<vector_type>(2);
   vector_type v3 = stxxl_files::getVector<vector_type>(3);

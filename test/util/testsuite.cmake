@@ -64,6 +64,7 @@ macro(generic_run_test test_target test_file
     ${driver_dep}
     ${TEST_TARGET_DEPS}
     stxxl
+    stdc++fs
   )
 
   target_include_directories(${test_target}_testrunner PUBLIC
