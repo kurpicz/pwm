@@ -8,13 +8,9 @@
 
 #pragma once
 
-#include <bitset>
 #include <vector>
-
-#include "arrays/memory_types.hpp"
-#include "construction/ctx_single_level.hpp"
 #include "construction/ps_external.hpp"
-#include "construction/wavelet_structure.hpp"
+#include "construction/wavelet_structure_external.hpp"
 
 #include "wx_base.hpp"
 
@@ -27,17 +23,20 @@ public:
   static constexpr bool is_huffman_shaped = false;
 
   template <typename InputType>
-  static external_bit_vectors
+  static wavelet_structure_external
   compute(const InputType& text, const uint64_t size, const uint64_t levels) {
 
-    using ctx_t = ctx_single_level<is_tree_>;
+    std::ostringstream name;
+    name << "w" << (is_tree_ ? "t" : "m") << "_ps_oe";
 
-    if (size == 0) {
-      return external_bit_vectors();
+    auto result = wavelet_structure_external::getNoHuffman(
+        size, levels, is_tree_, 0, name.str());
+
+    if (size > 0) {
+      ps_out_external<AlphabetType, is_tree_>(text, result);
     }
 
-    auto ctx = ctx_t(size, levels);
-    return ps_out_external<AlphabetType>(text, size, levels, ctx);
+    return result;
   }
 }; // class wx_ps
 

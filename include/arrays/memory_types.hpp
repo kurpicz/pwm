@@ -8,16 +8,13 @@
 
 #pragma once
 
-#include "util/common.hpp"
 #include "util/type_for_bytes.hpp"
 
-#include "bit_vectors.hpp"
-#include "flat_two_dim_array.hpp"
-#include "flat_two_dim_array_external.hpp"
 #include "memory_modes.hpp"
 #include "stxxl_helper.hpp"
 
 #include "construction/wavelet_structure.hpp"
+#include "construction/wavelet_structure_external.hpp"
 
 template <bool external, int word_width>
 struct input_type;
@@ -42,7 +39,7 @@ struct output_type<memory_mode::internal> {
 
 template <>
 struct output_type<memory_mode::external> {
-  using type = external_bit_vectors;
+  using type = wavelet_structure_external;
 };
 
 template <typename Algorithm>

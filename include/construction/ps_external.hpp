@@ -8,44 +8,42 @@
 
 #pragma once
 
-#include <condition_variable>
-#include <mutex>
-#include <thread>
+#include "construction/ctx_single_level_external.hpp"
+#include "construction/wavelet_structure_external.hpp"
 
 #define PSE_VERBOSE if (false)
 
-template <typename AlphabetType, typename ContextType, typename InputType>
-external_bit_vectors ps_out_external(const InputType& text,
-                                     uint64_t const size,
-                                     const uint64_t levels,
-                                     ContextType& ctx) {
+template <typename AlphabetType, bool is_tree, typename InputType>
+void ps_out_external(
+    const InputType& text,
+    wavelet_structure_external& result) {
+  auto levels = result.levels();
+  auto size = result.text_size();
+
+  auto& bvs = wavelet_structure_external_writer::bvs(result);
+  auto& zeros = wavelet_structure_external_writer::zeros(result);
+  auto& hist = wavelet_structure_external_writer::histograms(result);
+  auto const& level_offsets = result.level_offsets();
+
+  ctx_single_level_external<is_tree> ctx(size, levels);
+  auto& borders = ctx.borders();
 
   auto sorted_text_vec = std::vector<AlphabetType>(size);
-  AlphabetType* const sorted_text = sorted_text_vec.data();
-
-  external_bit_vectors result(levels, size);
-
-  using stxxl_vector_type = typename std::remove_reference<decltype(
-      external_bit_vectors().raw_data())>::type;
-  using stxxl_writer_type = typename stxxl_vector_type::bufwriter_type;
+  AlphabetType* sorted_text = sorted_text_vec.data();
 
   uint64_t cur_max_char = (1 << levels);
 
-  auto& zeros = ctx.zeros();
-  auto& borders = ctx.borders();
-  auto& level_offsets = result.level_offsets();
-
-  // stxxl vector of uint64_t
-  stxxl_vector_type& bv = result.raw_data();
+  using result_writer_type =
+      typename std::remove_reference<decltype(bvs)>::type::bufwriter_type;
 
   // While initializing the histogram, we also compute the first level
   uint64_t cur_pos = 0;
   {
-    stxxl_writer_type writer(bv);
+    result_writer_type writer(bvs);
     for (; cur_pos + 64 <= size; cur_pos += 64) {
       uint64_t word = 0ULL;
       for (uint64_t i = 0; i < 64; ++i) {
-        ++ctx.hist(levels, text[cur_pos + i]);
+        ++hist[levels][text[cur_pos + i]];
         word <<= 1;
         word |= ((text[cur_pos + i] >> (levels - 1)) & 1ULL);
       }
@@ -54,7 +52,7 @@ external_bit_vectors ps_out_external(const InputType& text,
     if (size & 63ULL) {
       uint64_t word = 0ULL;
       for (uint64_t i = 0; i < size - cur_pos; ++i) {
-        ++ctx.hist(levels, text[cur_pos + i]);
+        ++hist[levels][text[cur_pos + i]];
         word <<= 1;
         word |= ((text[cur_pos + i] >> (levels - 1)) & 1ULL);
       }
@@ -64,9 +62,9 @@ external_bit_vectors ps_out_external(const InputType& text,
   }
 
   // The number of 0s at the last level is the number of "even" characters
-  if (ContextType::compute_zeros) {
+  if constexpr (!is_tree) {
     for (uint64_t i = 0; i < cur_max_char; i += 2) {
-      zeros[levels - 1] += ctx.hist(levels, i);
+      zeros[levels - 1] += hist[levels][i];
     }
   }
 
@@ -76,8 +74,8 @@ external_bit_vectors ps_out_external(const InputType& text,
     // histogram of the bit prefixes
     cur_max_char >>= 1;
     for (uint64_t i = 0; i < cur_max_char; ++i) {
-      ctx.hist(level, i) =
-          ctx.hist(level + 1, i << 1) + ctx.hist(level + 1, (i << 1) + 1);
+      hist[level][i] =
+          hist[level + 1][i << 1] + hist[level + 1][(i << 1) + 1];
     }
 
     // Compute the starting positions of characters with respect to their
@@ -87,15 +85,15 @@ external_bit_vectors ps_out_external(const InputType& text,
       auto const prev_rho = ctx.rho(level, i - 1);
 
       borders[ctx.rho(level, i)] =
-          borders[prev_rho] + ctx.hist(level, prev_rho);
+          borders[prev_rho] + hist[level][prev_rho];
 
-      if (ContextType::compute_rho) {
+      if constexpr (!is_tree) {
         ctx.set_rho(level - 1, i - 1, prev_rho >> 1);
       }
     }
 
     // The number of 0s is the position of the first 1 in the previous level
-    if (ContextType::compute_zeros) {
+    if constexpr (!is_tree) {
       zeros[level - 1] = borders[1];
     }
 
@@ -107,7 +105,7 @@ external_bit_vectors ps_out_external(const InputType& text,
     }
 
     {
-      stxxl_writer_type writer(bv.begin() + level_offsets[level]);
+      result_writer_type writer(bvs.begin() + level_offsets[level]);
       // Since we have sorted the text, we can simply scan it from left to right
       // and for the character at position $i$ we set the $i$-th bit in the
       // bit vector accordingly
@@ -130,14 +128,6 @@ external_bit_vectors ps_out_external(const InputType& text,
       }
     }
   }
-
-  if (levels > 1) { // TODO check condition
-    ctx.hist(0, 0) = ctx.hist(1, 0) + ctx.hist(1, 1);
-  }
-
-  result.setZeros(zeros);
-
-  return result;
 }
 
 struct {
@@ -175,8 +165,7 @@ struct word_packed_reader_with_padding {
         values_per_word(64 / bits),
         values_in_last_word((size - 1) % (64 / bits) + 1),
         reader(vec) {
-
-    assert((vec.size() - 1) * values_per_word < size);
+    assert(vec.size() * values_per_word < size + values_per_word);
     assert(vec.size() * values_per_word >= size);
 
     current_word_counter = 65;
@@ -396,59 +385,51 @@ struct reader_writer_types<value_type, 2> {
   using writer_type = word_packed_writer_without_padding<value_type>;
 };
 
-template <typename InputType, bool is_tree, int word_packing_mode = 1>
+template <typename InputType, bool is_tree, int word_packing_mode = 2>
 struct wx_ps_fe_builder {
-  static external_bit_vectors
-  build(const InputType& text, uint64_t const size, const uint64_t levels);
+  static void build(const InputType& text, wavelet_structure_external& result);
 };
 
 template <typename InputType, int word_packing_mode>
 struct wx_ps_fe_builder<InputType, false, word_packing_mode> {
-  static external_bit_vectors
-  build(const InputType& text, uint64_t const size, const uint64_t levels);
+  static void build(const InputType& text, wavelet_structure_external& result);
 };
 
 template <typename InputType, int word_packing_mode>
 struct wx_ps_fe_builder<InputType, true, word_packing_mode> {
-  static external_bit_vectors
-  build(const InputType& text, uint64_t const size, const uint64_t levels);
+  static void build(const InputType& text, wavelet_structure_external& result);
 };
 
 template <typename InputType>
 struct wx_ps_fe_builder<InputType, false, 0> {
-  static external_bit_vectors
-  build(const InputType& text, uint64_t const size, const uint64_t levels);
+  static void build(const InputType& text, wavelet_structure_external& result);
 };
 
 template <typename InputType>
 struct wx_ps_fe_builder<InputType, true, 0> {
-  static external_bit_vectors
-  build(const InputType& text, uint64_t const size, const uint64_t levels);
+  static void build(const InputType& text, wavelet_structure_external& result);
 };
 
 // MATRIX WITH WORD PACKING
 template <typename InputType, int word_packing_mode>
-external_bit_vectors
-wx_ps_fe_builder<InputType, false, word_packing_mode>::build(
-    const InputType& text, uint64_t const size, const uint64_t levels) {
-
+void wx_ps_fe_builder<InputType, false, word_packing_mode>::build(
+    const InputType& text, wavelet_structure_external& result) {
   PSE_VERBOSE std::cout << "PS external (MATRIX, WORDPACKING "
                         << word_packing_mode << ")" << std::endl;
-  external_bit_vectors result(levels, size, 0);
-  std::vector<uint64_t>& zeros = result.zeros();
-  zeros.resize(levels);
+  auto levels = result.levels();
+  auto size = result.text_size();
+
+  auto& zeros = wavelet_structure_external_writer::zeros(result);
+  auto& bvs = wavelet_structure_external_writer::bvs(result);
 
   using input_reader_type = typename InputType::bufreader_type;
-  using out_vector_type =
-      typename std::remove_reference<decltype(result.raw_data())>::type;
-  using result_writer_type = typename out_vector_type::bufwriter_type;
+  using result_writer_type =
+      typename std::remove_reference<decltype(bvs)>::type::bufwriter_type;
 
-  using word_packed_vector_type = stxxlvector<uint64_t>;
   using value_type = typename InputType::value_type;
+  using word_packed_vector_type = stxxlvector<uint64_t>;
   using reader_type = word_packed_reader_with_padding<value_type>;
   using writer_type = word_packed_writer_with_padding<value_type>;
-
-  out_vector_type& bv = result.raw_data();
 
   word_packed_vector_type v1 =
       stxxl_files::getVectorTemporary<word_packed_vector_type>(1);
@@ -475,7 +456,7 @@ wx_ps_fe_builder<InputType, false, word_packing_mode>::build(
   writer_type* leftWriter;
   writer_type* rightWriter;
 
-  result_writer_type result_writer(bv);
+  result_writer_type result_writer(bvs);
 
   uint64_t left_size = 0;
   uint64_t right_size = 0;
@@ -641,33 +622,28 @@ wx_ps_fe_builder<InputType, false, word_packing_mode>::build(
   result_writer.finish();
 
   PSE_VERBOSE std::cout << "Done." << std::endl << std::endl;
-
-  return result;
 }
 
 // TREE WITH WORD PACKING
 template <typename InputType, int word_packing_mode>
-external_bit_vectors
-wx_ps_fe_builder<InputType, true, word_packing_mode>::build(
-    const InputType& text, uint64_t const size, const uint64_t levels) {
-
+void wx_ps_fe_builder<InputType, true, word_packing_mode>::build(
+    const InputType& text, wavelet_structure_external& result) {
   PSE_VERBOSE std::cout << "PS external (TREE, WORDPACKING "
                         << word_packing_mode << ")" << std::endl;
-  external_bit_vectors result(levels, size, 0);
+  auto levels = result.levels();
+  auto size = result.text_size();
+
+  auto& hist = wavelet_structure_external_writer::histograms(result);
+  auto& bvs = wavelet_structure_external_writer::bvs(result);
 
   using input_reader_type = typename InputType::bufreader_type;
-  using out_vector_type =
-      typename std::remove_reference<decltype(result.raw_data())>::type;
-  using result_writer_type = typename out_vector_type::bufwriter_type;
+  using result_writer_type =
+      typename std::remove_reference<decltype(bvs)>::type::bufwriter_type;
 
-  using word_packed_vector_type = stxxlvector<uint64_t>;
   using value_type = typename InputType::value_type;
-  using reader_type =
-      typename reader_writer_types<value_type, word_packing_mode>::reader_type;
-  using writer_type =
-      typename reader_writer_types<value_type, word_packing_mode>::writer_type;
-
-  out_vector_type& bv = result.raw_data();
+  using word_packed_vector_type = stxxlvector<uint64_t>;
+  using reader_type = word_packed_reader_with_padding<value_type>;
+  using writer_type = word_packed_writer_with_padding<value_type>;
 
   word_packed_vector_type v1 =
       stxxl_files::getVectorTemporary<word_packed_vector_type>(1);
@@ -694,14 +670,10 @@ wx_ps_fe_builder<InputType, true, word_packing_mode>::build(
   writer_type* leftWriter;
   writer_type* rightWriter;
 
-  result_writer_type result_writer(bv);
+  result_writer_type result_writer(bvs);
 
   uint64_t left_size = 0;
   uint64_t right_size = 0;
-
-  std::vector<std::vector<uint64_t>> hist(levels + 1);
-  for (unsigned i = 0; i <= levels; i++)
-    hist[i].resize(pow(2, i));
 
   PSE_VERBOSE std::cout << "Level 1 of " << levels << " (initial scan)... "
                         << std::endl;
@@ -906,31 +878,27 @@ wx_ps_fe_builder<InputType, true, word_packing_mode>::build(
   result_writer.finish();
 
   PSE_VERBOSE std::cout << "Done." << std::endl << std::endl;
-
-  return result;
 }
 
 // MATRIX WITHOUT WORD PACKING
 template <typename InputType>
-external_bit_vectors wx_ps_fe_builder<InputType, false, 0>::build(
-    const InputType& text, uint64_t const size, const uint64_t levels) {
-
+void wx_ps_fe_builder<InputType, false, 0>::build(
+    const InputType& text, wavelet_structure_external& result) {
   PSE_VERBOSE std::cout << "PS external (MATRIX, NO WORDPACKING)" << std::endl;
-  external_bit_vectors result(levels, size, 0);
-  std::vector<uint64_t>& zeros = result.zeros();
-  zeros.resize(levels);
+  auto levels = result.levels();
+  auto size = result.text_size();
+
+  auto& zeros = wavelet_structure_external_writer::zeros(result);
+  auto& bvs = wavelet_structure_external_writer::bvs(result);
 
   using input_reader_type = typename InputType::bufreader_type;
-  using out_vector_type =
-      typename std::remove_reference<decltype(result.raw_data())>::type;
-  using result_writer_type = typename out_vector_type::bufwriter_type;
+  using result_writer_type =
+  typename std::remove_reference<decltype(bvs)>::type::bufwriter_type;
 
   using value_type = typename InputType::value_type;
   using vector_type = stxxlvector<value_type>;
   using reader_type = typename vector_type::bufreader_type;
   using writer_type = typename vector_type::bufwriter_type;
-
-  out_vector_type& bv = result.raw_data();
 
   vector_type v1 = stxxl_files::getVectorTemporary<vector_type>(1);
   vector_type v2 = stxxl_files::getVectorTemporary<vector_type>(2);
@@ -953,7 +921,7 @@ external_bit_vectors wx_ps_fe_builder<InputType, false, 0>::build(
   writer_type* leftWriter;
   writer_type* rightWriter;
 
-  result_writer_type result_writer(bv);
+  result_writer_type result_writer(bvs);
 
   PSE_VERBOSE std::cout << "Level 1 of " << levels << " (initial scan)... "
                         << std::endl;
@@ -1113,29 +1081,27 @@ external_bit_vectors wx_ps_fe_builder<InputType, false, 0>::build(
   result_writer.finish();
 
   PSE_VERBOSE std::cout << "Done." << std::endl << std::endl;
-
-  return result;
 }
 
 // TREE WITHOUT WORD PACKING
 template <typename InputType>
-external_bit_vectors wx_ps_fe_builder<InputType, true, 0>::build(
-    const InputType& text, uint64_t const size, const uint64_t levels) {
-
+void wx_ps_fe_builder<InputType, true, 0>::build(
+    const InputType& text, wavelet_structure_external& result) {
   PSE_VERBOSE std::cout << "PS external (TREE, NO WORDPACKING)" << std::endl;
-  external_bit_vectors result(levels, size, 0);
+  auto levels = result.levels();
+  auto size = result.text_size();
+
+  auto& hist = wavelet_structure_external_writer::histograms(result);
+  auto& bvs = wavelet_structure_external_writer::bvs(result);
 
   using input_reader_type = typename InputType::bufreader_type;
-  using out_vector_type =
-      typename std::remove_reference<decltype(result.raw_data())>::type;
-  using result_writer_type = typename out_vector_type::bufwriter_type;
+  using result_writer_type =
+  typename std::remove_reference<decltype(bvs)>::type::bufwriter_type;
 
   using value_type = typename InputType::value_type;
   using vector_type = stxxlvector<value_type>;
   using reader_type = typename vector_type::bufreader_type;
   using writer_type = typename vector_type::bufwriter_type;
-
-  out_vector_type& bv = result.raw_data();
 
   vector_type v1 = stxxl_files::getVectorTemporary<vector_type>(1);
   vector_type v2 = stxxl_files::getVectorTemporary<vector_type>(2);
@@ -1158,11 +1124,7 @@ external_bit_vectors wx_ps_fe_builder<InputType, true, 0>::build(
   writer_type* leftWriter;
   writer_type* rightWriter;
 
-  result_writer_type result_writer(bv);
-
-  std::vector<std::vector<uint64_t>> hist(levels + 1);
-  for (unsigned i = 0; i <= levels; i++)
-    hist[i].resize(pow(2, i));
+  result_writer_type result_writer(bvs);
 
   PSE_VERBOSE std::cout << "Level 1 of " << levels << " (initial scan)... "
                         << std::endl;
@@ -1364,8 +1326,6 @@ external_bit_vectors wx_ps_fe_builder<InputType, true, 0>::build(
   result_writer.finish();
 
   PSE_VERBOSE std::cout << "Done." << std::endl << std::endl;
-
-  return result;
 }
 
 /******************************************************************************/

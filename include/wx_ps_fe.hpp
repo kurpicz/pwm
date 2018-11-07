@@ -9,10 +9,9 @@
 #pragma once
 
 #include <vector>
-
-#include "arrays/memory_types.hpp"
+#include <sstream>
 #include "construction/ps_external.hpp"
-#include "construction/wavelet_structure.hpp"
+#include "construction/wavelet_structure_external.hpp"
 
 #include "wx_base.hpp"
 
@@ -25,14 +24,25 @@ public:
   static constexpr bool is_huffman_shaped = false;
 
   template <typename InputType>
-  static external_bit_vectors
-  compute(const InputType& text, const uint64_t size, const uint64_t levels) {
+  static wavelet_structure_external
+  compute(const InputType& text,
+          const uint64_t size,
+          const uint64_t levels) {
 
-    if (size == 0) {
-      return external_bit_vectors();
+    std::ostringstream name;
+    name << "w" << (is_tree_ ? "t" : "m") << "_ps_fe_wp" << word_packing_mode;
+
+    auto result = wavelet_structure_external::getNoHuffman(
+        size, levels, is_tree_, 0, name.str());
+
+    if (size > 0) {
+      auto& bvs = wavelet_structure_external_writer::bvs(result);
+      bvs.resize(0);
+      wx_ps_fe_builder<InputType, is_tree_, word_packing_mode>::build(
+          text, result);
     }
-    return wx_ps_fe_builder<InputType, is_tree_, word_packing_mode>::build(
-        text, size, levels);
+
+    return result;
   }
 }; // class wx_ps
 

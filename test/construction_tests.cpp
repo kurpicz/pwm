@@ -80,17 +80,14 @@ TEST(wavelet, no_alphabet_reduction_external_output) {
       test::roundtrip_batch([&](const std::string& s){
           auto vec = std::vector<uint8_t>(s.begin(), s.end());
           uint64_t levels = no_reduction_alphabet(vec);
-          auto bvz = a->compute_bitvector(vec.data(), vec.size() , levels);
-          if(vec.size() == 0) {
-            ASSERT_EQ(bvz.levels(), uint64_t(0)) << "Failure (Algorithm): " << a->name();
+          auto bvz = a->compute_bitvector(vec.data(), vec.size() , levels)
+              .getInternalStructure();
+          if (a->is_tree()) {
+            auto decoded_s = decode_wt(bvz.bvs(), vec.size());
+            ASSERT_EQ(s, decoded_s) << "Failure (Algorithm): " << a->name();
           } else {
-            if (a->is_tree()) {
-              auto decoded_s = decode_wt(bvz, vec.size());
-              ASSERT_EQ(s, decoded_s) << "Failure (Algorithm): " << a->name();
-            } else {
-              auto decoded_s = decode_wm(bvz, bvz.zeros(), vec.size());
-              ASSERT_EQ(s, decoded_s) << "Failure (Algorithm): " << a->name();
-            }
+            auto decoded_s = decode_wm(bvz.bvs(), bvz.zeros(), vec.size());
+            ASSERT_EQ(s, decoded_s) << "Failure (Algorithm): " << a->name();
           }
       });
     }
@@ -110,17 +107,15 @@ TEST(wavelet, no_alphabet_reduction_external_input_output) {
           for(const auto symbol : vec)
             vec_external.push_back(symbol);
 
-          auto bvz = a->compute_bitvector(vec_external, vec.size() , levels);
-          if(vec.size() == 0) {
-            ASSERT_EQ(bvz.levels(), uint64_t(0)) << "Failure (Algorithm): " << a->name();
+          auto bvz = a->compute_bitvector(vec_external, vec.size() , levels)
+              .getInternalStructure();
+
+          if (a->is_tree()) {
+            auto decoded_s = decode_wt(bvz.bvs(), vec.size());
+            ASSERT_EQ(s, decoded_s) << "Failure (Algorithm): " << a->name();
           } else {
-            if (a->is_tree()) {
-              auto decoded_s = decode_wt(bvz, vec.size());
-              ASSERT_EQ(s, decoded_s) << "Failure (Algorithm): " << a->name();
-            } else {
-              auto decoded_s = decode_wm(bvz, bvz.zeros(), vec.size());
-              ASSERT_EQ(s, decoded_s) << "Failure (Algorithm): " << a->name();
-            }
+            auto decoded_s = decode_wm(bvz.bvs(), bvz.zeros(), vec.size());
+            ASSERT_EQ(s, decoded_s) << "Failure (Algorithm): " << a->name();
           }
       });
     }
