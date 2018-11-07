@@ -451,13 +451,13 @@ wx_ps_fe_builder<InputType, false, word_packing_mode>::build(
   out_vector_type& bv = result.raw_data();
 
   word_packed_vector_type v1 =
-      stxxl_files::getVector<word_packed_vector_type>(1);
+      stxxl_files::getVectorTemporary<word_packed_vector_type>(1);
   word_packed_vector_type v2 =
-      stxxl_files::getVector<word_packed_vector_type>(2);
+      stxxl_files::getVectorTemporary<word_packed_vector_type>(2);
   word_packed_vector_type v3 =
-      stxxl_files::getVector<word_packed_vector_type>(3);
+      stxxl_files::getVectorTemporary<word_packed_vector_type>(3);
   word_packed_vector_type v4 =
-      stxxl_files::getVector<word_packed_vector_type>(4);
+      stxxl_files::getVectorTemporary<word_packed_vector_type>(4);
 
   v1.clear();
   v2.clear();
@@ -670,13 +670,13 @@ wx_ps_fe_builder<InputType, true, word_packing_mode>::build(
   out_vector_type& bv = result.raw_data();
 
   word_packed_vector_type v1 =
-      stxxl_files::getVector<word_packed_vector_type>(1);
+      stxxl_files::getVectorTemporary<word_packed_vector_type>(1);
   word_packed_vector_type v2 =
-      stxxl_files::getVector<word_packed_vector_type>(2);
+      stxxl_files::getVectorTemporary<word_packed_vector_type>(2);
   word_packed_vector_type v3 =
-      stxxl_files::getVector<word_packed_vector_type>(3);
+      stxxl_files::getVectorTemporary<word_packed_vector_type>(3);
   word_packed_vector_type v4 =
-      stxxl_files::getVector<word_packed_vector_type>(4);
+      stxxl_files::getVectorTemporary<word_packed_vector_type>(4);
 
   v1.clear();
   v2.clear();
@@ -932,10 +932,10 @@ external_bit_vectors wx_ps_fe_builder<InputType, false, 0>::build(
 
   out_vector_type& bv = result.raw_data();
 
-  vector_type v1 = stxxl_files::getVector<vector_type>(1);
-  vector_type v2 = stxxl_files::getVector<vector_type>(2);
-  vector_type v3 = stxxl_files::getVector<vector_type>(3);
-  vector_type v4 = stxxl_files::getVector<vector_type>(4);
+  vector_type v1 = stxxl_files::getVectorTemporary<vector_type>(1);
+  vector_type v2 = stxxl_files::getVectorTemporary<vector_type>(2);
+  vector_type v3 = stxxl_files::getVectorTemporary<vector_type>(3);
+  vector_type v4 = stxxl_files::getVectorTemporary<vector_type>(4);
 
   v1.clear();
   v2.clear();
@@ -1137,10 +1137,10 @@ external_bit_vectors wx_ps_fe_builder<InputType, true, 0>::build(
 
   out_vector_type& bv = result.raw_data();
 
-  vector_type v1 = stxxl_files::getVector<vector_type>(1);
-  vector_type v2 = stxxl_files::getVector<vector_type>(2);
-  vector_type v3 = stxxl_files::getVector<vector_type>(3);
-  vector_type v4 = stxxl_files::getVector<vector_type>(4);
+  vector_type v1 = stxxl_files::getVectorTemporary<vector_type>(1);
+  vector_type v2 = stxxl_files::getVectorTemporary<vector_type>(2);
+  vector_type v3 = stxxl_files::getVectorTemporary<vector_type>(3);
+  vector_type v4 = stxxl_files::getVectorTemporary<vector_type>(4);
 
   v1.clear();
   v2.clear();

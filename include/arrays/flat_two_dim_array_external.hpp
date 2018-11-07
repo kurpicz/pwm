@@ -24,7 +24,7 @@ public:
       : levels_(levels) {
     assert(levels > 0);
     if (fileid > -1)
-      data_ = stxxl_files::getVector<stxxlvector<IndexType>>(fileid);
+      data_ = stxxl_files::getVectorPermanent<stxxlvector<IndexType>>(fileid);
     data_.clear();
     level_sizes_.reserve(levels + 1);
     level_offsets_.reserve(levels + 1);
