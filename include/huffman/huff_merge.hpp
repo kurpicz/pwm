@@ -247,7 +247,8 @@ inline auto huff_merge_bit_vectors(std::vector<uint64_t> const& level_sizes,
   }
 
   // TODO: remove redundant argument
-  auto r = huff_bit_vectors(levels, level_sizes);
+  // TODO: Need init?
+  auto r = huff_bit_vectors<>(levels, level_sizes);
   auto& _bv = r;
 
   #pragma omp parallel for
