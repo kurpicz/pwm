@@ -51,7 +51,7 @@ struct {
   bool memory = false;
   bool check = false;
   bool debug_print = false;
-  
+
   int32_t number_threads;
 
   auto filter_parallel(bool is_parallel) {
@@ -394,13 +394,13 @@ int32_t main(int32_t argc, char const* argv[]) {
                "Length of the prefix of the text that should be considered");
   cp.add_flag('\0', "list", global_settings.list_algorithms_only,
               "Print the name and description of all registered algorithms");
-  cp.add_flag('p', "parallel", global_settings.run_only_parallel,
+  cp.add_flag('\0', "parallel", global_settings.run_only_parallel,
               "Run only parallel construction algorithms.");
-  cp.add_flag('s', "sequential", global_settings.run_only_sequential,
+  cp.add_flag('\0', "sequential", global_settings.run_only_sequential,
               "Run only sequential construction algorithms.");
-  cp.add_flag('h', "huffman", global_settings.run_only_huffman,
+  cp.add_flag('\0', "huffman", global_settings.run_only_huffman,
               "Run only huffman-shaped construction algorithms.");
-  cp.add_flag('u', "no_huffman", global_settings.run_only_no_huffman,
+  cp.add_flag('\0', "no_huffman", global_settings.run_only_no_huffman,
               "Run only uncompressed (non-Huffman) construction algorithms");
   cp.add_flag('\0', "no_trees", global_settings.no_trees,
               "Skip all wavelet trees construction algorithms.");
@@ -426,7 +426,7 @@ int32_t main(int32_t argc, char const* argv[]) {
   cp.add_string('\0', "em_dir6", global_settings.em_dir6,
                 "Use specified file as external memory");
 
-  cp.add_flag('\0', "memory", global_settings.memory,
+  cp.add_flag('m', "memory", global_settings.memory,
               "Compute peak memory during construction.");
   cp.add_flag('c', "check", global_settings.check,
               "Check the constructed wavelet structure for validity.");
@@ -436,7 +436,7 @@ int32_t main(int32_t argc, char const* argv[]) {
   if (!cp.process(argc, argv)) {
     return -1;
   }
-  
+
   #pragma omp parallel
   {
     #pragma omp single
