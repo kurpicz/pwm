@@ -25,50 +25,54 @@
 
 #define GUARD_LOOP(x) if (!(x)) { continue; }
 
+struct filter_by_property {
+    bool exclude_other = false;
+    bool exclude_self = false;
+
+    inline bool should_keep(bool algo_property) {
+        if (exclude_other && exclude_self) {
+            std::cerr << "An pair of options excluded all algorithms, check the commandline arguments\n";
+            exit(1);
+        }
+
+        if (algo_property && exclude_self) {
+            return false;
+        }
+        if (!algo_property && exclude_other) {
+            return false;
+        }
+
+        return true;
+    }
+};
+
 struct {
   std::vector<std::string> file_paths;
-  std::string filter = "";
+  std::string filter_name = "";
   unsigned int word_width = 1;
   unsigned int nr_runs = 5;
   uint64_t prefix_size = 0;
   bool list_algorithms_only = false;
-  bool run_only_parallel = false;
-  bool run_only_sequential = false;
-  bool run_only_huffman = false;
-  bool run_only_no_huffman = false;
-  bool no_trees = false;
-  bool no_matrices = false;
 
+  filter_by_property parallel_filter;
+  filter_by_property huffman_filter;
+  filter_by_property matrix_filter;
+
+  //filter_by_property external_filter;
   bool external = false;
+
+  //filter_by_property external_in_filter;
   bool external_in = false;
+
+  //filter_by_property external_out_filter;
   bool external_out = false;
   std::string em_dirs;
 
   bool memory = false;
   bool check = false;
   bool debug_print = false;
-  
+
   int32_t number_threads;
-
-  auto filter_parallel(bool is_parallel) {
-    return (!run_only_parallel || is_parallel);
-  }
-
-  auto filter_sequential(bool is_parallel) {
-    return (!run_only_sequential || !is_parallel);
-  }
-
-  auto filter_wavelet_type(bool is_tree) {
-    return (is_tree ? !no_trees : !no_matrices);
-  }
-
-  auto filter_huffman(bool is_huffman) {
-    return (!run_only_huffman || is_huffman);
-  }
-
-  auto filter_no_huffman(bool is_huffman) {
-    return (!run_only_no_huffman || !is_huffman);
-  }
 
 } global_settings;
 
@@ -128,12 +132,10 @@ struct {
     }
 #endif // MALLOC_COUNT
       for (const auto& a : algo_list) {
-        GUARD_LOOP(global_settings.filter == "" || (a->name().compare(global_settings.filter) == 0));
-        GUARD_LOOP(global_settings.filter_parallel(a->is_parallel()));
-        GUARD_LOOP(global_settings.filter_sequential(a->is_parallel()));
-        GUARD_LOOP(global_settings.filter_wavelet_type(a->is_tree()));
-        GUARD_LOOP(global_settings.filter_huffman(a->is_huffman_shaped()));
-        GUARD_LOOP(global_settings.filter_no_huffman(a->is_huffman_shaped()));
+        GUARD_LOOP(global_settings.filter_name == "" || (a->name().compare(global_settings.filter_name) == 0));
+        GUARD_LOOP(global_settings.parallel_filter.should_keep(a->is_parallel()));
+        GUARD_LOOP(global_settings.huffman_filter.should_keep(a->is_huffman_shaped()));
+        GUARD_LOOP(global_settings.matrix_filter.should_keep(!a->is_tree()));
 
         std::cout << "RESULT " << "algo=" << a->name() << ' ';
         if (global_settings.memory) {
@@ -369,7 +371,7 @@ int32_t main(int32_t argc, char const* argv[]) {
 
   cp.add_stringlist('f', "file", global_settings.file_paths,
                     "Path(s) to the text file(s).");
-  cp.add_string('n', "name", global_settings.filter,
+  cp.add_string('n', "name", global_settings.filter_name,
                 "Runs all algorithms that contain the <name> in their name");
   cp.add_uint('b', "byte", global_settings.word_width,
               "Bytes per char in the input text.");
@@ -379,17 +381,19 @@ int32_t main(int32_t argc, char const* argv[]) {
                "Length of the prefix of the text that should be considered");
   cp.add_flag('\0', "list", global_settings.list_algorithms_only,
               "Print the name and description of all registered algorithms");
-  cp.add_flag('p', "parallel", global_settings.run_only_parallel,
+
+  cp.add_flag('\0', "parallel", global_settings.parallel_filter.exclude_other,
               "Run only parallel construction algorithms.");
-  cp.add_flag('s', "sequential", global_settings.run_only_sequential,
+  cp.add_flag('\0', "sequential", global_settings.parallel_filter.exclude_self,
               "Run only sequential construction algorithms.");
-  cp.add_flag('h', "huffman", global_settings.run_only_huffman,
+
+  cp.add_flag('\0', "huffman", global_settings.huffman_filter.exclude_other,
               "Run only huffman-shaped construction algorithms.");
-  cp.add_flag('u', "no_huffman", global_settings.run_only_no_huffman,
+  cp.add_flag('\0', "no_huffman", global_settings.huffman_filter.exclude_self,
               "Run only uncompressed (non-Huffman) construction algorithms");
-  cp.add_flag('\0', "no_trees", global_settings.no_trees,
+  cp.add_flag('\0', "no_trees", global_settings.matrix_filter.exclude_other,
               "Skip all wavelet trees construction algorithms.");
-  cp.add_flag('\0', "no_matrices", global_settings.no_matrices,
+  cp.add_flag('\0', "no_matrices", global_settings.matrix_filter.exclude_self,
               "Skip all wavelet matrices construction algorithms.");
 
   cp.add_flag('\0', "external", global_settings.external,
@@ -402,7 +406,7 @@ int32_t main(int32_t argc, char const* argv[]) {
                     "Use the given directories as external memory"
                     "(split multiple directories using ':').");
 
-  cp.add_flag('\0', "memory", global_settings.memory,
+  cp.add_flag('m', "memory", global_settings.memory,
               "Compute peak memory during construction.");
   cp.add_flag('c', "check", global_settings.check,
               "Check the constructed wavelet structure for validity.");
@@ -412,12 +416,8 @@ int32_t main(int32_t argc, char const* argv[]) {
   if (!cp.process(argc, argv)) {
     return -1;
   }
-  
-  #pragma omp parallel
-  {
-    #pragma omp single
-    global_settings.number_threads = omp_get_num_threads();
-  }
+
+  global_settings.number_threads = omp_get_max_threads();
 
   if (global_settings.external) {
     global_settings.external_in = true;
