@@ -49,19 +49,18 @@ private:
         is_tree_(is_tree),
         is_huffman_shaped_(is_huffman_shaped),
         save_zeros_(zeros_ != nullptr),
-        save_histograms_(histograms_ != nullptr) {
+        save_histograms_(histograms_ != nullptr),
+        metadata_(stxxl_files::getVectorPermanent<stxxlvector<uint64_t>>(
+            em_dir, em_name + ".meta")),
+        bvs_(stxxl_files::getVectorPermanent<stxxlvector<uint64_t>>(
+            em_dir, em_name + ".bvs")) {
     if(save_zeros_) assert(zeros_->size() == levels_);
     if(save_histograms_) {
       assert(histograms_->size() == levels_ + 1);
       (*histograms_)[0][0] = text_size_;
     }
-
-    metadata_ = stxxl_files::getVectorPermanent<stxxlvector<uint64_t>>(em_dir, em_name + ".meta");
-    bvs_ = stxxl_files::getVectorPermanent<stxxlvector<uint64_t>>(em_dir, em_name + ".bvs");
-
     bvs_.clear();
     metadata_.clear();
-
     level_offsets_.reserve(levels_ + 1);
     data_size_ = 0;
     for (uint64_t level = 0; level < levels_; ++level) {
