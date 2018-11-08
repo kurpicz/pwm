@@ -81,6 +81,7 @@ struct {
   int32_t run() {
     // determine input and output type of the requested algorithms
     using in_type = typename input_type<ext_in, width>::type;
+    using in_type_internal = typename input_type<false, width>::type;
     using out_type = typename output_type<ext_out>::type;
     using out_type_internal = typename output_type<false>::type;
     using uint_t = typename type_for_bytes<width>::type;
@@ -162,140 +163,149 @@ struct {
 
 
         if (global_settings.debug_print || global_settings.check) {
-          if constexpr (!ext_in){
-            auto ws_getter = [&](){
-              if constexpr (ext_out)
-                return a->compute_bitvector(input_for_algo, text_size, levels)
-                    .getInternalStructure();
+          auto ws_getter = [&](){
+            if constexpr (ext_out)
+              // TODO: this currently only checks structure and decoding for
+              // external results (histograms should be checked, too)
+              return a->compute_bitvector(input_for_algo, text_size, levels)
+                  .getInternalStructure();
+            else
+              return a->compute_bitvector(input_for_algo, text_size, levels);
+          };
+          auto in_getter = [&]() {
+              if constexpr (ext_in) {
+                text_uint = file_to_vector<width>(
+                    path, global_settings.prefix_size);
+                text_size = text_uint.size();
+                max_char = reduce_alphabet(text_uint);
+                levels = levels_for_max_char(max_char);
+                return text_uint.data();
+              }
               else
-                return a->compute_bitvector(input_for_algo, text_size, levels);
-            };
-            auto structure = ws_getter();
-            if (global_settings.debug_print) {
-              print_structure(std::cout, structure, true);
-            }
-            if (global_settings.check) {
-              if (global_settings.word_width != 1) {
-                std::cout << "WARNING:"
-                          << " Can only check texts over 1-byte alphabets\n";
-              } else {
-                auto& algo_list =
-                    algorithm_list<in_type, out_type_internal>::get_algorithm_list();
-                construction_algorithm<in_type, out_type_internal> const* naive =
-                    nullptr;
+                return input_for_algo;
+          };
+          auto structure = ws_getter();
+          auto input_for_algo_check = in_getter();
+          if (global_settings.debug_print) {
+            print_structure(std::cout, structure, true);
+          }
+          if (global_settings.check) {
+            if (global_settings.word_width != 1) {
+              std::cout << "WARNING:"
+                        << " Can only check texts over 1-byte alphabets\n";
+            } else {
+              auto& algo_list_check =
+                  algorithm_list<in_type_internal, out_type_internal>::
+                      get_algorithm_list();
+              construction_algorithm<in_type_internal, out_type_internal> const* naive =
+                  nullptr;
 
-                if ((a->is_tree()) && !(a->is_huffman_shaped())) {
-                  naive = algo_list.filtered([](auto e) {
-                      return e->name() == "wt_naive";
-                  }).at(0);
-                }
-                if (!(a->is_tree()) && !(a->is_huffman_shaped())) {
-                  naive = algo_list.filtered([](auto e) {
-                      return e->name() == "wm_naive";
-                  }).at(0);
-                }
-                if ((a->is_tree()) && (a->is_huffman_shaped())) {
-                  naive = algo_list.filtered([](auto e) {
-                      return e->name() == "wt_huff_naive";
-                  }).at(0);
-                }
-                if (!(a->is_tree()) && (a->is_huffman_shaped())) {
-                  naive = algo_list.filtered([](auto e) {
-                      return e->name() == "wm_huff_naive";
-                  }).at(0);
-                }
-                assert(naive != nullptr);
-                auto naive_wx =
-                    naive->compute_bitvector(input_for_algo, text_size, levels);
-                bool err_trigger = false;
-                auto check_err = [&](bool cond, auto const& msg) {
-                    if (!cond) {
-                      std::cout << "ERROR: " << msg << std::endl;
-                      err_trigger = true;
-                    }
-                    return cond;
-                };
-
-                if (check_err(structure.levels() == naive_wx.levels(),
-                              "structures have different level sizes")) {
-                  if (!a->is_tree()) {
-                    size_t sl = structure.levels();
-                    check_err(structure.zeros().size() == sl,
-                              "structure zeros too short");
-                    if (sl > 0) {
-                      auto sz = structure.zeros();
-                      auto nz = naive_wx.zeros();
-                      sz.pop_back();
-                      nz.pop_back();
-                      check_err(sz == nz, "zeros arrays differ");
-                    }
+              if ((a->is_tree()) && !(a->is_huffman_shaped())) {
+                naive = algo_list_check.filtered([](auto e) {
+                    return e->name() == "wt_naive";
+                }).at(0);
+              }
+              if (!(a->is_tree()) && !(a->is_huffman_shaped())) {
+                naive = algo_list_check.filtered([](auto e) {
+                    return e->name() == "wm_naive";
+                }).at(0);
+              }
+              if ((a->is_tree()) && (a->is_huffman_shaped())) {
+                naive = algo_list_check.filtered([](auto e) {
+                    return e->name() == "wt_huff_naive";
+                }).at(0);
+              }
+              if (!(a->is_tree()) && (a->is_huffman_shaped())) {
+                naive = algo_list_check.filtered([](auto e) {
+                    return e->name() == "wm_huff_naive";
+                }).at(0);
+              }
+              assert(naive != nullptr);
+              auto naive_wx = naive->compute_bitvector(
+                  input_for_algo_check, text_size, levels);
+              bool err_trigger = false;
+              auto check_err = [&](bool cond, auto const& msg) {
+                  if (!cond) {
+                    std::cout << "ERROR: " << msg << std::endl;
+                    err_trigger = true;
                   }
-                  auto& sbvs = structure.bvs();
-                  auto& nbvs = naive_wx.bvs();
-                  for (size_t l = 0; l < structure.levels(); l++) {
-                    auto sbs = sbvs.level_bit_size(l);
-                    auto nbs = nbvs.level_bit_size(l);
-                    if(check_err(sbs == nbs,
-                                 std::string("bit size differs on level ")
-                                 + std::to_string(l))) {
-                      for (uint64_t bi = 0; bi < sbs; bi++) {
-                        if(!check_err(
-                            bit_at(sbvs[l], bi) == bit_at(nbvs[l], bi),
-                            std::string("bit ")
-                            + std::to_string(bi)
-                            + " differs on level "
-                            + std::to_string(l))) {
-                          break;
-                        }
+                  return cond;
+              };
+
+              if (check_err(structure.levels() == naive_wx.levels(),
+                            "structures have different level sizes")) {
+                if (!a->is_tree()) {
+                  size_t sl = structure.levels();
+                  check_err(structure.zeros().size() == sl,
+                            "structure zeros too short");
+                  if (sl > 0) {
+                    auto sz = structure.zeros();
+                    auto nz = naive_wx.zeros();
+                    sz.pop_back();
+                    nz.pop_back();
+                    check_err(sz == nz, "zeros arrays differ");
+                  }
+                }
+                auto& sbvs = structure.bvs();
+                auto& nbvs = naive_wx.bvs();
+                for (size_t l = 0; l < structure.levels(); l++) {
+                  auto sbs = sbvs.level_bit_size(l);
+                  auto nbs = nbvs.level_bit_size(l);
+                  if(check_err(sbs == nbs,
+                               std::string("bit size differs on level ")
+                               + std::to_string(l))) {
+                    for (uint64_t bi = 0; bi < sbs; bi++) {
+                      if(!check_err(
+                          bit_at(sbvs[l], bi) == bit_at(nbvs[l], bi),
+                          std::string("bit ")
+                          + std::to_string(bi)
+                          + " differs on level "
+                          + std::to_string(l))) {
+                        break;
                       }
                     }
                   }
                 }
-                if (err_trigger) {
-                  returncode = -2;
-                } else {
-                  std::cout << "Output structurally OK" << std::endl;
-                }
-
-                if (err_trigger) {
-                  if (!global_settings.debug_print) {
-                    std::cout << "Output:\n";
-                    print_structure(std::cout, structure, true);
-                  }
-                  std::cout << "Naive result as comparison:\n";
-                  print_structure(std::cout, naive_wx, true);
-                }
-
-                auto pvec = [](auto const& v) {
-                    std::cout << "[";
-                    for (auto e : v) {
-                      std::cout << uint64_t(e) << ", ";
-                    }
-                    std::cout << "]\n";
-                };
-
-                std::string decoded_ = decode_structure(structure);
-                std::vector<uint8_t> decoded(decoded_.begin(), decoded_.end());
-                if (std::equal(text_uint.begin(), text_uint.end(),
-                               decoded.begin(), decoded.end())) {
-                  std::cout << "Output decoded OK" << std::endl;
-                } else {
-                  std::cout << "ERROR:"
-                            << "Decoded output not equal to input!"
-                            << std::endl;
-                  std::cout << "Input:" << std::endl;
-                  pvec(text_uint);
-                  std::cout << "Decoded:" << std::endl;
-                  pvec(decoded);
-                }
               }
-              std::cout << std::endl;
+              if (err_trigger) {
+                returncode = -2;
+              } else {
+                std::cout << "Output structurally OK" << std::endl;
+              }
+
+              if (err_trigger) {
+                if (!global_settings.debug_print) {
+                  std::cout << "Output:\n";
+                  print_structure(std::cout, structure, true);
+                }
+                std::cout << "Naive result as comparison:\n";
+                print_structure(std::cout, naive_wx, true);
+              }
+
+              auto pvec = [](auto const& v) {
+                  std::cout << "[";
+                  for (auto e : v) {
+                    std::cout << uint64_t(e) << ", ";
+                  }
+                  std::cout << "]\n";
+              };
+
+              std::string decoded_ = decode_structure(structure);
+              std::vector<uint8_t> decoded(decoded_.begin(), decoded_.end());
+              if (std::equal(text_uint.begin(), text_uint.end(),
+                             decoded.begin(), decoded.end())) {
+                std::cout << "Output decoded OK" << std::endl;
+              } else {
+                std::cout << "ERROR:"
+                          << "Decoded output not equal to input!"
+                          << std::endl;
+                std::cout << "Input:" << std::endl;
+                pvec(text_uint);
+                std::cout << "Decoded:" << std::endl;
+                pvec(decoded);
+              }
             }
-          }
-          else {
-            std::cout << "WARNING: "
-                      << "debug_print and check are only available "
-                      << "for internal memory algorithms." << std::endl;
+            std::cout << std::endl;
           }
         }
       }
