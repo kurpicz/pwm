@@ -149,7 +149,7 @@ public:
 
   out_type compute_bitvector(const in_type& global_text,
                              const uint64_t size,
-                             const uint64_t levels) const {
+                             const uint64_t levels) const override {
     return Algorithm::compute(global_text, size, levels);
   }
 
