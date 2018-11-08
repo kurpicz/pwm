@@ -9,6 +9,7 @@
 
 #include <tlx/cmdline_parser.hpp>
 #include <vector>
+#include <sstream>
 
 #include <omp.h>
 
@@ -41,12 +42,7 @@ struct {
   bool external = false;
   bool external_in = false;
   bool external_out = false;
-  std::string em_dir1;
-  std::string em_dir2;
-  std::string em_dir3;
-  std::string em_dir4;
-  std::string em_dir5;
-  std::string em_dir6;
+  std::string em_dirs;
 
   bool memory = false;
   bool check = false;
@@ -317,26 +313,15 @@ struct {
   int32_t startStep2() {
 
     if constexpr (ext_in || ext_out) {
-      std::vector<std::string> em_dirs;
-      if(!global_settings.em_dir1.empty())
-        em_dirs.push_back(global_settings.em_dir1);
-      if(!global_settings.em_dir2.empty())
-        em_dirs.push_back(global_settings.em_dir2);
-      if(!global_settings.em_dir3.empty())
-        em_dirs.push_back(global_settings.em_dir3);
-      if(!global_settings.em_dir4.empty())
-        em_dirs.push_back(global_settings.em_dir4);
-      if(!global_settings.em_dir5.empty())
-        em_dirs.push_back(global_settings.em_dir5);
-      if(!global_settings.em_dir6.empty())
-        em_dirs.push_back(global_settings.em_dir6);
-
       std::cout << "Setting up external memory...";
-      if(em_dirs.size() > 0) {
+      if(global_settings.em_dirs.size() > 0) {
         std::cout << std::endl;
-        for(unsigned i = 0; i < em_dirs.size(); ++i) {
-          std::cout << "EM buffer directory " << (i + 1) << ": " << em_dirs[i] << std::endl;
-          stxxl_files::addDirectory(em_dirs[i]);
+        std::stringstream em_dirs_stream(global_settings.em_dirs);
+        std::string em_dir;
+        unsigned i = 0;
+        while(std::getline(em_dirs_stream, em_dir, ':')) {
+          std::cout << "EM buffer directory " << (i += 1) << ": " << em_dir << std::endl;
+          stxxl_files::addDirectory(em_dir);
         }
       } else {
         std::cout << " No EM directories files given." << std::endl;
@@ -413,18 +398,9 @@ int32_t main(int32_t argc, char const* argv[]) {
               "Run only semi-external algorithms (stream input from disk).");
   cp.add_flag('\0', "external_out", global_settings.external_out,
               "Run only semi-external algorithms (stream output to disk).");
-  cp.add_string('\0', "em_dir1", global_settings.em_dir1,
-                "Use specified file as external memory");
-  cp.add_string('\0', "em_dir2", global_settings.em_dir2,
-                "Use specified file as external memory");
-  cp.add_string('\0', "em_dir3", global_settings.em_dir3,
-                "Use specified file as external memory");
-  cp.add_string('\0', "em_dir4", global_settings.em_dir4,
-                "Use specified file as external memory");
-  cp.add_string('\0', "em_dir5", global_settings.em_dir5,
-                "Use specified file as external memory");
-  cp.add_string('\0', "em_dir6", global_settings.em_dir6,
-                "Use specified file as external memory");
+  cp.add_string('\0', "em_dirs", global_settings.em_dirs,
+                    "Use the given directories as external memory"
+                    "(split multiple directories using ':').");
 
   cp.add_flag('\0', "memory", global_settings.memory,
               "Compute peak memory during construction.");
