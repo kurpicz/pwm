@@ -82,6 +82,7 @@ struct {
     // determine input and output type of the requested algorithms
     using in_type = typename input_type<ext_in, width>::type;
     using out_type = typename output_type<ext_out>::type;
+    using out_type_internal = typename output_type<false>::type;
     using uint_t = typename type_for_bytes<width>::type;
 
     int returncode = 0;
@@ -161,9 +162,15 @@ struct {
 
 
         if (global_settings.debug_print || global_settings.check) {
-          if constexpr (!ext_in && !ext_out){
-            auto structure =
-                a->compute_bitvector(input_for_algo, text_size, levels);
+          if constexpr (!ext_in){
+            auto ws_getter = [&](){
+              if constexpr (ext_out)
+                return a->compute_bitvector(input_for_algo, text_size, levels)
+                    .getInternalStructure();
+              else
+                return a->compute_bitvector(input_for_algo, text_size, levels);
+            };
+            auto structure = ws_getter();
             if (global_settings.debug_print) {
               print_structure(std::cout, structure, true);
             }
@@ -172,7 +179,11 @@ struct {
                 std::cout << "WARNING:"
                           << " Can only check texts over 1-byte alphabets\n";
               } else {
-                construction_algorithm<in_type, out_type> const* naive = nullptr;
+                auto& algo_list =
+                    algorithm_list<in_type, out_type_internal>::get_algorithm_list();
+                construction_algorithm<in_type, out_type_internal> const* naive =
+                    nullptr;
+
                 if ((a->is_tree()) && !(a->is_huffman_shaped())) {
                   naive = algo_list.filtered([](auto e) {
                       return e->name() == "wt_naive";
