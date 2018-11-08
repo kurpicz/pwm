@@ -437,11 +437,7 @@ int32_t main(int32_t argc, char const* argv[]) {
     return -1;
   }
 
-  #pragma omp parallel
-  {
-    #pragma omp single
-    global_settings.number_threads = omp_get_num_threads();
-  }
+  global_settings.number_threads = omp_get_max_threads();
 
   if (global_settings.external) {
     global_settings.external_in = true;
