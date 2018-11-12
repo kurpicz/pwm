@@ -29,8 +29,10 @@ public:
     std::ostringstream name;
     name << "w" << (is_tree_ ? "t" : "m") << "_ps_oe";
 
-    auto result = wavelet_structure_external::getNoHuffman(
-        size, levels, is_tree_, 0, name.str());
+    auto result =
+        wavelet_structure_external_factory(is_tree_).
+        histograms(true).
+        construct(size, levels, name.str(), 0);
 
     if (size > 0) {
       ps_out_external<AlphabetType, is_tree_>(text, result);
