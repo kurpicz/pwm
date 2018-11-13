@@ -15,23 +15,33 @@
 
 #include "wx_base.hpp"
 
-template <typename AlphabetType, typename ParallelAlgorithmType>
+template <typename AlphabetType, bool is_tree_>
 class wx_dd_fe : public wx_in_out_external<true, true> {
 public:
-  static constexpr bool is_parallel = ParallelAlgorithmType::is_parallel;
-  static constexpr bool is_tree = ParallelAlgorithmType::is_tree;
+  static constexpr bool is_parallel = true;
+  static constexpr bool is_tree = is_tree_;
   static constexpr uint8_t word_width = sizeof(AlphabetType);
   static constexpr bool is_huffman_shaped = false;
 
   template <typename InputType>
-  static external_bit_vectors
-  compute(const InputType& text, const uint64_t size, const uint64_t levels) {
+  static wavelet_structure_external
+  compute(const InputType& text,
+          const uint64_t size,
+          const uint64_t levels) {
 
-    if (size == 0) {
-      return external_bit_vectors();
+    std::ostringstream name;
+    name << "w" << (is_tree_ ? "t" : "m") << "_dd_fe";
+
+    auto result =
+        wavelet_structure_external_factory(is_tree_).
+            histograms().zeros().
+            construct(size, levels, name.str(), 0);
+
+    if (size > 0) {
+      //TODO: implement
     }
-    //TODO:
-    return external_bit_vectors();
+
+    return result;
   }
 }; // class wx_ps
 
