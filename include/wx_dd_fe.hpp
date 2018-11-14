@@ -19,7 +19,7 @@
 #include "wx_base.hpp"
 #include "wx_dd_pc.hpp"
 
-template <typename AlphabetType, bool is_tree_, uint64_t bytesPerBlock = 100>
+template <typename AlphabetType, bool is_tree_, uint64_t bytesPerBlock = 1024 * 1024 * 1024>
 class wx_dd_fe : public wx_in_out_external<true, true> {
   static constexpr uint64_t maxBlockSize = bytesPerBlock / sizeof(AlphabetType) / 64 * 64;
 
@@ -51,6 +51,8 @@ class wx_dd_fe : public wx_in_out_external<true, true> {
     AlphabetType * frontIn = block_vec1.data();
     AlphabetType * backIn = block_vec2.data();
 
+    std::vector<std::vector<std::vector<uint64_t>>> block_hists;
+
     wavelet_structure * frontRes = nullptr;
     wavelet_structure * backRes = nullptr;
 
@@ -58,11 +60,6 @@ class wx_dd_fe : public wx_in_out_external<true, true> {
 
     result_type result;
     result_writer_type result_writer;
-
-    std::vector<std::vector<std::vector<uint64_t>>> block_hists;
-
-    uint64_t next_block = 0;
-    uint64_t current_block = 0;
 
     dd_ctx(const InputType &text, const uint64_t size, const uint64_t plevels)
         : levels(plevels),
@@ -81,17 +78,9 @@ class wx_dd_fe : public wx_in_out_external<true, true> {
           block_vec2(block_chars),
           frontIn(block_vec1.data()),
           backIn(block_vec2.data()),
+          block_hists(block_count),
           text_reader(text),
           result_writer(result) {
-
-      block_hists.resize(block_count);
-      for(uint64_t b = 0; b < block_count; b++) {
-        block_hists[b].resize(levels + 1);
-        block_hists[b][0].resize(1, 0);
-        for(uint64_t l = 1; l < levels + 1; l++) {
-          block_hists[b][l].resize(block_hists[b][l - 1].size() * 2, 0);
-        }
-      }
       result.reserve(result_words);
     }
 
@@ -103,32 +92,37 @@ class wx_dd_fe : public wx_in_out_external<true, true> {
       std::swap(frontRes, backRes);
     }
 
-    inline void loadBackInput() {
-      current_block = next_block++;
+    inline void loadBackInput(uint64_t b) {
+      block_hists[b].resize(levels + 1);
+      block_hists[b][0].resize(1, 0);
+      for(uint64_t l = 1; l < levels + 1; l++) {
+        block_hists[b][l].resize(block_hists[b][l - 1].size() * 2, 0);
+      }
+
       const uint64_t current_block_chars =
-          (next_block < block_count) ?
+          (b + 1 < block_count) ?
           block_chars : last_block_chars;
 
       //read block to internal memory and calculate last level histograms
       for(uint64_t i = 0; i < current_block_chars; i++) {
         auto symbol = *text_reader;
         backIn[i] = symbol;
-        ++block_hists[current_block][levels][symbol];
+        ++block_hists[b][levels][symbol];
         ++text_reader;
       }
       // calculate remaining histograms
       for(int64_t l = levels - 1; l >= 0; l--) {
-        for(uint64_t s = 0; s < block_hists[current_block][l].size(); s++) {
-          block_hists[current_block][l][s] =
-              block_hists[current_block][l + 1][2 * s] +
-              block_hists[current_block][l + 1][2 * s + 1];
+        for(uint64_t s = 0; s < block_hists[b][l].size(); s++) {
+          block_hists[b][l][s] =
+              block_hists[b][l + 1][2 * s] +
+              block_hists[b][l + 1][2 * s + 1];
         }
       }
     }
 
-    inline void processFrontInput() {
+    inline void processFrontInput(uint64_t b) {
       const uint64_t current_block_chars =
-          (next_block < block_count) ?
+          (b + 1 < block_count) ?
           block_chars : last_block_chars;
 
       delete frontRes;
@@ -140,9 +134,9 @@ class wx_dd_fe : public wx_in_out_external<true, true> {
           levels));
     }
 
-    inline void saveBackResult() {
+    inline void saveBackResult(uint64_t b) {
       const uint64_t current_block_level_words =
-          (next_block < block_count) ?
+          (b + 1 < block_count) ?
           block_level_words : last_block_level_words;
 
       auto& block_bvs = (*backRes).bvs();
@@ -155,7 +149,6 @@ class wx_dd_fe : public wx_in_out_external<true, true> {
     }
 
     inline void finish() {
-      assert(next_block == block_count);
       result_writer.finish();
     }
 
@@ -208,21 +201,47 @@ public:
     auto& bvs = wavelet_structure_external_writer::bvs(result);
     bvs.clear();
 
-    const dd_ctx ctx(text, size, levels);
+    using ctx_t = dd_ctx<InputType>;
+    ctx_t ctx(text, size, levels);
 
     std::cout << " --INITIAL SCAN-- " << std::flush;
-    for(uint64_t b = 0; b < ctx.block_count; b++) {
-      ctx.loadBackInput();
+    if(ctx.block_count <= 2) {
+      for(uint64_t b = 0; b < ctx.block_count; b++) {
+        ctx.loadBackInput(b);
+        ctx.swapInputs();
+        ctx.processFrontInput(b);
+        ctx.swapResults();
+        ctx.saveBackResult(b);
+      }
+    } else {
+      ctx.loadBackInput(0);
       ctx.swapInputs();
-      ctx.processFrontInput();
+      std::thread prepare([&ctx](){ctx.loadBackInput(1);});
+      for(uint64_t b = 0; b < ctx.block_count - 2; b++) {
+        ctx.processFrontInput(b);
+        prepare.join();
+        ctx.swapInputs();
+        ctx.swapResults();
+
+        prepare = std::thread(
+            [&ctx, b] () {
+              ctx.saveBackResult(b);
+              ctx.loadBackInput(b + 2);
+            });
+      }
+      ctx.processFrontInput(ctx.block_count - 2);
+      prepare.join();
+      ctx.swapInputs();
       ctx.swapResults();
-      ctx.saveBackResult();
+      prepare = std::thread([&ctx](){ctx.saveBackResult(ctx.block_count - 2);});
+      ctx.processFrontInput(ctx.block_count - 1);
+      prepare.join();
+      ctx.swapResults();
+      ctx.saveBackResult(ctx.block_count - 1);
     }
     ctx.finish();
 
     std::cout << " --MERGE-- " << std::flush;
-
-
     //MERGE:
     ctx.merge(bvs);
 
