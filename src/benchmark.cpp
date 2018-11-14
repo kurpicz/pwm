@@ -147,7 +147,7 @@ struct {
           std::cout << "memory=no ";
 #endif // MALLOC_COUNT
         }
-        std::cout << "runs=" << global_settings.nr_runs << " ";
+        std::cout << "runs=" << global_settings.nr_runs << " " << std::flush;
         if (global_settings.nr_runs > 0) {
           std::cout << "median_time=" << a->median_time(
               input_for_algo, text_size, levels, global_settings.nr_runs) << ' ';

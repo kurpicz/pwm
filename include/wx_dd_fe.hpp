@@ -18,9 +18,9 @@
 #include "wx_base.hpp"
 #include "wx_dd_pc.hpp"
 
-template <typename AlphabetType, bool is_tree_>
+template <typename AlphabetType, bool is_tree_, uint64_t bytesPerBlock = 1024 * 1024 * 1024>
 class wx_dd_fe : public wx_in_out_external<true, true> {
-  static constexpr uint64_t bytesPerBlock = 537;
+  static constexpr uint64_t maxBlockSize = bytesPerBlock / sizeof(AlphabetType) / 64 * 64;
 public:
   static constexpr bool is_parallel = true;
   static constexpr bool is_tree = is_tree_;
@@ -43,9 +43,12 @@ public:
         wavelet_structure_external_factory(is_tree_).
             histograms().zeros().
             construct(size, levels, name.str(), 0);
+    if(size == 0) return result;
+
     auto& bvs = wavelet_structure_external_writer::bvs(result);
     bvs.clear();
 
+    //std::cout << "ADDRESS IN MAIN: " << &bvs << std::endl;
     // typedefs
     using parallel_algo = wx_dd_pc<AlphabetType, is_tree_>;
 
@@ -54,31 +57,33 @@ public:
     using text_reader_type = typename InputType::bufreader_type;
 
     // calculate block sizes etc
-    const uint64_t block_size = bytesPerBlock / sizeof(AlphabetType) / 64 * 64;
+    const uint64_t block_size = std::min(maxBlockSize, size);
     const uint64_t block_count = (size + block_size - 1) / block_size;
     const uint64_t last_block_size = size - ((block_count - 1) * block_size);
 
     const uint64_t block_level_words = (block_size + 63) / 64;
-    const uint64_t block_words = block_level_words * levels;
     const uint64_t last_block_level_words = (last_block_size + 63) / 64;
-    const uint64_t last_block_words = last_block_level_words * levels;
-    const uint64_t temp_data_size =
-        block_words * (block_count - 1) + last_block_words;
+    const uint64_t temp_data_level_words =
+        block_level_words * (block_count - 1) + last_block_level_words;
 
+    const uint64_t block_words = block_level_words * levels;
+//    const uint64_t last_block_words = last_block_level_words * levels;
+    const uint64_t temp_data_words = temp_data_level_words * levels;
 
-    std::cout << std::endl << name.str()
-              << ": block_size=" << block_size
-              << ", block_count=" << block_count
-              << ", last_block_size=" << last_block_size
-              << std::endl;
+//    std::cout << std::endl << name.str()
+//              << ": block_size=" << block_size
+//              << ", block_count=" << block_count
+//              << ", last_block_size=" << last_block_size
+//              << std::endl;
 
     // readers, writers, buffers
     bv_type temp_vector;
-    temp_vector.reserve(temp_data_size);
+    temp_vector.reserve(temp_data_words);
     bv_writer_type temp_writer(temp_vector);
-    bv_writer_type result_writer(bvs);
+//    bv_writer_type result_writer(bvs);
     text_reader_type text_reader(text);
-    AlphabetType block [block_size];
+    std::vector<AlphabetType> block_vec(block_size);
+    AlphabetType * block = block_vec.data();
 
     // initialize block histograms
     std::vector<std::vector<std::vector<uint64_t>>> block_hists;
@@ -91,6 +96,7 @@ public:
       }
     }
 
+    std::cout << " --INITIAL SCAN-- " << std::flush;
     for(uint64_t b = 0; b < block_count; b++) {
       const uint64_t current_block_size =
           (b + 1 < block_count) ? block_size : last_block_size;
@@ -104,7 +110,7 @@ public:
         ++text_reader;
       }
       // calculate remaining histograms
-      for(uint64_t l = levels - 1; l > 0; l--) {
+      for(int64_t l = levels - 1; l >= 0; l--) {
         for(uint64_t s = 0; s < block_hists[b][l].size(); s++) {
           block_hists[b][l][s] =
               block_hists[b][l + 1][2 * s] + block_hists[b][l + 1][2 * s + 1];
@@ -117,38 +123,62 @@ public:
       auto& block_bvs = block_ws.bvs();
 
       for(uint64_t l = 0; l < levels; l++) {
-        auto& writer = (l == 0) ? result_writer : temp_writer;
+//        auto& writer = (l == 0) ? result_writer : temp_writer;
+//        auto& writer = (l == 0) ? result_writer : temp_writer;
         for(uint64_t w = 0; w < current_block_level_words; w++) {
-          writer << block_bvs[l][w];
+          temp_writer << block_bvs[l][w];
+//          std::cout << std::bitset<64>(block_bvs[l][w]).to_string() << std::endl;
 //          std::cout << block_bvs[l][w] << std::endl;
         }
       }
     }
     temp_writer.finish();
 
-    std::vector<uint64_t> new_block_offsets(block_count, 0);
-    for(uint64_t b = 1; b < block_count; b++)
-      new_block_offsets[b] = new_block_offsets[b - 1] + block_size;
+//    std::cout << "TEMP BVS: " << std::endl;
+//    for(auto word : temp_vector) {
+//      std::cout << std::bitset<64>(word).to_string() << std::endl;
+//    }
 
-    external_merger merger(result_writer, temp_vector);
+//    std::cout << "SIZE OF BVS BEFORE: " << bvs.size() << std::endl;
+//    for(auto word : bvs) {
+//      std::cout << std::bitset<64>(word).to_string() << std::endl;
+//    }
+
+    std::cout << " --MERGE-- " << std::flush;
+    external_merger merger(&temp_vector, bvs);
 
     //MERGE:
-    for(uint64_t l = 1; l < levels; l++) {
-      auto block_offsets = new_block_offsets;
+    for(uint64_t l = 0; l < levels; l++) {
+      std::vector<uint64_t> block_offsets(block_count);
+      for(uint64_t b = 0; b < block_count - 1; b++)
+        block_offsets[b] = 64 * (b * block_words + l * block_level_words);
+      block_offsets[block_count - 1] =
+          64 * ((block_count - 1) * block_words + l * last_block_level_words);
       for(uint64_t s = 0; s < block_hists[0][l].size(); s++) {
         for (uint64_t b = 0; b < block_count; b++) {
           auto bits_to_copy = block_hists[b][l][s];
           auto block_offset = block_offsets[b];
 
-          // merge
+//          if(bits_to_copy > 0 )
+//            std::cout << "Block " << b << ": "
+//                      << "copy " << bits_to_copy
+//                      << " from " << block_offset
+//                      << " (hist " << std::bitset<8>(s).to_string().substr(8 - l, l) << ") " << std::endl;
+
+          merger.write(bits_to_copy, block_offset);
 
           block_offsets[b] += bits_to_copy;
         }
       }
+      merger.finishLevel();
+      //std::cout << std::endl;
     }
+    merger.finish();
 
-
-    result_writer.finish();
+    //std::cout << "SIZE OF BVS AFTER: " << bvs.size() << std::endl;
+//    for(auto word : bvs) {
+//      //std::cout << std::bitset<64>(word).to_string() << std::endl;
+//    }
 
     return result;
   }
