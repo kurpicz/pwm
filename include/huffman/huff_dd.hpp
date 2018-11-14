@@ -18,8 +18,7 @@
 #include "arrays/span.hpp"
 #include "construction/wavelet_structure.hpp"
 
-#include "huffman/ctx_huff_all_levels.hpp"
-#include "huffman/ctx_huff_all_levels_borders.hpp"
+#include "construction/ctx_generic.hpp"
 #include "huffman/huff_bit_vectors.hpp"
 #include "huffman/huff_codes.hpp"
 #include "huffman/huff_merge.hpp"
@@ -28,7 +27,7 @@
 #include "wx_base.hpp"
 
 template <typename Algorithm, typename AlphabetType, bool is_tree_>
-class huff_dd : public wx_in_out_external<false, false>  {
+class huff_dd : public wx_in_out_external<false, false> {
 
 public:
   static constexpr bool is_parallel = true;
@@ -36,9 +35,14 @@ public:
   static constexpr uint8_t word_width = sizeof(AlphabetType);
   static constexpr bool is_huffman_shaped = true;
 
-  using ctx_t = std::conditional_t<Algorithm::needs_all_borders,
-                                   ctx_huff_all_levels_borders<is_tree>,
-                                   ctx_huff_all_levels<is_tree>>;
+  // TODO: Redesign somehow
+  using ctx_t = ctx_generic<is_tree,
+                            std::conditional_t<Algorithm::needs_all_borders,
+                                               ctx_options::all_level,
+                                               ctx_options::single_level>,
+                            ctx_options::all_level,
+                            ctx_options::pre_computed_rho,
+                            huff_bit_vectors>;
 
   template <typename InputType>
   static wavelet_structure compute(const InputType& global_text_ptr,

@@ -333,7 +333,7 @@ inline auto merge_bit_vectors(uint64_t size,
       const auto permuted_block = rho(level, block);
 
       // block size == number of entries in the block on this level
-      auto block_size = src_ctxs[read_shard].hist(level, permuted_block);
+      auto block_size = src_ctxs[read_shard].hist_at_level(level)[permuted_block];
 
       // advance global write offset by the number of bits assigned for
       // this block
@@ -435,8 +435,8 @@ inline auto merge_bit_vectors(uint64_t size,
         i++;
 
         const auto& local_bv = src_ctxs[read_shard].bv()[level];
-        const auto& h = src_ctxs[read_shard];
-        uint64_t block_size = h.hist(level, rho(level, block)) - initial_offset;
+        auto&& hist = src_ctxs[read_shard].hist_at_level(level);
+        uint64_t block_size = hist[rho(level, block)] - initial_offset;
         uint64_t distance_to_end = target_right - write_offset;
 
         uint64_t copy_size;

@@ -33,8 +33,9 @@ void huff_naive(AlphabetType const* text,
     for (size_t i = 0; i < size; i++) {
       const code_pair cp = codes.encode_symbol(text[i]);
       for (size_t level = 0; level <= cp.code_length; level++) {
+        auto&& hist = ctx.hist_at_level(level);
         auto prefix = cp.prefix(level);
-        ctx.hist(level, prefix)++;
+        hist[prefix]++;
       }
     }
   }

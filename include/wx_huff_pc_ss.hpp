@@ -13,7 +13,7 @@
 
 #include "construction/wavelet_structure.hpp"
 
-#include "huffman/ctx_huff_all_levels_borders.hpp"
+#include "construction/ctx_generic.hpp"
 #include "huffman/huff_bit_vectors.hpp"
 #include "huffman/huff_codes.hpp"
 #include "huffman/huff_level_sizes_builder.hpp"
@@ -30,8 +30,12 @@ public:
   static constexpr uint8_t word_width = sizeof(AlphabetType);
   static constexpr bool is_huffman_shaped = true;
 
-  // TODO: change to single level
-  using ctx_t = ctx_huff_all_levels_borders<is_tree>;
+  // TODO: review if we can reduce further (change to single level)
+  using ctx_t = ctx_generic<is_tree,
+                            ctx_options::all_level,
+                            ctx_options::all_level,
+                            ctx_options::pre_computed_rho,
+                            huff_bit_vectors>;
 
   static wavelet_structure compute(AlphabetType const* const text,
                                    const uint64_t size,

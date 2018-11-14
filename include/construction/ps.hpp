@@ -19,7 +19,6 @@ void ps(AlphabetType const* const text,
   uint64_t cur_alphabet_size = (1 << levels);
 
   auto& zeros = ctx.zeros();
-  auto& borders = ctx.borders();
   auto& bv = ctx.bv();
 
   scan_text_compute_first_level_bv_and_last_level_hist(text, size, levels, bv,
@@ -27,19 +26,23 @@ void ps(AlphabetType const* const text,
 
   // The number of 0s at the last level is the number of "even" characters
   if (ContextType::compute_zeros) {
+    auto&& hist = ctx.hist_at_level(levels);
     for (uint64_t i = 0; i < cur_alphabet_size; i += 2) {
-      zeros[levels - 1] += ctx.hist(levels, i);
+      zeros[levels - 1] += hist[i];
     }
   }
 
   // Now we compute the WM bottom-up, i.e., the last level first
   for (uint64_t level = levels - 1; level > 0; --level) {
+    auto&& borders = ctx.borders_at_level(level);
+    auto&& hist = ctx.hist_at_level(level);
+    auto&& next_hist = ctx.hist_at_level(level + 1);
+
     // Update the maximum value of a feasible a bit prefix and update the
     // histogram of the bit prefixes
     cur_alphabet_size >>= 1;
     for (uint64_t i = 0; i < cur_alphabet_size; ++i) {
-      ctx.hist(level, i) =
-          ctx.hist(level + 1, i << 1) + ctx.hist(level + 1, (i << 1) + 1);
+      hist[i] = next_hist[i << 1] + next_hist[(i << 1) + 1];
     }
 
     // Compute the starting positions of characters with respect to their
@@ -63,7 +66,7 @@ void ps(AlphabetType const* const text,
     });
   }
 
-  ctx.hist(0, 0) = size;
+  ctx.hist_at_level(0)[0] = size;
 }
 
 /******************************************************************************/

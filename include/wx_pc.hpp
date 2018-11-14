@@ -11,7 +11,6 @@
 #include <vector>
 
 #include "construction/ctx_generic.hpp"
-#include "construction/ctx_single_level.hpp"
 #include "construction/pc.hpp"
 #include "construction/wavelet_structure.hpp"
 
@@ -26,24 +25,10 @@ public:
   static constexpr uint8_t word_width = sizeof(AlphabetType);
   static constexpr bool is_huffman_shaped = false;
 
-  using ctx_t = ctx_single_level<is_tree, true>;
-
-  using ctx_a_t = ctx_generic<is_tree,
-                              ctx_options::single_level,
-                              ctx_options::single_level,
-                              ctx_options::pre_computed_rho>;
-  using ctx_b_t = ctx_generic<is_tree,
-                              ctx_options::all_level,
-                              ctx_options::all_level,
-                              ctx_options::pre_computed_rho>;
-  using ctx_c_t = ctx_generic<is_tree,
-                              ctx_options::sharded_single_level,
-                              ctx_options::sharded_single_level,
-                              ctx_options::pre_computed_rho>;
-  using ctx_d_t = ctx_generic<is_tree,
-                              ctx_options::single_level,
-                              ctx_options::single_level,
-                              ctx_options::live_computed_rho>;
+  using ctx_t = ctx_generic<is_tree,
+                            ctx_options::single_level,
+                            ctx_options::single_level,
+                            ctx_options::live_computed_rho>;
 
   template <typename InputType>
   static wavelet_structure
@@ -57,13 +42,7 @@ public:
       }
     }
 
-    auto ctx = ctx_t(size, levels);
-
-    auto const rho = rho_dispatch<is_tree>::create(levels);
-    ctx_a_t a(size, levels, ctx_options::pre_computed_rho<is_tree>(rho));
-    ctx_b_t b(size, levels, ctx_options::pre_computed_rho<is_tree>(rho));
-    ctx_c_t c(size, levels, ctx_options::pre_computed_rho<is_tree>(rho));
-    ctx_d_t d(size, levels, ctx_options::live_computed_rho<is_tree>(levels));
+    auto ctx = ctx_t(size, levels, levels);
 
     pc(text, size, levels, ctx);
 

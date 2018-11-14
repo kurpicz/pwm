@@ -28,13 +28,15 @@ void huff_pc_ss(AlphabetType const* text,
                                                       codes);
 
   for (uint64_t level = levels - 1; level > 0; --level) {
-    ctx.borders(level, 0) = 0;
+    auto&& borders = ctx.borders_at_level(level);
+    auto&& hist = ctx.hist_at_level(level);
+
+    borders[0] = 0;
     for (uint64_t pos = 1; pos < ctx.hist_size(level); ++pos) {
       auto const prev_block = ctx.rho(level, pos - 1);
       auto const this_block = ctx.rho(level, pos);
 
-      ctx.borders(level, this_block) =
-          ctx.borders(level, prev_block) + ctx.hist(level, prev_block);
+      borders[this_block] = borders[prev_block] + hist[prev_block];
       // NB: The above calulcation produces _wrong_ border offsets
       // for huffman codes that are one-shorter than the current level.
       //
@@ -48,15 +50,16 @@ void huff_pc_ss(AlphabetType const* text,
 
     // The number of 0s is the position of the first 1 in the previous level
     if constexpr (ContextType::compute_zeros) {
-      ctx.zeros()[level - 1] = ctx.borders(level, 1);
+      ctx.zeros()[level - 1] = borders[1];
     }
   }
 
   for (uint64_t i = 0; i < size; ++i) {
     const code_pair cp = codes.encode_symbol(text[i]);
     for (uint64_t level = cp.code_length - 1; level > 0; --level) {
+      auto&& borders = ctx.borders_at_level(level);
       uint64_t const prefix = cp.prefix(level);
-      uint64_t const pos = ctx.borders(level, prefix)++;
+      uint64_t const pos = borders[prefix]++;
       uint64_t const bit = cp[level];
       uint64_t const word_pos = 63ULL - (pos & 63ULL);
       bv[level][pos >> 6] |= (bit << word_pos);
