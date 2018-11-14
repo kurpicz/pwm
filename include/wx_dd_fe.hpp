@@ -21,7 +21,9 @@
 
 template <typename AlphabetType, bool is_tree_, uint64_t bytesPerBlock = 1024 * 1024 * 1024>
 class wx_dd_fe : public wx_in_out_external<true, true> {
-  static constexpr uint64_t maxBlockSize = bytesPerBlock / sizeof(AlphabetType) / 64 * 64;
+  static constexpr uint64_t given_block_chars = bytesPerBlock / sizeof(AlphabetType);
+  static constexpr uint64_t max_block_chars =
+      std::max(uint64_t(64), uint64_t(given_block_chars / 64 * 64));
 
   template <typename InputType>
   struct dd_ctx {
@@ -63,7 +65,7 @@ class wx_dd_fe : public wx_in_out_external<true, true> {
 
     dd_ctx(const InputType &text, const uint64_t size, const uint64_t plevels)
         : levels(plevels),
-          block_chars(std::min(maxBlockSize, size)),
+          block_chars(std::min(max_block_chars, size)),
           block_count((size + block_chars - 1) / block_chars),
           last_block_chars(size - ((block_count - 1) * block_chars)),
           block_level_words((block_chars + 63) / 64),
