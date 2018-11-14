@@ -19,6 +19,8 @@ class wavelet_structure_external {
 public:
   friend class wavelet_structure_external_writer;
   friend class wavelet_structure_external_factory;
+
+  using bv_type = stxxlvector<uint64_t>;
 private:
   uint64_t text_size_;
   uint64_t levels_;
@@ -28,8 +30,8 @@ private:
   bool save_histograms_;
   bool is_huffman_shaped_;
 
-  stxxlvector<uint64_t> metadata_;
-  stxxlvector<uint64_t> bvs_;
+  bv_type metadata_;
+  bv_type bvs_;
 
   uint64_t data_size_;
   std::vector<uint64_t> level_sizes_;
@@ -52,9 +54,9 @@ private:
         save_zeros_(save_zeros),
         save_histograms_(save_histograms),
         is_huffman_shaped_(is_huffman_shaped),
-        metadata_(stxxl_files::getVectorPermanent<stxxlvector<uint64_t>>(
+        metadata_(stxxl_files::getVectorPermanent<bv_type>(
             em_dir, em_name + ".meta")),
-        bvs_(stxxl_files::getVectorPermanent<stxxlvector<uint64_t>>(
+        bvs_(stxxl_files::getVectorPermanent<bv_type>(
             em_dir, em_name + ".bvs")) {
 
     if (is_huffman_shaped_) std::abort(); //TODO: implement
