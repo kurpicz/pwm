@@ -52,6 +52,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -ggdb")
 
 # Add include checking
 include(iwyu)
+include(header_walker)
 
 # Make malloc count optional
 option(ENABLE_MALLOC_COUNT "Enable memory measurement." OFF)
