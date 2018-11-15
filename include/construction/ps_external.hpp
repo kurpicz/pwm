@@ -11,7 +11,7 @@
 #include "construction/ctx_single_level_external.hpp"
 #include "construction/wavelet_structure_external.hpp"
 
-#define PSE_VERBOSE if (false)
+#define PSE_VERBOSE if constexpr (false)
 
 template <typename AlphabetType, bool is_tree, typename InputType>
 void ps_out_external(
