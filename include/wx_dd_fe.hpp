@@ -10,6 +10,7 @@
 
 #include <vector>
 #include <thread>
+#include <sstream>
 
 #include "arrays/memory_types.hpp"
 #include "construction/merge_external.hpp"
@@ -19,13 +20,29 @@
 #include "wx_base.hpp"
 #include "wx_dd_pc.hpp"
 
+#define DDE_VERBOSE if constexpr (true) atomic_out()
+
+
 template <typename AlphabetType, bool is_tree_, uint64_t bytesPerBlock = 1024 * 1024 * 1024>
 class wx_dd_fe : public wx_in_out_external<true, true> {
   static constexpr uint64_t given_block_chars = bytesPerBlock / sizeof(AlphabetType);
   static constexpr uint64_t max_block_chars =
       std::max(uint64_t(64), uint64_t(given_block_chars / 64 * 64));
 
-  template <typename InputType>
+  class atomic_out {
+    std::ostringstream stream;
+  public:
+    template <typename in_type>
+    atomic_out& operator<<(const in_type& in) {
+      stream << in;
+      return *this;
+    }
+    ~atomic_out() {
+      std::cout << stream.str() << std::flush;
+    }
+  };
+
+  template <typename InputType, bool dd_verbose = false>
   struct dd_ctx {
     using result_type = typename wavelet_structure_external::bv_type;
     using result_writer_type = typename result_type::bufwriter_type;
@@ -84,6 +101,12 @@ class wx_dd_fe : public wx_in_out_external<true, true> {
           text_reader(text),
           result_writer(result) {
       result.reserve(result_words);
+      DDE_VERBOSE
+          << "Created context for wx_dd_fe "
+          << "[blocks: " << block_count << ", "
+          << "block_chars: " << block_chars << ", "
+          << "last_block_chars: " << last_block_chars
+          << "].\n";
     }
 
     inline void swapInputs() {
@@ -95,6 +118,8 @@ class wx_dd_fe : public wx_in_out_external<true, true> {
     }
 
     inline void loadBackInput(uint64_t b) {
+      DDE_VERBOSE << "(load " << b << " start) ";
+
       block_hists[b].resize(levels + 1);
       block_hists[b][0].resize(1, 0);
       for(uint64_t l = 1; l < levels + 1; l++) {
@@ -120,9 +145,11 @@ class wx_dd_fe : public wx_in_out_external<true, true> {
               block_hists[b][l + 1][2 * s + 1];
         }
       }
+      DDE_VERBOSE << "(load " << b << " done) ";
     }
 
     inline void processFrontInput(uint64_t b) {
+      DDE_VERBOSE << "(process " << b << " start) ";
       const uint64_t current_block_chars =
           (b + 1 < block_count) ?
           block_chars : last_block_chars;
@@ -134,9 +161,11 @@ class wx_dd_fe : public wx_in_out_external<true, true> {
           frontIn,
           current_block_chars,
           levels));
+      DDE_VERBOSE << "(process " << b << " done) ";
     }
 
     inline void saveBackResult(uint64_t b) {
+      DDE_VERBOSE << "(save " << b << " start) ";
       const uint64_t current_block_level_words =
           (b + 1 < block_count) ?
           block_level_words : last_block_level_words;
@@ -148,14 +177,17 @@ class wx_dd_fe : public wx_in_out_external<true, true> {
           result_writer << block_bvs[l][w];
         }
       }
+      DDE_VERBOSE << "(save " << b << " done) ";
     }
 
     inline void finish() {
       result_writer.finish();
+      DDE_VERBOSE << "\n";
     }
 
 
     inline void merge(result_type& bvs) {
+      DDE_VERBOSE << "Merging... ";
       external_merger merger(&result, bvs);
       for(uint64_t l = 0; l < levels; l++) {
         std::vector<uint64_t> block_offsets(block_count);
@@ -175,6 +207,7 @@ class wx_dd_fe : public wx_in_out_external<true, true> {
         merger.finishLevel();
       }
       merger.finish();
+      DDE_VERBOSE << "Done.\n";
     }
   };
 
@@ -206,7 +239,6 @@ public:
     using ctx_t = dd_ctx<InputType>;
     ctx_t ctx(text, size, levels);
 
-    std::cout << " --INITIAL SCAN-- " << std::flush;
     if(ctx.block_count <= 2) {
       for(uint64_t b = 0; b < ctx.block_count; b++) {
         ctx.loadBackInput(b);
@@ -243,7 +275,6 @@ public:
     }
     ctx.finish();
 
-    std::cout << " --MERGE-- " << std::flush;
     //MERGE:
     ctx.merge(bvs);
 
