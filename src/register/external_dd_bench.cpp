@@ -1,5 +1,5 @@
 /*******************************************************************************
- * src/register/external_dd_test.cpp
+ * src/register/external_dd_bench.cpp
  *
  * Copyright (C) 2018 Jonas Ellert <jonas.ellert@tu-dortmund.de>
  *
@@ -8,6 +8,6 @@
 
 #include "external_dd.cpp"
 
-static const wx_dd_fe_registry<64> wx_dd_fe_small;
+static const wx_dd_fe_registry<1024 * 1024 * 1024> wx_dd_fe_large;
 
 /******************************************************************************/

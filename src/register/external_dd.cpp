@@ -9,8 +9,10 @@
 #include "benchmark/algorithm.hpp"
 #include "wx_dd_fe.hpp"
 
-using wm_dd_fe = wx_dd_fe<uint8_t, false>;
-using wt_dd_fe = wx_dd_fe<uint8_t, true>;
+template <uint64_t bytesMemory>
+struct wx_dd_fe_registry {
+  using wm_dd_fe = wx_dd_fe<uint8_t, false, bytesMemory>;
+  using wt_dd_fe = wx_dd_fe<uint8_t, true, bytesMemory>;
 
 
 //CONSTRUCTION_REGISTER(
@@ -18,11 +20,11 @@ using wt_dd_fe = wx_dd_fe<uint8_t, true>;
 //    "Sequential wavelet matrix construction with 8-bit alphabet "
 //    "(using counting, external input).",
 //    wm_dd_fe)
-CONSTRUCTION_REGISTER(
-    "wt_dd_fe",
-    "Sequential wavelet tree construction with 8-bit alphabet "
-    "(using counting, external input).",
-    wt_dd_fe)
-
+  CONSTRUCTION_REGISTER_MEMBER(
+      "wt_dd_fe",
+      "Sequential wavelet tree construction with 8-bit alphabet "
+      "(using counting, external input).",
+      wt_dd_fe)
+};
 
 /******************************************************************************/

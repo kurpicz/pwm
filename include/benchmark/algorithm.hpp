@@ -183,6 +183,10 @@ public:
   static const auto _cstr_algo_##ws##_register =                               \
       concrete_algorithm<ws>(algo_name, algo_description);
 
+#define CONSTRUCTION_REGISTER_MEMBER(algo_name, algo_description, ws)          \
+  const concrete_algorithm<ws> _cstr_algo_##ws##_register =                               \
+      concrete_algorithm<ws>(algo_name, algo_description);
+
 #endif // ALGORITHM_HEADER
 
 /******************************************************************************/
