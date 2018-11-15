@@ -100,6 +100,7 @@ class wx_dd_fe : public wx_in_out_external<true, true> {
           block_hists(block_count),
           text_reader(text),
           result_writer(result) {
+      result = stxxl_files::getVectorTemporary<result_type>(1);
       result.reserve(result_words);
       DDE_VERBOSE
           << "Created context for wx_dd_fe "
@@ -130,19 +131,21 @@ class wx_dd_fe : public wx_in_out_external<true, true> {
           (b + 1 < block_count) ?
           block_chars : last_block_chars;
 
+      auto& current_block_hist = block_hists[b];
+      auto& block_hist_last_level = current_block_hist[levels];
       //read block to internal memory and calculate last level histograms
       for(uint64_t i = 0; i < current_block_chars; i++) {
         auto symbol = *text_reader;
         backIn[i] = symbol;
-        ++block_hists[b][levels][symbol];
+        ++block_hist_last_level[symbol];
         ++text_reader;
       }
       // calculate remaining histograms
       for(int64_t l = levels - 1; l >= 0; l--) {
         for(uint64_t s = 0; s < block_hists[b][l].size(); s++) {
-          block_hists[b][l][s] =
-              block_hists[b][l + 1][2 * s] +
-              block_hists[b][l + 1][2 * s + 1];
+          current_block_hist[l][s] =
+              current_block_hist[l + 1][2 * s] +
+              current_block_hist[l + 1][2 * s + 1];
         }
       }
       DDE_VERBOSE << "(load " << b << " done) ";
