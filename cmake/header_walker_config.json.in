@@ -3,8 +3,6 @@
     "project_root": "${CMAKE_SOURCE_DIR}",
     "filter_out_system_search_paths": true,
     "filter_out_paths_outside_project_root": true,
-    "print_all_unique_header": true,
-    "print_header_dependencies": true,
     "excluded_directories": [
         "${CMAKE_BINARY_DIR}",
         "${CMAKE_SOURCE_DIR}/external",
