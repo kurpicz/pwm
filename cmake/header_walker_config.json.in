@@ -3,6 +3,7 @@
     "project_root": "${CMAKE_SOURCE_DIR}",
     "filter_out_system_search_paths": true,
     "filter_out_paths_outside_project_root": true,
+    "regenerate_cmake_compile_commands_in_build_dir": true,
     "excluded_directories": [
         "${CMAKE_BINARY_DIR}",
         "${CMAKE_SOURCE_DIR}/external",
