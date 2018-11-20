@@ -411,8 +411,7 @@ inline auto merge_bit_vectors(uint64_t size,
   triple_loop_exit:; // we are done
   }
 
-  auto r = bit_vectors<false>(levels, size);
-  auto& _bv = r;
+  auto bv = bit_vectors<false>(levels, size);
 
   #pragma omp parallel for
   for (size_t merge_shard = 0; merge_shard < shards; merge_shard++) {
@@ -447,7 +446,7 @@ inline auto merge_bit_vectors(uint64_t size,
         }
 
         auto& local_cursor = ctx.levels[level].read_offsets[read_shard];
-        copy_bits<uint64_t, true>(_bv[level].data(), local_bv.data(),
+        copy_bits<uint64_t, true>(bv[level].data(), local_bv.data(),
                                   write_offset, local_cursor, copy_size,
                                   &zero_marker);
       };
@@ -463,7 +462,7 @@ inline auto merge_bit_vectors(uint64_t size,
     }
   }
 
-  return r;
+  return bv;
 }
 
 /******************************************************************************/
