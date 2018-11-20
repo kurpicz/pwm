@@ -25,7 +25,7 @@ void copy_bits(WordType* const dst,
   if (block_size == 0)
     return;
 
-  auto debug_ptr = [dst](WordType* const) {
+  auto debug_ptr = [/*dst*/](WordType* const /*ptr*/) {
     /*
     NB: Code skeleton for debugging writes to memory.
     This should not have runtime impact while commented out

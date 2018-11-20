@@ -43,7 +43,6 @@ if(ENABLE_MALLOC_COUNT)
   target_compile_definitions(benchmark PUBLIC MALLOC_COUNT)
 endif(ENABLE_MALLOC_COUNT)
 
-
 target_include_directories(benchmark PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/>
   $<INSTALL_INTERFACE:${PROJECT_SOURCE_DIR}/include/>

@@ -17,6 +17,12 @@
 #include <memory>
 #include <vector>
 
+// NB: These headers provide definitions used by the .cpp implementation files
+// and the CONSTRUCTION_REGISTER macro. We flag them as being provided by this
+// header to omit them from warning output
+#include <string> // IWYU pragma: export
+#include <cstdint> // IWYU pragma: export
+
 #include "arrays/memory_types.hpp"
 #include "arrays/stxxl_helper.hpp"
 #include "construction/wavelet_structure.hpp"
@@ -75,7 +81,7 @@ private:
 template <typename in_type, typename out_type>
 class construction_algorithm {
 public:
-  construction_algorithm(std::string name, std::string description)
+  construction_algorithm(std::string const& name, std::string const& description)
       : name_(name), description_(description) {
     algorithm_list<in_type, out_type>::get_algorithm_list().register_algorithm(
         this);
@@ -144,12 +150,12 @@ public:
   using in_type = typename algo_type<Algorithm>::in;
   using out_type = typename algo_type<Algorithm>::out;
 
-  concrete_algorithm(std::string name, std::string description)
+  concrete_algorithm(std::string const& name, std::string const& description)
       : construction_algorithm<in_type, out_type>(name, description) {}
 
   out_type compute_bitvector(const in_type& global_text,
                              const uint64_t size,
-                             const uint64_t levels) const {
+                             const uint64_t levels) const override {
     return Algorithm::compute(global_text, size, levels);
   }
 
