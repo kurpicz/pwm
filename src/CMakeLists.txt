@@ -47,7 +47,6 @@ target_include_directories(benchmark PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/>
   $<INSTALL_INTERFACE:${PROJECT_SOURCE_DIR}/include/>
 )
-add_iwyu_diagnostic_for_ccx_target(benchmark)
 
 add_executable(alphabet_count alphabet_count.cpp)
 add_executable(fastq_extract fastq_extract.cpp)
