@@ -101,7 +101,7 @@ protected:
 }; // class base_flat_two_dim_array
 
 template <typename IndexType, class size_function,
-          bool requires_initialization = true>
+          bool requires_initialization>
 class flat_two_dim_array : public base_flat_two_dim_array<IndexType> {
   using base = base_flat_two_dim_array<IndexType>;
 
@@ -146,7 +146,7 @@ public:
         memset(data_[0] + offset, 0, local_size * sizeof(IndexType));
       }
     }
-    
+
     for (uint64_t level = 1; level < data_.size(); ++level) {
       const uint64_t level_size =
           size_function::level_size(level - 1, size_f_args...);

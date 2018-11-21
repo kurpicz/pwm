@@ -20,6 +20,6 @@ struct pow2_level_size {
   static constexpr bool is_bit_vector = false;
 }; // struct pow2_level_size
 
-using pow2_array = flat_two_dim_array<uint64_t, pow2_level_size>;
+using pow2_array = flat_two_dim_array<uint64_t, pow2_level_size, true>;
 
 /******************************************************************************/

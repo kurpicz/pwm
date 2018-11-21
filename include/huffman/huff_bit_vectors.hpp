@@ -19,6 +19,6 @@ struct huff_bit_vectors_sizes {
   static constexpr bool is_bit_vector = true;
 }; // struct huff_bit_vectors_sizes
 
-using huff_bit_vectors = flat_two_dim_array<uint64_t, huff_bit_vectors_sizes>;
+using huff_bit_vectors = flat_two_dim_array<uint64_t, huff_bit_vectors_sizes, true>;
 
 /******************************************************************************/

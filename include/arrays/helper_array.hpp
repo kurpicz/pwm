@@ -14,6 +14,6 @@ struct helper_array_sizes {
   static constexpr bool is_bit_vector = false;
 }; // struct helper_array_sizes
 
-using helper_array = flat_two_dim_array<uint64_t, helper_array_sizes>;
+using helper_array = flat_two_dim_array<uint64_t, helper_array_sizes, true>;
 
 /******************************************************************************/

@@ -23,6 +23,6 @@ struct bit_vector_sizes {
 using base_bit_vectors = base_flat_two_dim_array<uint64_t>;
 
 template <bool requires_initialization = true>
-using bit_vectors = flat_two_dim_array<uint64_t, bit_vector_sizes>;
+using bit_vectors = flat_two_dim_array<uint64_t, bit_vector_sizes, requires_initialization>;
 
 /******************************************************************************/
