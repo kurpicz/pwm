@@ -57,6 +57,9 @@ void copy_bits(WordType* const dst,
         }
         DCHECK(zero_mem_marker == word + 1);
       }
+    } else {
+      (void) opt_zero_mem_marker;
+      (void) word;
     }
   };
   auto skip_zero_words = [opt_zero_mem_marker](WordType const* start,
@@ -69,6 +72,10 @@ void copy_bits(WordType* const dst,
         }
         zero_mem_marker += count;
       }
+    } else {
+      (void) opt_zero_mem_marker;
+      (void) start;
+      (void) count;
     }
   };
 
@@ -404,7 +411,7 @@ inline auto merge_bit_vectors(uint64_t size,
   triple_loop_exit:; // we are done
   }
 
-  auto r = bit_vectors<>(levels, size);
+  auto r = bit_vectors<false>(levels, size);
   auto& _bv = r;
 
   #pragma omp parallel for
