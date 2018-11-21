@@ -16,30 +16,60 @@
 #include "util/common.hpp"
 #include "util/macros.hpp"
 
-template <typename WordType>
+template <typename WordType, bool zero_mem = false>
 void copy_bits(WordType* const dst,
                WordType const* const src,
                uint64_t& dst_off_ref,
                uint64_t& src_off_ref,
-               uint64_t const block_size) {
-  if (block_size == 0)
+               uint64_t const block_size,
+               WordType const** opt_zero_mem_marker = nullptr) {
+  if (block_size == 0) {
     return;
+  }
 
-  auto debug_ptr = [/*dst*/](WordType* const /*ptr*/) {
-    /*
-    NB: Code skeleton for debugging writes to memory.
-    This should not have runtime impact while commented out
-
-    #include <bitset>
-    #include <sstream>
-
+  /*
+  NB: Code skeleton for debugging writes to memory.
+  #include <bitset>
+  #include <iomanip>
+  #include <sstream>
+  auto debug_ptr = [dst](WordType* const ptr, auto extra_fmt) {
     int64_t diff = ptr - dst;
     std::stringstream ss;
-    ss << "write [" << dst << "][" << diff << "]: " << std::bitset<64>(*ptr) <<
-    "\n";
+    ss << "write [" << dst << "][" << std::setw(6) << diff
+       << "]: " << std::bitset<64>(*ptr);
+    extra_fmt(ss);
+    ss << "\n";
     // Using a stringstream to get a atomic write to cout
     std::cout << ss.str();
-    */
+  };
+  */
+
+  auto zero_word_once = [opt_zero_mem_marker](WordType* word) {
+    if constexpr (zero_mem) {
+      if (opt_zero_mem_marker != nullptr) {
+        WordType const*& zero_mem_marker = *opt_zero_mem_marker;
+        if (zero_mem_marker == nullptr) {
+          zero_mem_marker = word;
+        }
+        if (zero_mem_marker == word) {
+          *word = 0;
+          zero_mem_marker++;
+        }
+        DCHECK(zero_mem_marker == word + 1);
+      }
+    }
+  };
+  auto skip_zero_words = [opt_zero_mem_marker](WordType const* start,
+                                               size_t count) {
+    if constexpr (zero_mem) {
+      if (opt_zero_mem_marker != nullptr) {
+        WordType const*& zero_mem_marker = *opt_zero_mem_marker;
+        if (zero_mem_marker == nullptr) {
+          zero_mem_marker = start;
+        }
+        zero_mem_marker += count;
+      }
+    }
   };
 
   WordType constexpr BITS = (sizeof(WordType) * CHAR_BIT);
@@ -58,11 +88,13 @@ void copy_bits(WordType* const dst,
     {
       auto& word = dst[dst_off >> SHIFT];
 
+      if ((dst_off & MOD_MASK) != 0 && dst_off != dst_off_end) {
+        zero_word_once(&word);
+      }
       while ((dst_off & MOD_MASK) != 0 && dst_off != dst_off_end) {
         bool const bit = bit_at<WordType>(src, src_off++);
 
         word |= (WordType(bit) << (MOD_MASK - (dst_off++ & MOD_MASK)));
-        debug_ptr(&word);
       }
     }
 
@@ -75,9 +107,9 @@ void copy_bits(WordType* const dst,
 
       WordType const* const ds_end = ds + words;
 
+      skip_zero_words(ds, words);
       while (ds != ds_end) {
         *ds++ = *sr++;
-        debug_ptr(ds);
       }
 
       dst_off += words * BITS;
@@ -88,11 +120,13 @@ void copy_bits(WordType* const dst,
     {
       auto& word = dst[dst_off >> SHIFT];
 
+      if (dst_off != dst_off_end) {
+        zero_word_once(&word);
+      }
       while (dst_off != dst_off_end) {
         bool const bit = bit_at<WordType>(src, src_off++);
 
         word |= (WordType(bit) << (MOD_MASK - (dst_off++ & MOD_MASK)));
-        debug_ptr(&word);
       }
     }
   } else {
@@ -100,11 +134,13 @@ void copy_bits(WordType* const dst,
     {
       auto& word = dst[dst_off >> SHIFT];
 
+      if ((dst_off & MOD_MASK) != 0 && dst_off != dst_off_end) {
+        zero_word_once(&word);
+      }
       while ((dst_off & MOD_MASK) != 0 && dst_off != dst_off_end) {
         bool const bit = bit_at<WordType>(src, src_off++);
 
         word |= (WordType(bit) << (MOD_MASK - (dst_off++ & MOD_MASK)));
-        debug_ptr(&word);
       }
     }
 
@@ -119,9 +155,9 @@ void copy_bits(WordType* const dst,
       WordType const* sr = src + (src_off >> SHIFT);
       WordType const* const ds_end = ds + words;
 
+      skip_zero_words(ds, words);
       while (ds != ds_end) {
         *ds++ = (*sr << src_shift_a) | (*(sr + 1) >> src_shift_b);
-        debug_ptr(ds);
         sr++;
       }
 
@@ -133,11 +169,13 @@ void copy_bits(WordType* const dst,
     {
       auto& word = dst[dst_off >> SHIFT];
 
+      if (dst_off != dst_off_end) {
+        zero_word_once(&word);
+      }
       while (dst_off != dst_off_end) {
         bool const bit = bit_at<WordType>(src, src_off++);
 
         word |= (WordType(bit) << (MOD_MASK - (dst_off++ & MOD_MASK)));
-        debug_ptr(&word);
       }
     }
   }
@@ -382,6 +420,7 @@ inline auto merge_bit_vectors(uint64_t size,
     for (size_t level = 0; level < levels; level++) {
       auto i = ctx.levels[level].first_read_block;
       uint64_t write_offset = target_left;
+      uint64_t const* zero_marker = nullptr;
 
       auto copy_next_block = [&](size_t const initial_offset) {
         const auto block = i / shards;
@@ -401,8 +440,9 @@ inline auto merge_bit_vectors(uint64_t size,
         }
 
         auto& local_cursor = ctx.levels[level].read_offsets[read_shard];
-        copy_bits<uint64_t>(_bv[level].data(), local_bv.data(), write_offset,
-                            local_cursor, copy_size);
+        copy_bits<uint64_t, true>(_bv[level].data(), local_bv.data(),
+                                  write_offset, local_cursor, copy_size,
+                                  &zero_marker);
       };
 
       if (write_offset < target_right) {
