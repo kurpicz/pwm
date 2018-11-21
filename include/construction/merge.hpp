@@ -10,7 +10,6 @@
 
 #include <cassert>
 #include <climits>
-#include <chrono>
 #include <omp.h>
 
 #include "arrays/bit_vectors.hpp"
@@ -252,7 +251,7 @@ inline auto merge_bit_vectors(uint64_t size,
   }
   ctxs[shards - 1].end_offset = word_size(size) * 64ull;
 
-  // #pragma omp parallel for
+  //#pragma omp parallel for
   for (size_t level = 0; level < levels; level++) {
     // number of tree nodes on the current level
     const size_t blocks = 1ull << level;
@@ -370,11 +369,9 @@ inline auto merge_bit_vectors(uint64_t size,
   auto r = bit_vectors<>(levels, size);
   auto& _bv = r;
 
-  #pragma omp parallel
-  {
+  #pragma omp parallel for
+  for (size_t merge_shard = 0; merge_shard < shards; merge_shard++) {
     assert(size_t(omp_get_num_threads()) == shards);
-    const size_t omp_rank = omp_get_thread_num();
-    const size_t merge_shard = omp_rank;
 
     auto& ctx = ctxs[merge_shard];
 
