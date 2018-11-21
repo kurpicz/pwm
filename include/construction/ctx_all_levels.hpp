@@ -62,11 +62,11 @@ public:
     return zeros_;
   }
 
-  bit_vectors& bv() {
+  bit_vectors<>& bv() {
     return bv_;
   }
 
-  bit_vectors const& bv() const {
+  bit_vectors<> const& bv() const {
     return bv_;
   }
 
@@ -79,7 +79,7 @@ private:
   rho_t const* rho_ = nullptr;
   std::vector<uint64_t> borders_;
   std::vector<uint64_t> zeros_;
-  bit_vectors bv_;
+  bit_vectors<> bv_;
 }; // class ctx_all_levels
 
 /******************************************************************************/

@@ -72,10 +72,10 @@ private:
     bvs_.resize(data_size_);
   }
 
-  bit_vectors getInternalBitvectors() {
+  bit_vectors<> getInternalBitvectors() {
     if(is_huffman_shaped_) std::abort();
 
-    bit_vectors result(levels_, text_size_);
+    bit_vectors<> result(levels_, text_size_);
     for(uint64_t level = 0; level < levels_; level++) {
       auto intLevel = result[level];
       auto extLevel = (*this)[level];

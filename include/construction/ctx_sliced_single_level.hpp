@@ -74,11 +74,11 @@ public:
     return zeros_;
   }
 
-  bit_vectors& bv() {
+  bit_vectors<>& bv() {
     return bv_;
   }
 
-  bit_vectors const& bv() const {
+  bit_vectors<> const& bv() const {
     return bv_;
   }
 
@@ -90,7 +90,7 @@ private:
   helper_array hist_;
   helper_array borders_;
   std::vector<uint64_t> zeros_;
-  bit_vectors bv_;
+  bit_vectors<> bv_;
   std::vector<uint64_t> bit_reverse_;
 }; // class ctx_sliced_single_level
 

@@ -11,6 +11,7 @@
 
 #include <cstring>
 #include <iostream>
+#include <omp.h>
 
 #include "span.hpp"
 #include "util/common.hpp"
@@ -99,7 +100,8 @@ protected:
 
 }; // class base_flat_two_dim_array
 
-template <typename IndexType, class size_function>
+template <typename IndexType, class size_function,
+          bool requires_initialization = true>
 class flat_two_dim_array : public base_flat_two_dim_array<IndexType> {
   using base = base_flat_two_dim_array<IndexType>;
 
@@ -128,7 +130,23 @@ public:
       }
     }
     data_[0] = new IndexType[data_size];
-    memset(data_[0], 0, data_size * sizeof(IndexType));
+
+    if constexpr (requires_initialization) {
+      #pragma omp parallel
+      {
+        const uint64_t omp_rank = omp_get_thread_num();
+        const uint64_t omp_size = omp_get_num_threads();
+        assert(omp_size == shards);
+
+        const uint64_t local_size =
+          (data_size / omp_size) + ((omp_rank < data_size % omp_size) ? 1 : 0);
+        const uint64_t offset = (omp_rank * (data_size / omp_size)) +
+                                 std::min<uint64_t>(omp_rank,
+                                                    data_size % omp_size);
+        memset(data_[0] + offset, 0, local_size * sizeof(IndexType));
+      }
+    }
+    
     for (uint64_t level = 1; level < data_.size(); ++level) {
       const uint64_t level_size =
           size_function::level_size(level - 1, size_f_args...);

@@ -30,7 +30,8 @@ struct filter_by_property {
 
     inline bool should_keep(bool algo_property) {
         if (exclude_other && exclude_self) {
-            std::cerr << "An pair of options excluded all algorithms, check the commandline arguments\n";
+            std::cerr << "An pair of options excluded all algorithms, check "
+                      << "the command line arguments" << std::endl;;
             exit(1);
         }
 
@@ -136,7 +137,8 @@ struct {
     }
 #endif // MALLOC_COUNT
       for (const auto& a : algo_list) {
-        GUARD_LOOP(global_settings.filter_name == "" || (a->name().compare(global_settings.filter_name) == 0));
+        GUARD_LOOP(global_settings.filter_name == "" || 
+                   (a->name().compare(global_settings.filter_name) == 0));
         GUARD_LOOP(global_settings.parallel_filter.should_keep(a->is_parallel()));
         GUARD_LOOP(global_settings.huffman_filter.should_keep(a->is_huffman_shaped()));
         GUARD_LOOP(global_settings.matrix_filter.should_keep(!a->is_tree()));
@@ -153,8 +155,9 @@ struct {
         }
         std::cout << "runs=" << global_settings.nr_runs << " ";
         if (global_settings.nr_runs > 0) {
-          std::cout << "median_time=" << a->median_time(
-              input_for_algo, text_size, levels, global_settings.nr_runs) << ' ';
+          auto median_time =  a->median_time(input_for_algo, text_size, levels,
+                                             global_settings.nr_runs);
+          std::cout << "median_time=" << median_time << ' ';
         }
         std::cout << "input=" << path << ' '
                   << "characters=" << text_size << ' '

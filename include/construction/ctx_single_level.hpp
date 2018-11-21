@@ -62,11 +62,11 @@ public:
     return zeros_;
   }
 
-  bit_vectors& bv() {
+  bit_vectors<>& bv() {
     return bv_;
   }
 
-  bit_vectors const& bv() const {
+  bit_vectors<> const& bv() const {
     return bv_;
   }
 
@@ -78,7 +78,7 @@ private:
   std::vector<uint64_t> hist_;
   std::vector<uint64_t> borders_;
   std::vector<uint64_t> zeros_;
-  bit_vectors bv_;
+  bit_vectors<> bv_;
   std::vector<uint64_t> bit_reverse_;
 }; // ctx_single_level
 
