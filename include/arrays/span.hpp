@@ -19,6 +19,7 @@ class span {
 
 public:
   inline span(T* ptr, size_t size) : ptr_(ptr), size_(size) { }
+  inline span(): span((T*) "", 0) {}
 
   inline size_t size() const {
     return size_;
