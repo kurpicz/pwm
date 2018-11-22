@@ -12,14 +12,15 @@
 #include "flat_two_dim_array.hpp"
 #include "util/common.hpp"
 
-struct pow2_level_size {
+struct pow2_array_config {
   static uint64_t level_size(const uint64_t level) {
     return 1ULL << level;
   };
 
   static constexpr bool is_bit_vector = false;
-}; // struct pow2_level_size
+  static constexpr bool requires_initialization = true;
+}; // struct pow2_array_config
 
-using pow2_array = flat_two_dim_array<uint64_t, pow2_level_size>;
+using pow2_array = flat_two_dim_array<uint64_t, pow2_array_config>;
 
 /******************************************************************************/

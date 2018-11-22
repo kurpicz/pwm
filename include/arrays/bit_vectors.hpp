@@ -12,17 +12,20 @@
 
 #include "flat_two_dim_array.hpp"
 
-struct bit_vector_sizes {
+template <bool requires_initialization_>
+struct bit_vectors_config {
   static uint64_t level_size(const uint64_t, const uint64_t size) {
     return size;
   };
 
   static constexpr bool is_bit_vector = true;
-}; // struct bit_vector_sizes
+  static constexpr bool requires_initialization = requires_initialization_;
+}; // struct bit_vectors_config
 
 using base_bit_vectors = base_flat_two_dim_array<uint64_t>;
 
 template <bool requires_initialization = true>
-using bit_vectors = flat_two_dim_array<uint64_t, bit_vector_sizes>;
+using bit_vectors =
+    flat_two_dim_array<uint64_t, bit_vectors_config<requires_initialization>>;
 
 /******************************************************************************/

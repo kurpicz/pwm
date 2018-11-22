@@ -10,15 +10,17 @@
 
 #include "arrays/flat_two_dim_array.hpp"
 
-struct huff_bit_vectors_sizes {
+struct huff_bit_vectors_config {
   static uint64_t level_size(const uint64_t level,
                              std::vector<uint64_t> const& level_sizes) {
     return level_sizes[level];
   }
 
   static constexpr bool is_bit_vector = true;
-}; // struct huff_bit_vectors_sizes
+  static constexpr bool requires_initialization = true;
+}; // struct huff_bit_vectors_config
 
-using huff_bit_vectors = flat_two_dim_array<uint64_t, huff_bit_vectors_sizes>;
+// TODO: Make init optional
+using huff_bit_vectors = flat_two_dim_array<uint64_t, huff_bit_vectors_config>;
 
 /******************************************************************************/
