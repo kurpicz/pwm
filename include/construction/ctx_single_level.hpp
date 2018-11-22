@@ -15,7 +15,7 @@
 // TODO: WM/WT abstract that selects zeros and rho
 
 // Overwrite information for each level
-template <bool is_tree>
+template <bool is_tree, bool requires_initialization>
 class ctx_single_level {
 
 public:
@@ -62,11 +62,11 @@ public:
     return zeros_;
   }
 
-  bit_vectors<>& bv() {
+  auto& bv() {
     return bv_;
   }
 
-  bit_vectors<> const& bv() const {
+  auto const& bv() const {
     return bv_;
   }
 
@@ -78,7 +78,7 @@ private:
   std::vector<uint64_t> hist_;
   std::vector<uint64_t> borders_;
   std::vector<uint64_t> zeros_;
-  bit_vectors<> bv_;
+  bit_vectors<requires_initialization> bv_;
   std::vector<uint64_t> bit_reverse_;
 }; // ctx_single_level
 

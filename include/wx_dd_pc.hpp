@@ -48,11 +48,11 @@ public:
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = end_time - begin_time;
     auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
-    std::cout << "time_init_wt=" << static_cast<float>(millis.count()) << " ";
+    // std::cout << "time_init_wt=" << static_cast<float>(millis.count()) << " ";
 
     const uint64_t shards = omp_get_max_threads();
 
-    std::cout << "shards=" << shards << " ";
+    //std::cout << "shards=" << shards << " ";
 
     begin_time = std::chrono::high_resolution_clock::now();
     const auto rho = rho_dispatch<is_tree>::create(levels);
@@ -69,7 +69,7 @@ public:
     end_time = std::chrono::high_resolution_clock::now();
     duration = end_time - begin_time;
     millis = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
-    std::cout << "time_context=" << static_cast<float>(millis.count()) << " ";
+    //std::cout << "time_context=" << static_cast<float>(millis.count()) << " ";
 
     begin_time = std::chrono::high_resolution_clock::now();
     #pragma omp parallel
@@ -90,7 +90,7 @@ public:
     end_time = std::chrono::high_resolution_clock::now();
     duration = end_time - begin_time;
     millis = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
-    std::cout << "time_partial=" << static_cast<float>(millis.count()) << " ";
+    //std::cout << "time_partial=" << static_cast<float>(millis.count()) << " ";
 
 
     for (auto& ctx : ctxs) {
@@ -102,7 +102,7 @@ public:
     end_time = std::chrono::high_resolution_clock::now();
     duration = end_time - begin_time;
     millis = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
-    std::cout << "time_merge=" << static_cast<float>(millis.count()) << " ";
+    //std::cout << "time_merge=" << static_cast<float>(millis.count()) << " ";
 
     if constexpr (ctx_t::compute_zeros) {
       auto _zeros = std::vector<uint64_t>(levels, 0);

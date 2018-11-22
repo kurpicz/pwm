@@ -30,7 +30,7 @@ public:
   static wavelet_structure
   compute(const InputType& text, const uint64_t size, const uint64_t levels) {
 
-    using ctx_t = ctx_single_level<is_tree>;
+    using ctx_t = ctx_single_level<is_tree, true>;
 
     if (size == 0) {
       if constexpr (is_tree_)
