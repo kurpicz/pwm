@@ -110,14 +110,27 @@ struct sharded_single_level : public helper_array {
   static constexpr bool is_not_leveled = true;
 };
 
+namespace borders {
+    using ctx_options::single_level;
+    using ctx_options::all_level;
+    using ctx_options::sharded_single_level;
+}
+namespace hist {
+    using ctx_options::single_level;
+    using ctx_options::all_level;
+    using ctx_options::sharded_single_level;
+}
+constexpr bool bv_initialized = true;
+constexpr bool bv_uninitialized = false;
+
 } // namespace ctx_options
 
 template <bool is_tree,
           typename borders_array,
           typename hist_array,
           template <bool> typename rho_type,
-          template <bool> typename bv_type = bit_vectors,
-          bool require_initialization = true>
+          bool require_initialization,
+          template <bool> typename bv_type>
 class ctx_generic {
 public:
   ctx_generic() = default;

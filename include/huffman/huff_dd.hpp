@@ -38,10 +38,11 @@ public:
   // TODO: Redesign somehow
   using ctx_t = ctx_generic<is_tree,
                             std::conditional_t<Algorithm::needs_all_borders,
-                                               ctx_options::all_level,
-                                               ctx_options::single_level>,
-                            ctx_options::all_level,
+                                               ctx_options::borders::all_level,
+                                               ctx_options::borders::single_level>,
+                            ctx_options::hist::all_level,
                             ctx_options::pre_computed_rho,
+                            ctx_options::bv_initialized,
                             huff_bit_vectors>;
 
   template <typename InputType>

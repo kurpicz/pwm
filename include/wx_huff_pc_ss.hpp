@@ -32,9 +32,10 @@ public:
 
   // TODO: review if we can reduce further (change to single level)
   using ctx_t = ctx_generic<is_tree,
-                            ctx_options::all_level,
-                            ctx_options::all_level,
+                            ctx_options::borders::all_level,
+                            ctx_options::hist::all_level,
                             ctx_options::pre_computed_rho,
+                            ctx_options::bv_initialized,
                             huff_bit_vectors>;
 
   static wavelet_structure compute(AlphabetType const* const text,

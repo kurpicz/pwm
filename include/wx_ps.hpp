@@ -26,11 +26,11 @@ public:
   static constexpr bool is_huffman_shaped = false;
 
   using ctx_t = ctx_generic<is_tree,
-                            ctx_options::single_level,
-                            ctx_options::single_level,
+                            ctx_options::borders::single_level,
+                            ctx_options::hist::single_level,
                             ctx_options::live_computed_rho,
-                            bit_vectors,
-                            false>;
+                            ctx_options::bv_uninitialized,
+                            bit_vectors>;
 
   template <typename InputType>
   static wavelet_structure
