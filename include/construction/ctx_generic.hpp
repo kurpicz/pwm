@@ -222,6 +222,7 @@ public:
     return bv_;
   }
 
+  // TODO: Remove or make functional
   void discard_non_merge_data() {
     // Not used in merge algorithm
   }
