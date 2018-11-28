@@ -128,7 +128,16 @@ public:
                              ctxs[shard]);
       }
 
-      ctxs[shard].discard_non_merge_data();
+      // we discard all ctx data once we no longer need it:
+      // - merge needs ctxs[shard].hist and ctxs[shard].bv
+      // - zeros needs ctxs[shard].zeros
+      // - after merge we only move the bv and drop the entire ctx,
+      //   so no need for an early cleanup.
+      ctxs[shard].discard_borders();
+      ctxs[shard].discard_rho();
+      // ctxs[shard].discard_hist();
+      // ctxs[shard].discard_bv();
+      // ctxs[shard].discard_zeros();
     }
 
     drop_me(std::move(global_sorted_text_allocation));

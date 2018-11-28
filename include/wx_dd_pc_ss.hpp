@@ -77,9 +77,19 @@ public:
       pc_ss(text, local_size, levels, ctxs[omp_rank]);
     }
 
+    // we discard all ctx data once we no longer need it:
+    // - merge needs ctxs[i].hist and ctxs[i].bv
+    // - zeros needs ctxs[i].zeros
+    // - after merge we only move the bv and drop the entire ctx,
+    //   so no need for an early cleanup.
     for (auto& ctx : ctxs) {
-      ctx.discard_non_merge_data();
+      ctx.discard_borders();
+      ctx.discard_rho();
+      // ctx.discard_hist();
+      // ctx.discard_bv();
+      // ctx.discard_zeros();
     }
+
     auto _bv = merge_bit_vectors(size, levels, shards, ctxs, rho);
 
     if constexpr (ctx_t::compute_zeros) {

@@ -222,9 +222,20 @@ public:
     return bv_;
   }
 
-  // TODO: Remove or make functional
-  void discard_non_merge_data() {
-    // Not used in merge algorithm
+  void discard_borders() {
+    drop_me(std::move(borders_));
+  }
+  void discard_hist() {
+    drop_me(std::move(hist_));
+  }
+  void discard_zeros() {
+    drop_me(std::move(zeros_));
+  }
+  void discard_bv() {
+    drop_me(std::move(bv_));
+  }
+  void discard_rho() {
+    drop_me(std::move(rho_));
   }
 
 private:
