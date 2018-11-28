@@ -44,7 +44,7 @@ void copy_bits(WordType* const dst,
   };
   */
 
-  auto zero_word_once = [opt_zero_mem_marker](WordType* word) {
+  auto zero_word_once = [opt_zero_mem_marker]([[maybe_unused]] WordType* word) {
     if constexpr (zero_mem) {
       if (opt_zero_mem_marker != nullptr) {
         WordType const*& zero_mem_marker = *opt_zero_mem_marker;
@@ -59,25 +59,23 @@ void copy_bits(WordType* const dst,
       }
     } else {
       (void) opt_zero_mem_marker;
-      (void) word;
     }
   };
-  auto skip_zero_words = [opt_zero_mem_marker](WordType const* start,
-                                               size_t count) {
-    if constexpr (zero_mem) {
-      if (opt_zero_mem_marker != nullptr) {
-        WordType const*& zero_mem_marker = *opt_zero_mem_marker;
-        if (zero_mem_marker == nullptr) {
-          zero_mem_marker = start;
+  auto skip_zero_words =
+      [opt_zero_mem_marker]([[maybe_unused]] WordType const* start,
+                            [[maybe_unused]] size_t count) {
+        if constexpr (zero_mem) {
+          if (opt_zero_mem_marker != nullptr) {
+            WordType const*& zero_mem_marker = *opt_zero_mem_marker;
+            if (zero_mem_marker == nullptr) {
+              zero_mem_marker = start;
+            }
+            zero_mem_marker += count;
+          }
+        } else {
+          (void) opt_zero_mem_marker;
         }
-        zero_mem_marker += count;
-      }
-    } else {
-      (void) opt_zero_mem_marker;
-      (void) start;
-      (void) count;
-    }
-  };
+      };
 
   WordType constexpr BITS = (sizeof(WordType) * CHAR_BIT);
   WordType constexpr MOD_MASK = BITS - 1;
@@ -333,7 +331,8 @@ inline auto merge_bit_vectors(uint64_t size,
       const auto permuted_block = rho(level, block);
 
       // block size == number of entries in the block on this level
-      auto block_size = src_ctxs[read_shard].hist_at_level(level)[permuted_block];
+      auto block_size =
+          src_ctxs[read_shard].hist_at_level(level)[permuted_block];
 
       // advance global write offset by the number of bits assigned for
       // this block

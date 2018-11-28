@@ -50,12 +50,10 @@ public:
     }
   }
 
-  inline void set(size_t /*level*/, size_t i, uint64_t value) {
+  inline void set(size_t /*level*/, [[maybe_unused]] size_t i, [[maybe_unused]] uint64_t value) {
     if constexpr (!is_tree) {
       bit_reverse_[i] = value;
     } else {
-      (void) i;
-      (void) value;
       DCHECK(false); // Should not be called
     }
   }
