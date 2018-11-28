@@ -10,8 +10,8 @@
 
 #include <omp.h>
 
+#include "construction/ctx_generic.hpp"
 #include "construction/building_blocks.hpp"
-#include "construction/ctx_compute_borders.hpp"
 #include "construction/pc_ss.hpp"
 #include "construction/wavelet_structure.hpp"
 
@@ -26,7 +26,12 @@ public:
   static constexpr uint8_t word_width = sizeof(AlphabteType);
   static constexpr bool is_huffman_shaped = false;
 
-  using ctx_t = ctx_compute_borders<is_tree>;
+  using ctx_t = ctx_generic<is_tree,
+                            ctx_options::borders::all_level,
+                            ctx_options::hist::all_level,
+                            ctx_options::pre_computed_rho,
+                            ctx_options::bv_initialized,
+                            bit_vectors>;
 
   template <typename InputType>
   static wavelet_structure
@@ -82,14 +87,15 @@ public:
       }
     }
 
+    auto&& hist = ctx.hist_at_level(levels);
     for (uint64_t i = 0; i < all_hists.size(); ++i) {
       for (uint64_t j = 0; j < alphabet_size; ++j) {
-        ctx.hist(levels, j) += all_hists[i][j];
+        hist[j] += all_hists[i][j];
       }
     }
     if constexpr (ctx_t::compute_zeros) {
       for (uint64_t i = 0; i < alphabet_size; i += 2) {
-        zeros[levels - 1] += ctx.hist(levels, i);
+        zeros[levels - 1] += hist[i];
       }
     }
 
@@ -99,10 +105,11 @@ public:
     #pragma omp parallel num_threads(levels)
     {
       uint64_t level = omp_get_thread_num();
+      auto&& borders = ctx.borders_at_level(level);
       for (uint64_t i = 0; i < size; ++i) {
         const uint64_t prefix_shift = (levels - level);
         const uint64_t cur_bit_shift = prefix_shift - 1;
-        const uint64_t pos = ctx.borders(level, text[i] >> prefix_shift)++;
+        const uint64_t pos = borders[text[i] >> prefix_shift]++;
         bv[level][pos >> 6] |=
             (((text[i] >> cur_bit_shift) & 1ULL) << (63ULL - (pos & 63ULL)));
       }

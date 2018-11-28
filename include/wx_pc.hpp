@@ -10,7 +10,7 @@
 
 #include <vector>
 
-#include "construction/ctx_single_level.hpp"
+#include "construction/ctx_generic.hpp"
 #include "construction/pc.hpp"
 #include "construction/wavelet_structure.hpp"
 
@@ -25,7 +25,12 @@ public:
   static constexpr uint8_t word_width = sizeof(AlphabetType);
   static constexpr bool is_huffman_shaped = false;
 
-  using ctx_t = ctx_single_level<is_tree, true>;
+  using ctx_t = ctx_generic<is_tree,
+                            ctx_options::borders::single_level,
+                            ctx_options::hist::single_level,
+                            ctx_options::live_computed_rho,
+                            ctx_options::bv_initialized,
+                            bit_vectors>;
 
   template <typename InputType>
   static wavelet_structure
@@ -39,7 +44,7 @@ public:
       }
     }
 
-    auto ctx = ctx_t(size, levels);
+    auto ctx = ctx_t(size, levels, levels);
 
     pc(text, size, levels, ctx);
 

@@ -13,7 +13,7 @@
 #include <omp.h>
 #include <vector>
 
-#include "construction/ctx_all_levels.hpp"
+#include "construction/ctx_generic.hpp"
 #include "construction/merge.hpp"
 #include "construction/ps.hpp"
 #include "construction/wavelet_structure.hpp"
@@ -30,7 +30,12 @@ public:
   static constexpr uint8_t word_width = sizeof(AlphabetType);
   static constexpr bool is_huffman_shaped = false;
 
-  using ctx_t = ctx_all_levels<is_tree>;
+  using ctx_t = ctx_generic<is_tree,
+                            ctx_options::borders::single_level,
+                            ctx_options::hist::all_level,
+                            ctx_options::pre_computed_rho,
+                            ctx_options::bv_initialized,
+                            bit_vectors>;
 
   template <typename InputType>
   static wavelet_structure compute(const InputType& global_text,
@@ -77,8 +82,17 @@ public:
       ps(text, local_size, levels, ctxs[omp_rank], sorted_text);
     }
 
+    // we discard all ctx data once we no longer need it:
+    // - merge needs ctxs[i].hist and ctxs[i].bv
+    // - zeros needs ctxs[i].zeros
+    // - after merge we only move the bv and drop the entire ctx,
+    //   so no need for an early cleanup.
     for (auto& ctx : ctxs) {
-      ctx.discard_non_merge_data();
+      ctx.discard_borders();
+      ctx.discard_rho();
+      // ctx.discard_hist();
+      // ctx.discard_bv();
+      // ctx.discard_zeros();
     }
     drop_me(std::move(global_sorted_text));
 

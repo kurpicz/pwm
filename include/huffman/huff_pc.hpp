@@ -21,7 +21,6 @@ void huff_pc(AlphabetType const* text,
              uint64_t const levels,
              HuffCodes const& codes,
              ContextType& ctx) {
-  auto& borders = ctx.borders();
   auto& bv = ctx.bv();
 
   // While calculating the histogram, we also compute the first level
@@ -30,6 +29,7 @@ void huff_pc(AlphabetType const* text,
 
   // Now we compute the WX top-down, since the histograms are already computed
   for (uint64_t level = levels - 1; level > 0; --level) {
+    auto&& borders = ctx.borders_at_level(level);
     uint64_t blocks = 1ull << level;
 
     // Compute the starting positions of characters with respect to their

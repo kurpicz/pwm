@@ -17,7 +17,7 @@ huff_scan_text_compute_first_level_bv_and_full_hist(text_t const& text,
                                                     bv_t& bv,
                                                     ctx_t& ctx,
                                                     codes_t const& codes) {
-  ctx.hist(0, 0) = size;
+  ctx.hist_at_level(0)[0] = size;
 
   auto process_symbol = [&](auto& word, auto pos) {
     const code_pair cp = codes.encode_symbol(text[pos]);
@@ -28,8 +28,9 @@ huff_scan_text_compute_first_level_bv_and_full_hist(text_t const& text,
     //
     // Eg, just adding at code_length, and summing all up afterwards?
     for (size_t level = 1; level <= cp.code_length; level++) {
+      auto&& hist = ctx.hist_at_level(level);
       auto prefix = cp.prefix(level);
-      ctx.hist(level, prefix)++;
+      hist[prefix]++;
     }
   };
 

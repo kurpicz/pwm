@@ -44,7 +44,7 @@ void copy_bits(WordType* const dst,
   };
   */
 
-  auto zero_word_once = [opt_zero_mem_marker](WordType* word) {
+  auto zero_word_once = [opt_zero_mem_marker]([[maybe_unused]] WordType* word) {
     if constexpr (zero_mem) {
       if (opt_zero_mem_marker != nullptr) {
         WordType const*& zero_mem_marker = *opt_zero_mem_marker;
@@ -59,25 +59,23 @@ void copy_bits(WordType* const dst,
       }
     } else {
       (void) opt_zero_mem_marker;
-      (void) word;
     }
   };
-  auto skip_zero_words = [opt_zero_mem_marker](WordType const* start,
-                                               size_t count) {
-    if constexpr (zero_mem) {
-      if (opt_zero_mem_marker != nullptr) {
-        WordType const*& zero_mem_marker = *opt_zero_mem_marker;
-        if (zero_mem_marker == nullptr) {
-          zero_mem_marker = start;
+  auto skip_zero_words =
+      [opt_zero_mem_marker]([[maybe_unused]] WordType const* start,
+                            [[maybe_unused]] size_t count) {
+        if constexpr (zero_mem) {
+          if (opt_zero_mem_marker != nullptr) {
+            WordType const*& zero_mem_marker = *opt_zero_mem_marker;
+            if (zero_mem_marker == nullptr) {
+              zero_mem_marker = start;
+            }
+            zero_mem_marker += count;
+          }
+        } else {
+          (void) opt_zero_mem_marker;
         }
-        zero_mem_marker += count;
-      }
-    } else {
-      (void) opt_zero_mem_marker;
-      (void) start;
-      (void) count;
-    }
-  };
+      };
 
   WordType constexpr BITS = (sizeof(WordType) * CHAR_BIT);
   WordType constexpr MOD_MASK = BITS - 1;
@@ -333,7 +331,8 @@ inline auto merge_bit_vectors(uint64_t size,
       const auto permuted_block = rho(level, block);
 
       // block size == number of entries in the block on this level
-      auto block_size = src_ctxs[read_shard].hist(level, permuted_block);
+      auto block_size =
+          src_ctxs[read_shard].hist_at_level(level)[permuted_block];
 
       // advance global write offset by the number of bits assigned for
       // this block
@@ -411,8 +410,7 @@ inline auto merge_bit_vectors(uint64_t size,
   triple_loop_exit:; // we are done
   }
 
-  auto r = bit_vectors<false>(levels, size);
-  auto& _bv = r;
+  auto bv = bit_vectors<false>(levels, size);
 
   #pragma omp parallel for
   for (size_t merge_shard = 0; merge_shard < shards; merge_shard++) {
@@ -435,8 +433,8 @@ inline auto merge_bit_vectors(uint64_t size,
         i++;
 
         const auto& local_bv = src_ctxs[read_shard].bv()[level];
-        const auto& h = src_ctxs[read_shard];
-        uint64_t block_size = h.hist(level, rho(level, block)) - initial_offset;
+        auto&& hist = src_ctxs[read_shard].hist_at_level(level);
+        uint64_t block_size = hist[rho(level, block)] - initial_offset;
         uint64_t distance_to_end = target_right - write_offset;
 
         uint64_t copy_size;
@@ -447,7 +445,7 @@ inline auto merge_bit_vectors(uint64_t size,
         }
 
         auto& local_cursor = ctx.levels[level].read_offsets[read_shard];
-        copy_bits<uint64_t, true>(_bv[level].data(), local_bv.data(),
+        copy_bits<uint64_t, true>(bv[level].data(), local_bv.data(),
                                   write_offset, local_cursor, copy_size,
                                   &zero_marker);
       };
@@ -463,7 +461,7 @@ inline auto merge_bit_vectors(uint64_t size,
     }
   }
 
-  return r;
+  return bv;
 }
 
 /******************************************************************************/

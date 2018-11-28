@@ -167,7 +167,7 @@ inline auto huff_merge_bit_vectors(std::vector<uint64_t> const& level_sizes,
       const auto permuted_block = rho(level, block);
 
       // block size == number of entries in the block on this level
-      auto block_size = src_ctxs[read_shard].hist(level, permuted_block);
+      auto block_size = src_ctxs[read_shard].hist_at_level(level)[permuted_block];
 
       // advance global write offset by the number of bits assigned for
       // this block
@@ -247,7 +247,8 @@ inline auto huff_merge_bit_vectors(std::vector<uint64_t> const& level_sizes,
   }
 
   // TODO: remove redundant argument
-  auto r = huff_bit_vectors(levels, level_sizes);
+  // TODO: Need init?
+  auto r = huff_bit_vectors<>(levels, level_sizes);
   auto& _bv = r;
 
   #pragma omp parallel for
@@ -272,10 +273,9 @@ inline auto huff_merge_bit_vectors(std::vector<uint64_t> const& level_sizes,
         i++;
 
         const auto& local_bv = src_ctxs[read_shard].bv()[level];
-        const auto& h = src_ctxs[read_shard];
+        auto&& hist = src_ctxs[read_shard].hist_at_level(level);
         auto const permuted_block = rho(level, block);
-        uint64_t block_size =
-            h.hist(level, permuted_block) - initial_read_offset;
+        uint64_t block_size = hist[permuted_block] - initial_read_offset;
         uint64_t distance_to_end = target_right - write_offset;
 
         uint64_t copy_size;
