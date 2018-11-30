@@ -8,7 +8,6 @@
 
 #pragma once
 
-#include <cassert>
 #include <climits>
 #include <omp.h>
 
@@ -16,14 +15,15 @@
 #include "huffman/huff_bit_vectors.hpp"
 #include "util/common.hpp"
 #include "util/macros.hpp"
+#include "util/debug_assert.hpp"
 
 template <typename ContextType, typename Rho>
 inline auto huff_merge_bit_vectors(std::vector<uint64_t> const& level_sizes,
                                    uint64_t const shards,
                                    const std::vector<ContextType>& src_ctxs,
                                    const Rho& rho) {
-  assert(shards == src_ctxs.size());
-  assert(shards > 1);
+  DCHECK(shards == src_ctxs.size());
+  DCHECK(shards > 1);
 
   uint64_t const levels = level_sizes.size();
 
@@ -240,7 +240,7 @@ inline auto huff_merge_bit_vectors(std::vector<uint64_t> const& level_sizes,
         write_offset += block_size;
         nxt_lctx(merge_shard).read_offsets[read_shard] += block_size;
 
-        assert(write_offset <= lctx(merge_shard).write_end_offset);
+        DCHECK(write_offset <= lctx(merge_shard).write_end_offset);
       }
     }
   triple_loop_exit:; // we are done
@@ -299,7 +299,7 @@ inline auto huff_merge_bit_vectors(std::vector<uint64_t> const& level_sizes,
         // other blocks start at 0
         copy_next_block(0);
       }
-      assert(write_offset == target_right);
+      DCHECK(write_offset == target_right);
     }
   }
 

@@ -16,6 +16,7 @@
 #include "arrays/memory_modes.hpp"
 #include "arrays/bit_vectors.hpp"
 #include "huffman/huff_codes.hpp"
+#include "util/debug_assert.hpp"
 
 class wavelet_structure;
 
@@ -58,7 +59,7 @@ protected:
     return empty;
   }
   inline virtual void const* codes(std::type_info const&) const {
-    assert(false);
+    DCHECK(false);
     return nullptr;
   }
 };
@@ -100,7 +101,7 @@ private:
   canonical_huff_codes<AlphabetType, true> codes_;
   inline virtual void const* codes([
       [maybe_unused]] std::type_info const& type_info) const override {
-    assert(type_info == typeid(canonical_huff_codes<AlphabetType, true>));
+    DCHECK(type_info == typeid(canonical_huff_codes<AlphabetType, true>));
     return &codes_;
   }
 };
@@ -130,7 +131,7 @@ private:
 
   inline virtual void const* codes([
       [maybe_unused]] std::type_info const& type_info) const override {
-    assert(type_info == typeid(canonical_huff_codes<AlphabetType, false>));
+    DCHECK(type_info == typeid(canonical_huff_codes<AlphabetType, false>));
     return &codes_;
   }
 };
@@ -153,40 +154,40 @@ public:
   wavelet_structure& operator=(wavelet_structure&& other) = default;
 
   inline uint64_t levels() const {
-    assert(bool(data_));
+    DCHECK(bool(data_));
     return data_->bvs_.levels();
   }
 
   inline base_bit_vectors const& bvs() const {
-    assert(bool(data_));
+    DCHECK(bool(data_));
     return data_->bvs_;
   }
 
   inline std::vector<uint64_t> const& zeros() const {
-    assert(bool(data_));
+    DCHECK(bool(data_));
     return data_->zeros();
   }
 
   template <typename AlphabetType, bool is_tree>
   inline canonical_huff_codes<AlphabetType, is_tree> const& codes() const {
     using Ty = canonical_huff_codes<AlphabetType, is_tree>;
-    assert(bool(data_));
+    DCHECK(bool(data_));
     auto ptr = data_->codes(typeid(Ty));
     return *((Ty const*) ptr);
   }
 
   inline bool is_tree() const {
-    assert(bool(data_));
+    DCHECK(bool(data_));
     return data_->is_tree_;
   }
 
   inline bool is_huffman_shaped() const {
-    assert(bool(data_));
+    DCHECK(bool(data_));
     return data_->is_huffman_shaped_;
   }
 
   inline size_t text_size() const {
-    assert(bool(data_));
+    DCHECK(bool(data_));
     return data_->text_size_;
   }
 

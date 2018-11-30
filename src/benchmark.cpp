@@ -17,6 +17,7 @@
 #include "util/file_util.hpp"
 #include "util/print.hpp"
 #include "util/structure_decode.hpp"
+#include "util/debug_assert.hpp"
 
 #ifdef MALLOC_COUNT
 #include "benchmark/malloc_count.h"
@@ -137,7 +138,7 @@ struct {
     }
 #endif // MALLOC_COUNT
       for (const auto& a : algo_list) {
-        GUARD_LOOP(global_settings.filter_name == "" || 
+        GUARD_LOOP(global_settings.filter_name == "" ||
                    (a->name().compare(global_settings.filter_name) == 0));
         GUARD_LOOP(global_settings.parallel_filter.should_keep(a->is_parallel()));
         GUARD_LOOP(global_settings.huffman_filter.should_keep(a->is_huffman_shaped()));
@@ -225,7 +226,7 @@ struct {
                     return e->name() == "wm_huff_naive";
                 }).at(0);
               }
-              assert(naive != nullptr);
+              DCHECK(naive != nullptr);
               auto naive_wx = naive->compute_bitvector(
                   input_for_algo_check, text_size, levels);
               bool err_trigger = false;
