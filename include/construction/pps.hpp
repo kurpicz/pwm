@@ -143,28 +143,9 @@ void pps(AlphabetType const* text,
 
       #pragma omp barrier
 
-      // Since we have sorted the text, we can simply scan it from left to
-      // right and for the character at position $i$ we set the $i$-th bit in
-      // the bit vector accordingly
-      #pragma omp for
-      for (uint64_t cur_pos = 0; cur_pos <= size - 64; cur_pos += 64) {
-        uint64_t word = 0ULL;
-        for (uint64_t i = 0; i < 64; ++i) {
-          word <<= 1;
-          word |= (sorted_text[cur_pos + i] & 1ULL);
-        }
-        bv[level][cur_pos >> 6] = word;
-      }
-
-      if ((size & 63ULL) && ((omp_rank + 1) == omp_size)) {
-        uint64_t word = 0ULL;
-        for (uint64_t i = 0; i < (size & 63ULL); ++i) {
-          word <<= 1;
-          word |= (sorted_text[size - (size & 63ULL) + i] & 1ULL);
-        }
-        word <<= (64 - (size & 63ULL));
-        bv[level][size >> 6] = word;
-      }
+      omp_write_bits_wordwise(0, size, bv[level], [&](uint64_t pos) {
+        return sorted_text[pos] & 1ULL;
+      });
     }
   }
 }
