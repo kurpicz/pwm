@@ -83,17 +83,12 @@ public:
 
     bottom_up_compute_hist_and_borders_and_optional_zeros(size, levels, ctx);
 
-    // TODO: Is this correct?
     #pragma omp parallel num_threads(levels)
     {
       uint64_t level = omp_get_thread_num();
       auto&& borders = ctx.borders_at_level(level);
       for (uint64_t i = 0; i < size; ++i) {
-        const uint64_t prefix_shift = (levels - level);
-        const uint64_t cur_bit_shift = prefix_shift - 1;
-        const uint64_t pos = borders[text[i] >> prefix_shift]++;
-        bv[level][pos >> 6] |=
-            (((text[i] >> cur_bit_shift) & 1ULL) << (63ULL - (pos & 63ULL)));
+        single_scan_write_bit(bv, level, levels, borders, text[i]);
       }
     }
 

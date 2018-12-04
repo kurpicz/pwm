@@ -142,3 +142,18 @@ inline void compute_borders_and_optional_zeros_and_optional_rho(
     ctx.zeros()[level - 1] = borders[1];
   }
 }
+
+template <typename bv_t, typename borders_t, typename alphabet_type>
+inline __attribute__((always_inline)) void
+single_scan_write_bit(bv_t& bv,
+                      uint64_t level,
+                      uint64_t levels,
+                      borders_t&& borders,
+                      alphabet_type c) {
+  const uint64_t prefix_shift = (levels - level);
+  const uint64_t cur_bit_shift = prefix_shift - 1;
+  const uint64_t pos = borders[c >> prefix_shift]++;
+  const uint64_t bit =
+      (((c >> cur_bit_shift) & 1ULL) << (63ULL - (pos & 63ULL)));
+  bv[level][pos >> 6] |= bit;
+}
