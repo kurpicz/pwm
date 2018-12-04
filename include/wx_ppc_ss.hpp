@@ -63,28 +63,12 @@ public:
       all_hists = std::vector<std::vector<uint64_t>>(
           omp_size, std::vector<uint64_t>(alphabet_size + 1, 0));
 
-      #pragma omp for
-      for (uint64_t cur_pos = 0; cur_pos <= size - 64; cur_pos += 64) {
-        uint64_t word = 0ULL;
-        for (uint64_t i = 0; i < 64; ++i) {
-          //++ctx.hist(omp_rank, text[cur_pos + i]);
-          ++all_hists[omp_rank][text[cur_pos + i]];
-          word <<= 1;
-          word |= ((text[cur_pos + i] >> (levels - 1)) & 1ULL);
-        }
-        bv[0][cur_pos >> 6] = word;
-      }
-      if ((size & 63ULL) && ((omp_rank + 1) == omp_size)) {
-        uint64_t word = 0ULL;
-        for (uint64_t i = 0; i < (size & 63ULL); ++i) {
-          //++ctx.hist(omp_rank, text[size - (size & 63ULL) + i]);
-          ++all_hists[omp_rank][text[size - (size & 63ULL) + i]];
-          word <<= 1;
-          word |= ((text[size - (size & 63ULL) + i] >> (levels - 1)) & 1ULL);
-        }
-        word <<= (64 - (size & 63ULL));
-        bv[0][size >> 6] = word;
-      }
+      auto&& hist = span<uint64_t>(all_hists[omp_rank]);
+      omp_write_bits_wordwise(0, size, bv[0], [&](uint64_t i) {
+        hist[text[i]]++;
+        uint64_t const bit = ((text[i] >> (levels - 1)) & 1ULL);
+        return bit;
+      });
     }
 
     auto&& hist = ctx.hist_at_level(levels);
