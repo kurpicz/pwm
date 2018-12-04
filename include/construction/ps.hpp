@@ -14,8 +14,9 @@ template <typename AlphabetType, typename ContextType>
 void ps(AlphabetType const* const text,
         uint64_t const size,
         uint64_t const levels,
-        ContextType& ctx,
-        AlphabetType* const sorted_text) {
+        ContextType& ctx) {
+  auto sorted_text_ = std::vector<AlphabetType>(size);
+  auto sorted_text = span<AlphabetType>(sorted_text_);
   uint64_t cur_alphabet_size = (1 << levels);
 
   auto&& zeros = ctx.zeros();

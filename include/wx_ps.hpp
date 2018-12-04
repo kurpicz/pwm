@@ -45,9 +45,7 @@ public:
     }
 
     auto ctx = ctx_t(size, levels, levels);
-
-    auto sorted_text = std::vector<AlphabetType>(size);
-    ps(text, size, levels, ctx, sorted_text.data());
+    ps(text, size, levels, ctx);
 
     if constexpr (ctx_t::compute_zeros) {
       return wavelet_structure_matrix(std::move(ctx.bv()),
