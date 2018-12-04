@@ -47,9 +47,8 @@ public:
 
     const uint64_t shards = omp_get_max_threads();
     ctx_t ctx(size, levels, levels, shards);
-    std::vector<AlphabetType> sorted_text(size);
 
-    pps(text, size, levels, ctx, sorted_text.data());
+    pps(text, size, levels, ctx);
 
     if constexpr (ctx_t::compute_zeros) {
       return wavelet_structure_matrix(std::move(ctx.bv()),

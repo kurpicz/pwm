@@ -19,8 +19,9 @@ template <typename AlphabetType, typename ContextType>
 void pps(AlphabetType const* text,
          const uint64_t size,
          const uint64_t levels,
-         ContextType& ctx,
-         AlphabetType* sorted_text) {
+         ContextType& ctx) {
+  auto sorted_text_ = std::vector<AlphabetType>(size);
+  auto sorted_text = span<AlphabetType>(sorted_text_);
 
   std::vector<uint64_t> offsets_(1 << levels, 0);
   auto offsets = span<uint64_t>(offsets_);
