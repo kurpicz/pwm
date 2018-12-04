@@ -22,9 +22,8 @@ struct huff_ps_disp {
                         uint64_t const levels,
                         HuffCodes const& codes,
                         ContextType& ctx,
-                        AlphabetType* const sorted_text,
                         std::vector<uint64_t> const& level_sizes) {
-    huff_ps(text, size, levels, codes, ctx, sorted_text, level_sizes);
+    huff_ps(text, size, levels, codes, ctx, level_sizes);
   }
 };
 

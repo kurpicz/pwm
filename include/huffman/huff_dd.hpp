@@ -100,15 +100,6 @@ public:
     const auto rho = rho_dispatch<is_tree>::create(levels);
     auto ctxs = std::vector<ctx_t>(shards);
 
-    // NB: Only allocate if needed
-    std::vector<AlphabetType> global_sorted_text_allocation;
-    if constexpr (Algorithm::needs_second_text_allocation) {
-      global_sorted_text_allocation = std::vector<AlphabetType>(size);
-    }
-    span<AlphabetType> const global_sorted_text{
-        global_sorted_text_allocation.data(),
-        global_sorted_text_allocation.size()};
-
     #pragma omp parallel for
     for (size_t shard = 0; shard < shards; shard++) {
       std::vector<uint64_t> const& local_level_sizes =
@@ -119,10 +110,8 @@ public:
       ctxs[shard] = ctx_t(local_level_sizes, levels, rho);
 
       if constexpr (Algorithm::needs_second_text_allocation) {
-        auto const sorted_text = get_local_slice(shard, global_sorted_text);
         Algorithm::calc_huff(text.data(), text.size(), levels, codes,
-                             ctxs[shard], sorted_text.data(),
-                             local_level_sizes);
+                             ctxs[shard], local_level_sizes);
       } else {
         Algorithm::calc_huff(text.data(), text.size(), levels, codes,
                              ctxs[shard]);
@@ -139,8 +128,6 @@ public:
       // ctxs[shard].discard_bv();
       // ctxs[shard].discard_zeros();
     }
-
-    drop_me(std::move(global_sorted_text_allocation));
 
     std::vector<uint64_t> const& level_sizes = builder.level_sizes();
     auto bv = huff_merge_bit_vectors(level_sizes, shards, ctxs, rho);

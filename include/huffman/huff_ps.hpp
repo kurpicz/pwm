@@ -21,8 +21,9 @@ void huff_ps(AlphabetType const* text,
              uint64_t const levels,
              HuffCodes const& codes,
              ContextType& ctx,
-             AlphabetType* const sorted_text,
              std::vector<uint64_t> const& level_sizes) {
+  auto sorted_text_ = std::vector<AlphabetType>(size);
+  auto sorted_text = span<AlphabetType>(sorted_text_);
   auto& bv = ctx.bv();
 
   // While calculating the histogram, we also compute the first level
