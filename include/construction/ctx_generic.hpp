@@ -44,7 +44,7 @@ class live_computed_rho {
 public:
   inline uint64_t get(size_t /*level*/, size_t i) const {
     if constexpr (!is_tree) {
-      return bit_reverse_[i];
+      return span<uint64_t const>(bit_reverse_.data(), bit_reverse_.size())[i];
     } else {
       return i;
     }
@@ -52,7 +52,7 @@ public:
 
   inline void set(size_t /*level*/, [[maybe_unused]] size_t i, [[maybe_unused]] uint64_t value) {
     if constexpr (!is_tree) {
-      bit_reverse_[i] = value;
+      span<uint64_t>(bit_reverse_.data(), bit_reverse_.size())[i] = value;
     } else {
       DCHECK(false); // Should not be called
     }
