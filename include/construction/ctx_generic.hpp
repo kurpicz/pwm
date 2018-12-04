@@ -209,9 +209,16 @@ public:
   static bool constexpr compute_zeros = !is_tree;
   static bool constexpr compute_rho = rho_type<is_tree>::compute_rho;
 
-  // TODO: return span
-  std::vector<uint64_t>& zeros() {
-    return zeros_;
+  auto zeros() {
+    return span<uint64_t>(zeros_.data(), zeros_.size());
+  }
+
+  auto zeros() const {
+    return span<uint64_t const>(zeros_.data(), zeros_.size());
+  }
+
+  std::vector<uint64_t>&& take_zeros() {
+    return std::move(zeros_);
   }
 
   bv_type<require_initialization>& bv() {

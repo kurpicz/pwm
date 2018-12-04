@@ -18,7 +18,7 @@ void ps(AlphabetType const* const text,
         AlphabetType* const sorted_text) {
   uint64_t cur_alphabet_size = (1 << levels);
 
-  auto& zeros = ctx.zeros();
+  auto&& zeros = ctx.zeros();
   auto& bv = ctx.bv();
 
   scan_text_compute_first_level_bv_and_last_level_hist(text, size, levels, bv,

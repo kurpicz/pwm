@@ -24,7 +24,7 @@ void huff_naive(AlphabetType const* text,
   constexpr bool is_tree = !ContextType::compute_zeros;
 
   auto& bv = ctx.bv();
-  auto& zeros = ctx.zeros();
+  auto&& zeros = ctx.zeros();
 
   // calculate histogram
   {

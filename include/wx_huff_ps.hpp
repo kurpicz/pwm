@@ -66,7 +66,7 @@ public:
     }
 
     auto& bv = ctx.bv();
-    auto& zeros = ctx.zeros();
+    auto&& zeros = ctx.take_zeros();
 
     if constexpr (is_tree) {
       return wavelet_structure_tree_huffman<AlphabetType>(std::move(bv),

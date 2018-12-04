@@ -50,7 +50,7 @@ public:
 
     if constexpr (ctx_t::compute_zeros) {
       return wavelet_structure_matrix(std::move(ctx.bv()),
-                                      std::move(ctx.zeros()));
+                                      std::move(ctx.take_zeros()));
     } else {
       return wavelet_structure_tree(std::move(ctx.bv()));
     }
