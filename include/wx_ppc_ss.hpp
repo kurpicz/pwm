@@ -10,15 +10,15 @@
 
 #include <omp.h>
 
-#include "construction/ctx_generic.hpp"
 #include "construction/building_blocks.hpp"
+#include "construction/ctx_generic.hpp"
 #include "construction/pc_ss.hpp"
 #include "construction/wavelet_structure.hpp"
 
 #include "wx_base.hpp"
 
 template <typename AlphabteType, bool is_tree_>
-class wx_ppc_ss : public wx_in_out_external<false, false>  {
+class wx_ppc_ss : public wx_in_out_external<false, false> {
 
 public:
   static constexpr bool is_parallel = true;
@@ -52,18 +52,16 @@ public:
 
     const uint64_t alphabet_size = (1 << levels);
 
-    std::vector<std::vector<uint64_t>> all_hists;
+    std::vector<std::vector<uint64_t>> all_hists_ =
+        std::vector<std::vector<uint64_t>>(omp_get_max_threads());
+    span<std::vector<uint64_t>> all_hists(all_hists_);
 
     #pragma omp parallel
     {
       const auto omp_rank = omp_get_thread_num();
-      const auto omp_size = omp_get_num_threads();
-
-      #pragma omp single
-      all_hists = std::vector<std::vector<uint64_t>>(
-          omp_size, std::vector<uint64_t>(alphabet_size + 1, 0));
-
+      all_hists[omp_rank] = std::vector<uint64_t>(alphabet_size + 1, 0);
       auto&& hist = span<uint64_t>(all_hists[omp_rank]);
+
       omp_write_bits_wordwise(0, size, bv[0], [&](uint64_t i) {
         hist[text[i]]++;
         uint64_t const bit = ((text[i] >> (levels - 1)) & 1ULL);
