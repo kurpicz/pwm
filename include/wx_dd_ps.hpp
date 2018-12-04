@@ -18,6 +18,7 @@
 #include "construction/ps.hpp"
 #include "construction/wavelet_structure.hpp"
 #include "util/common.hpp"
+#include "util/debug_assert.hpp"
 
 #include "wx_base.hpp"
 
@@ -69,7 +70,7 @@ public:
     {
       const uint64_t omp_rank = omp_get_thread_num();
       const uint64_t omp_size = omp_get_num_threads();
-      assert(omp_size == shards);
+      DCHECK(omp_size == shards);
 
       const uint64_t local_size =
           (size / omp_size) + ((omp_rank < size % omp_size) ? 1 : 0);

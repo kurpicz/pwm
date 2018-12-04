@@ -8,12 +8,12 @@
 
 #pragma once
 
-#include <cassert>
+#include "util/debug_assert.hpp"
 
 template <uint8_t BytesPerWord>
 struct type_for_bytes {
   type_for_bytes() {
-    assert(false); // There must be 1, 2, 4 or 8 bytes per word.
+    DCHECK(false); // There must be 1, 2, 4 or 8 bytes per word.
   }
 }; // type_for_bytes<uint8_t>
 

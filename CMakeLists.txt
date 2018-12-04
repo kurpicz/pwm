@@ -46,8 +46,8 @@ endif()
 set(CMAKE_CXX_FLAGS
   "${CMAKE_CXX_FLAGS} -fopenmp -Wall -Wextra -Wpedantic -fdiagnostics-color=auto")
 set(CMAKE_CXX_FLAGS_RELEASE
-  "${CMAKE_CXX_FLAGS_RELEASE} -O3 -funroll-loops -march=native")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -ggdb")
+  "${CMAKE_CXX_FLAGS_RELEASE} -O3 -funroll-loops -march=native -DNDEBUG")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -ggdb -DDEBUG")
 
 # Add include checking
 include(header_walker)

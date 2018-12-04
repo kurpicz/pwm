@@ -15,6 +15,7 @@
 
 #include "span.hpp"
 #include "util/common.hpp"
+#include "util/debug_assert.hpp"
 
 template <typename IndexType>
 class base_flat_two_dim_array {
@@ -23,7 +24,7 @@ public:
 
   base_flat_two_dim_array(const uint64_t levels)
       : levels_(levels), data_(levels + 1), level_bit_sizes_(levels) {
-    assert(levels > 0);
+    DCHECK(levels > 0);
   }
 
   base_flat_two_dim_array(base_flat_two_dim_array&& other) = default;

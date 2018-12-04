@@ -11,6 +11,7 @@
 #include <vector>
 #include "arrays/stxxl_helper.hpp"
 #include "construction/wavelet_structure.hpp"
+#include "util/debug_assert.hpp"
 
 class wavelet_structure_external_writer;
 
@@ -50,9 +51,9 @@ private:
         is_huffman_shaped_(is_huffman_shaped),
         save_zeros_(zeros_ != nullptr),
         save_histograms_(histograms_ != nullptr) {
-    if(save_zeros_) assert(zeros_->size() == levels_);
+    if(save_zeros_) DCHECK(zeros_->size() == levels_);
     if(save_histograms_) {
-      assert(histograms_->size() == levels_ + 1);
+      DCHECK(histograms_->size() == levels_ + 1);
       (*histograms_)[0][0] = text_size_;
     }
 

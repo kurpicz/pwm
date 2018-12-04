@@ -9,11 +9,11 @@
 
 #pragma once
 
-#include <cassert>
 #include <climits>
 #include <stdint.h>
 #include <type_traits>
 #include <vector>
+#include "util/debug_assert.hpp"
 
 #include "util/permutation.hpp"
 

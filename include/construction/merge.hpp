@@ -8,13 +8,13 @@
 
 #pragma once
 
-#include <cassert>
 #include <climits>
 #include <omp.h>
 
 #include "arrays/bit_vectors.hpp"
 #include "util/common.hpp"
 #include "util/macros.hpp"
+#include "util/debug_assert.hpp"
 
 template <typename WordType, bool zero_mem = false>
 void copy_bits(WordType* const dst,
@@ -195,7 +195,7 @@ inline auto merge_bit_vectors(uint64_t size,
                               uint64_t shards,
                               const std::vector<ContextType>& src_ctxs,
                               const Rho& rho) {
-  assert(shards == src_ctxs.size());
+  DCHECK(shards == src_ctxs.size());
 
   // Allocate data structures centrally
 
@@ -404,7 +404,7 @@ inline auto merge_bit_vectors(uint64_t size,
         write_offset += block_size;
         nxt_lctx(merge_shard).read_offsets[read_shard] += block_size;
 
-        assert(write_offset <= ctxs[merge_shard].end_offset);
+        DCHECK(write_offset <= ctxs[merge_shard].end_offset);
       }
     }
   triple_loop_exit:; // we are done
@@ -414,7 +414,7 @@ inline auto merge_bit_vectors(uint64_t size,
 
   #pragma omp parallel for
   for (size_t merge_shard = 0; merge_shard < shards; merge_shard++) {
-    assert(size_t(omp_get_num_threads()) == shards);
+    DCHECK(size_t(omp_get_num_threads()) == shards);
 
     auto& ctx = ctxs[merge_shard];
 

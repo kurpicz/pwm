@@ -10,6 +10,7 @@
 
 #include "construction/ctx_single_level_external.hpp"
 #include "construction/wavelet_structure_external.hpp"
+#include "util/debug_assert.hpp"
 
 #define PSE_VERBOSE if (false)
 
@@ -165,8 +166,8 @@ struct word_packed_reader_with_padding {
         values_per_word(64 / bits),
         values_in_last_word((size - 1) % (64 / bits) + 1),
         reader(vec) {
-    assert(vec.size() * values_per_word < size + values_per_word);
-    assert(vec.size() * values_per_word >= size);
+    DCHECK(vec.size() * values_per_word < size + values_per_word);
+    DCHECK(vec.size() * values_per_word >= size);
 
     current_word_counter = 65;
   }
@@ -277,8 +278,8 @@ struct word_packed_reader_without_padding {
         current_word(0),
         current_shift(-bits) {
 
-    assert((size * bits_per_value) / 64 <= vec.size());
-    assert((size * bits_per_value) / 64 + 1 >= vec.size());
+    DCHECK((size * bits_per_value) / 64 <= vec.size());
+    DCHECK((size * bits_per_value) / 64 + 1 >= vec.size());
   }
 
   inline ValueType next() {
