@@ -21,7 +21,7 @@ void huff_ps(AlphabetType const* text,
              uint64_t const levels,
              HuffCodes const& codes,
              ContextType& ctx,
-             std::vector<uint64_t> const& level_sizes) {
+             span<uint64_t const> const level_sizes) {
   auto sorted_text_ = std::vector<AlphabetType>(size);
   auto sorted_text = span<AlphabetType>(sorted_text_);
   auto& bv = ctx.bv();

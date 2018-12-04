@@ -20,7 +20,8 @@ void huff_pc_ss(AlphabetType const* text,
                 uint64_t const size,
                 uint64_t const levels,
                 HuffCodes const& codes,
-                ContextType& ctx) {
+                ContextType& ctx,
+                span<uint64_t const> const) {
   auto& bv = ctx.bv();
 
   // While calculating the histogram, we also compute the first level

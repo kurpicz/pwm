@@ -60,7 +60,7 @@ public:
     const auto rho = rho_dispatch<is_tree>::create(levels);
     auto ctx = ctx_t(level_sizes, levels, rho);
 
-    huff_pc_ss(text, size, levels, codes, ctx);
+    huff_pc_ss(text, size, levels, codes, ctx, level_sizes);
 
     auto& bv = ctx.bv();
     auto&& zeros = ctx.take_zeros();

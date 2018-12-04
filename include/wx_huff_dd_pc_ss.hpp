@@ -13,7 +13,6 @@
 #include "huffman/huff_pc_ss.hpp"
 
 struct huff_pc_ss_disp {
-  static constexpr bool needs_second_text_allocation = false;
   static constexpr bool needs_all_borders = true;
 
   template <typename AlphabetType, typename ContextType, typename HuffCodes>
@@ -21,8 +20,9 @@ struct huff_pc_ss_disp {
                         uint64_t const size,
                         uint64_t const levels,
                         HuffCodes const& codes,
-                        ContextType& ctx) {
-    huff_pc_ss(text, size, levels, codes, ctx);
+                        ContextType& ctx,
+                        span<uint64_t const> const level_sizes) {
+    huff_pc_ss(text, size, levels, codes, ctx, level_sizes);
   }
 };
 

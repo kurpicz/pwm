@@ -109,13 +109,8 @@ public:
 
       ctxs[shard] = ctx_t(local_level_sizes, levels, rho);
 
-      if constexpr (Algorithm::needs_second_text_allocation) {
-        Algorithm::calc_huff(text.data(), text.size(), levels, codes,
-                             ctxs[shard], local_level_sizes);
-      } else {
-        Algorithm::calc_huff(text.data(), text.size(), levels, codes,
-                             ctxs[shard]);
-      }
+      Algorithm::calc_huff(text.data(), text.size(), levels, codes,
+                           ctxs[shard], local_level_sizes);
 
       // we discard all ctx data once we no longer need it:
       // - merge needs ctxs[shard].hist and ctxs[shard].bv
