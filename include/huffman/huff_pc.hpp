@@ -34,7 +34,8 @@ void huff_pc(AlphabetType const* text,
 
     // Compute the starting positions of characters with respect to their
     // bit prefixes and the bit-reversal permutation
-    compute_borders_and_optional_zeros_and_optional_rho(level, blocks, ctx);
+    compute_borders_and_optional_zeros_and_optional_rho(level,
+                                                        blocks, ctx, borders);
 
     // Now we insert the bits with respect to their bit prefixes
     for (uint64_t i = 0; i < size; ++i) {

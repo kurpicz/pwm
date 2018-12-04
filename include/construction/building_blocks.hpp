@@ -111,11 +111,9 @@ inline void bottom_up_compute_hist_and_borders_and_optional_zeros(
   ctx.hist_at_level(0)[0] = size;
 }
 
-template <typename ctx_t>
-inline void compute_borders_and_optional_zeros_and_optional_rho(uint64_t level,
-                                                                uint64_t blocks,
-                                                                ctx_t& ctx) {
-  auto&& borders = ctx.borders_at_level(level);
+template <typename ctx_t, typename borders_t>
+inline void compute_borders_and_optional_zeros_and_optional_rho(
+    uint64_t level, uint64_t blocks, ctx_t& ctx, borders_t&& borders) {
   auto&& hist = ctx.hist_at_level(level);
 
   // Compute the starting positions of characters with respect to their

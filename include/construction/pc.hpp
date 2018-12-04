@@ -45,11 +45,13 @@ void pc(AlphabetType const* text,
       hist[i] = next_hist[i << 1] + next_hist[(i << 1) + 1];
     }
 
+    auto&& borders = ctx.borders_at_level(level);
+
     // Compute the starting positions of characters with respect to their
     // bit prefixes and the bit-reversal permutation
     compute_borders_and_optional_zeros_and_optional_rho(level,
-                                                        cur_alphabet_size, ctx);
-    auto&& borders = ctx.borders_at_level(level);
+                                                        cur_alphabet_size,
+                                                        ctx, borders);
 
     // Now we insert the bits with respect to their bit prefixes
     for (uint64_t i = 0; i < size; ++i) {
