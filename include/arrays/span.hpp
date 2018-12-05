@@ -20,6 +20,9 @@ class span {
 public:
   inline span(T* ptr, size_t size) : ptr_(ptr), size_(size) {}
   inline span() : span(nullptr, 0) {}
+  template <typename container_type>
+  inline span(container_type&& container)
+      : span(container.data(), container.size()) {}
 
   inline size_t size() const {
     return size_;

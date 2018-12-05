@@ -64,8 +64,6 @@ public:
       ctxs[shard] = ctx_t(local_size, levels, rho);
     }
 
-    auto global_sorted_text = std::vector<AlphabetType>(size);
-
     #pragma omp parallel
     {
       const uint64_t omp_rank = omp_get_thread_num();
@@ -78,9 +76,8 @@ public:
                               std::min<uint64_t>(omp_rank, size % omp_size);
 
       AlphabetType const* text = global_text + offset;
-      AlphabetType* sorted_text = global_sorted_text.data() + offset;
 
-      ps(text, local_size, levels, ctxs[omp_rank], sorted_text);
+      ps(text, local_size, levels, ctxs[omp_rank]);
     }
 
     // we discard all ctx data once we no longer need it:
@@ -95,7 +92,6 @@ public:
       // ctx.discard_bv();
       // ctx.discard_zeros();
     }
-    drop_me(std::move(global_sorted_text));
 
     auto _bv = merge_bit_vectors(size, levels, shards, ctxs, rho);
 

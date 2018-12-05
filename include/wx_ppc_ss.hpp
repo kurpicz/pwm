@@ -10,15 +10,15 @@
 
 #include <omp.h>
 
-#include "construction/ctx_generic.hpp"
 #include "construction/building_blocks.hpp"
-#include "construction/pc_ss.hpp"
+#include "construction/ctx_generic.hpp"
+#include "construction/ppc_ss.hpp"
 #include "construction/wavelet_structure.hpp"
 
 #include "wx_base.hpp"
 
 template <typename AlphabteType, bool is_tree_>
-class wx_ppc_ss : public wx_in_out_external<false, false>  {
+class wx_ppc_ss : public wx_in_out_external<false, false> {
 
 public:
   static constexpr bool is_parallel = true;
@@ -47,77 +47,11 @@ public:
 
     const auto rho = rho_dispatch<is_tree>::create(levels);
     auto ctx = ctx_t(size, levels, rho);
-    auto& bv = ctx.bv();
-    auto& zeros = ctx.zeros();
-
-    const uint64_t alphabet_size = (1 << levels);
-
-    std::vector<std::vector<uint64_t>> all_hists;
-
-    #pragma omp parallel
-    {
-      const auto omp_rank = omp_get_thread_num();
-      const auto omp_size = omp_get_num_threads();
-
-      #pragma omp single
-      all_hists = std::vector<std::vector<uint64_t>>(
-          omp_size, std::vector<uint64_t>(alphabet_size + 1, 0));
-
-      #pragma omp for
-      for (uint64_t cur_pos = 0; cur_pos <= size - 64; cur_pos += 64) {
-        uint64_t word = 0ULL;
-        for (uint64_t i = 0; i < 64; ++i) {
-          //++ctx.hist(omp_rank, text[cur_pos + i]);
-          ++all_hists[omp_rank][text[cur_pos + i]];
-          word <<= 1;
-          word |= ((text[cur_pos + i] >> (levels - 1)) & 1ULL);
-        }
-        bv[0][cur_pos >> 6] = word;
-      }
-      if ((size & 63ULL) && ((omp_rank + 1) == omp_size)) {
-        uint64_t word = 0ULL;
-        for (uint64_t i = 0; i < (size & 63ULL); ++i) {
-          //++ctx.hist(omp_rank, text[size - (size & 63ULL) + i]);
-          ++all_hists[omp_rank][text[size - (size & 63ULL) + i]];
-          word <<= 1;
-          word |= ((text[size - (size & 63ULL) + i] >> (levels - 1)) & 1ULL);
-        }
-        word <<= (64 - (size & 63ULL));
-        bv[0][size >> 6] = word;
-      }
-    }
-
-    auto&& hist = ctx.hist_at_level(levels);
-    for (uint64_t i = 0; i < all_hists.size(); ++i) {
-      for (uint64_t j = 0; j < alphabet_size; ++j) {
-        hist[j] += all_hists[i][j];
-      }
-    }
-    if constexpr (ctx_t::compute_zeros) {
-      for (uint64_t i = 0; i < alphabet_size; i += 2) {
-        zeros[levels - 1] += hist[i];
-      }
-    }
-
-    bottom_up_compute_hist_and_borders_and_optional_zeros(size, levels, ctx);
-
-    // TODO: Is this correct?
-    #pragma omp parallel num_threads(levels)
-    {
-      uint64_t level = omp_get_thread_num();
-      auto&& borders = ctx.borders_at_level(level);
-      for (uint64_t i = 0; i < size; ++i) {
-        const uint64_t prefix_shift = (levels - level);
-        const uint64_t cur_bit_shift = prefix_shift - 1;
-        const uint64_t pos = borders[text[i] >> prefix_shift]++;
-        bv[level][pos >> 6] |=
-            (((text[i] >> cur_bit_shift) & 1ULL) << (63ULL - (pos & 63ULL)));
-      }
-    }
+    ppc_ss(text, size, levels, ctx);
 
     if constexpr (ctx_t::compute_zeros) {
       return wavelet_structure_matrix(std::move(ctx.bv()),
-                                      std::move(ctx.zeros()));
+                                      std::move(ctx.take_zeros()));
     } else {
       return wavelet_structure_tree(std::move(ctx.bv()));
     }

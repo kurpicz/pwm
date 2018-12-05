@@ -8,10 +8,9 @@
 
 #pragma once
 
-#include <omp.h>
-
 #include "construction/building_blocks.hpp"
-#include "construction/ctx_all_levels.hpp"
+#include "construction/ctx_generic.hpp"
+#include "construction/ppc.hpp"
 #include "construction/wavelet_structure.hpp"
 #include "util/common.hpp"
 
@@ -26,14 +25,19 @@ public:
   static constexpr uint8_t word_width = sizeof(AlphabetType);
   static constexpr bool is_huffman_shaped = false;
 
-  using ctx_t = ctx_all_levels<is_tree>;
+  using ctx_t = ctx_generic<is_tree,
+                            ctx_options::borders::sharded_single_level,
+                            ctx_options::hist::all_level,
+                            ctx_options::pre_computed_rho,
+                            ctx_options::bv_initialized,
+                            bit_vectors>;
 
   template <typename InputType>
   static wavelet_structure
   compute(const InputType& text, const uint64_t size, const uint64_t levels) {
 
     if (size == 0) {
-      if (ctx_t::compute_zeros) {
+      if constexpr (ctx_t::compute_zeros) {
         return wavelet_structure_matrix();
       } else {
         return wavelet_structure_tree();
@@ -41,117 +45,13 @@ public:
     }
 
     const auto rho = rho_dispatch<is_tree>::create(levels);
-    // TODO create new context with all max size hist-levels.
-    ctx_t ctx(size, levels, rho);
-    auto& bv = ctx.bv();
-    auto& zeros = ctx.zeros();
+    ctx_t ctx(size, levels, rho, levels);
 
-    std::vector<uint64_t> initial_hist((1ULL << levels) * levels, 0);
+    ppc(text, size, levels, ctx);
 
-    #pragma omp parallel num_threads(levels)
-    {
-      const uint64_t omp_rank = uint64_t(omp_get_thread_num());
-      const uint64_t omp_size = uint64_t(omp_get_num_threads());
-      const uint64_t alphabet_size = (1 << levels);
-
-      auto* const initial_hist_ptr =
-          initial_hist.data() + (alphabet_size * omp_rank);
-
-      #pragma omp for
-      for (uint64_t cur_pos = 0; cur_pos <= size - 64; cur_pos += 64) {
-        uint64_t word = 0ULL;
-        for (uint64_t i = 0; i < 64; ++i) {
-          ++initial_hist_ptr[text[cur_pos + i]];
-          word <<= 1;
-          word |= ((text[cur_pos + i] >> (levels - 1)) & 1ULL);
-        }
-        bv[0][cur_pos >> 6] = word;
-      }
-
-      if ((size & 63ULL) && omp_rank == 0) {
-        uint64_t word = 0ULL;
-        for (uint64_t i = 0; i < (size & 63ULL); ++i) {
-          ++initial_hist_ptr[text[size - (size & 63ULL) + i]];
-          word <<= 1;
-          word |= ((text[size - (size & 63ULL) + i] >> (levels - 1)) & 1ULL);
-        }
-        word <<= (64 - (size & 63ULL));
-        bv[0][size >> 6] = word;
-      }
-
-      #pragma omp barrier
-
-      // Compute the historam with respect to the local slices of the text
-      #pragma omp for
-      for (uint64_t i = 0; i < alphabet_size; ++i) {
-        for (uint64_t rank = 0; rank < omp_size; ++rank) {
-          ctx.hist(levels, i) +=
-              *(initial_hist.data() + (alphabet_size * rank) + i);
-        }
-      }
-
-      #pragma omp single
-      {
-        if constexpr (ctx_t::compute_zeros) {
-          // The number of 0s at the last level is the number of "even"
-          // characters
-          for (uint64_t i = 0; i < alphabet_size; i += 2) {
-            zeros[levels - 1] += ctx.hist(levels, i);
-          }
-        }
-      }
-
-      // Compute the histogram for each level of the wavelet structure
-      #pragma omp for
-      for (uint64_t level = 1; level < levels; ++level) {
-        const uint64_t local_alphabet_size = (1 << level);
-        const uint64_t requierd_characters = (1 << (levels - level));
-        for (uint64_t i = 0; i < local_alphabet_size; ++i) {
-          for (uint64_t j = 0; j < requierd_characters; ++j) {
-            ctx.hist(level, i) +=
-                ctx.hist(levels, (i * requierd_characters) + j);
-          }
-        }
-      }
-
-      // Now we compute the wavelet structure bottom-up, i.e., the last level
-      // first
-      #pragma omp for
-      for (uint64_t level = 1; level < levels; ++level) {
-
-        const uint64_t local_alphabet_size = (1 << level);
-        const uint64_t prefix_shift = (levels - level);
-        const uint64_t cur_bit_shift = prefix_shift - 1;
-
-        // TODO: Add this local borders to the "new" context, too.
-        std::vector<uint64_t> borders(local_alphabet_size, 0);
-
-        // TODO: Address the previous comment, to allow replace the
-        // below code with this:
-        // compute_borders_and_optional_zeros_and_optional_rho(
-        //   level, local_alphabet_size, ctx);
-
-        borders[0] = 0;
-        for (uint64_t i = 1; i < local_alphabet_size; ++i) {
-          const auto prev_rho = ctx.rho(level, i - 1);
-          borders[ctx.rho(level, i)] =
-              borders[prev_rho] + ctx.hist(level, prev_rho);
-        }
-        // The number of 0s is the position of the first 1 in the previous level
-        if constexpr (ctx_t::compute_zeros) {
-          zeros[level - 1] = borders[1];
-        }
-
-        // Now we insert the bits with respect to their bit prefixes
-        for (uint64_t i = 0; i < size; ++i) {
-          const uint64_t pos = borders[text[i] >> prefix_shift]++;
-          bv[level][pos >> 6] |=
-              (((text[i] >> cur_bit_shift) & 1ULL) << (63ULL - (pos & 63ULL)));
-        }
-      }
-    }
     if constexpr (ctx_t::compute_zeros) {
-      return wavelet_structure_matrix(std::move(ctx.bv()), std::move(zeros));
+      return wavelet_structure_matrix(std::move(ctx.bv()),
+                                      std::move(ctx.take_zeros()));
     } else {
       return wavelet_structure_tree(std::move(ctx.bv()));
     }

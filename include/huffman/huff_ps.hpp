@@ -21,8 +21,9 @@ void huff_ps(AlphabetType const* text,
              uint64_t const levels,
              HuffCodes const& codes,
              ContextType& ctx,
-             AlphabetType* const sorted_text,
-             std::vector<uint64_t> const& level_sizes) {
+             span<uint64_t const> const level_sizes) {
+  auto sorted_text_ = std::vector<AlphabetType>(size);
+  auto sorted_text = span<AlphabetType>(sorted_text_);
   auto& bv = ctx.bv();
 
   // While calculating the histogram, we also compute the first level
@@ -36,7 +37,8 @@ void huff_ps(AlphabetType const* text,
 
     // Compute the starting positions of characters with respect to their
     // bit prefixes and the bit-reversal permutation
-    compute_borders_and_optional_zeros_and_optional_rho(level, blocks, ctx);
+    compute_borders_and_optional_zeros_and_optional_rho(level,
+                                                        blocks, ctx, borders);
 
     // Now we sort the text utilizing counting sort and the starting positions
     // that we have computed before

@@ -60,10 +60,10 @@ public:
     const auto rho = rho_dispatch<is_tree>::create(levels);
     auto ctx = ctx_t(level_sizes, levels, rho);
 
-    huff_naive(text, size, levels, codes, ctx);
+    huff_naive(text, size, levels, codes, ctx, level_sizes);
 
     auto& bv = ctx.bv();
-    auto& zeros = ctx.zeros();
+    auto&& zeros = ctx.take_zeros();
 
     if constexpr (is_tree) {
       return wavelet_structure_tree_huffman<AlphabetType>(std::move(bv),

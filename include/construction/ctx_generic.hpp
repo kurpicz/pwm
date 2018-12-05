@@ -44,7 +44,7 @@ class live_computed_rho {
 public:
   inline uint64_t get(size_t /*level*/, size_t i) const {
     if constexpr (!is_tree) {
-      return bit_reverse_[i];
+      return span<uint64_t const>(bit_reverse_)[i];
     } else {
       return i;
     }
@@ -52,7 +52,7 @@ public:
 
   inline void set(size_t /*level*/, [[maybe_unused]] size_t i, [[maybe_unused]] uint64_t value) {
     if constexpr (!is_tree) {
-      bit_reverse_[i] = value;
+      (span<uint64_t>(bit_reverse_)[i]) = value;
     } else {
       DCHECK(false); // Should not be called
     }
@@ -71,10 +71,10 @@ struct single_level : public std::vector<uint64_t> {
   inline single_level(uint64_t const levels, uint64_t const /*shards*/)
       : std::vector<uint64_t>(1ULL << levels, 0) {}
   inline auto get(uint64_t /*shard*/, uint64_t /*level*/) {
-    return span<uint64_t>(this->data(), this->size());
+    return span<uint64_t>(*this);
   }
   inline auto get(uint64_t /*shard*/, uint64_t /*level*/) const {
-    return span<uint64_t const>(this->data(), this->size());
+    return span<uint64_t const>(*this);
   }
   static constexpr bool is_not_sharded = true;
   static constexpr bool is_not_leveled = true;
@@ -209,9 +209,16 @@ public:
   static bool constexpr compute_zeros = !is_tree;
   static bool constexpr compute_rho = rho_type<is_tree>::compute_rho;
 
-  // TODO: return span
-  std::vector<uint64_t>& zeros() {
-    return zeros_;
+  auto zeros() {
+    return span<uint64_t>(zeros_);
+  }
+
+  auto zeros() const {
+    return span<uint64_t const>(zeros_);
+  }
+
+  std::vector<uint64_t>&& take_zeros() {
+    return std::move(zeros_);
   }
 
   bv_type<require_initialization>& bv() {

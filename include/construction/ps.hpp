@@ -14,11 +14,12 @@ template <typename AlphabetType, typename ContextType>
 void ps(AlphabetType const* const text,
         uint64_t const size,
         uint64_t const levels,
-        ContextType& ctx,
-        AlphabetType* const sorted_text) {
+        ContextType& ctx) {
+  auto sorted_text_ = std::vector<AlphabetType>(size);
+  auto sorted_text = span<AlphabetType>(sorted_text_);
   uint64_t cur_alphabet_size = (1 << levels);
 
-  auto& zeros = ctx.zeros();
+  auto&& zeros = ctx.zeros();
   auto& bv = ctx.bv();
 
   scan_text_compute_first_level_bv_and_last_level_hist(text, size, levels, bv,
@@ -48,7 +49,8 @@ void ps(AlphabetType const* const text,
     // Compute the starting positions of characters with respect to their
     // bit prefixes and the bit-reversal permutation
     compute_borders_and_optional_zeros_and_optional_rho(level,
-                                                        cur_alphabet_size, ctx);
+                                                        cur_alphabet_size,
+                                                        ctx, borders);
 
     // Now we sort the text utilizing counting sort and the starting positions
     // that we have computed before

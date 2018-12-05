@@ -20,11 +20,12 @@ void huff_naive(AlphabetType const* text,
                 uint64_t const size,
                 uint64_t const levels,
                 HuffCodes const& codes,
-                ContextType& ctx) {
+                ContextType& ctx,
+                span<uint64_t const> const) {
   constexpr bool is_tree = !ContextType::compute_zeros;
 
   auto& bv = ctx.bv();
-  auto& zeros = ctx.zeros();
+  auto&& zeros = ctx.zeros();
 
   // calculate histogram
   {

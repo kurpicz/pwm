@@ -8,30 +8,64 @@
 
 #pragma once
 
+#include <omp.h>
+
+#include "arrays/span.hpp"
+
+// NB: This formulation as an inline-always function
+// has been roghly tested to produce the least amount of machine code if
+// used from `write_bits_wordwise()`.
+template <typename level_bv_t, typename loop_body_t>
+inline __attribute__((always_inline)) void
+write_bits_word(uint64_t const start,
+                uint64_t const size,
+                level_bv_t const& level_bv,
+                loop_body_t body) {
+  DCHECK(size <= 64);
+  uint64_t word = 0ULL;
+  for (uint64_t i = 0; i < size; ++i) {
+    uint64_t const bit = body(start + i);
+    word <<= 1;
+    word |= bit;
+  }
+
+  // NB. This gets optimized out if size is a constant 64
+  word <<= (64 - size);
+
+  level_bv[start >> 6] = word;
+}
+
 template <typename level_bv_t, typename loop_body_t>
 inline void write_bits_wordwise(uint64_t start,
                                 uint64_t size,
                                 level_bv_t const& level_bv,
                                 loop_body_t body) {
-  uint64_t cur_pos = start;
-  for (; cur_pos + 64 <= size; cur_pos += 64) {
-    uint64_t word = 0ULL;
-    for (uint64_t i = 0; i < 64; ++i) {
-      uint64_t const bit = body(cur_pos + i);
-      word <<= 1;
-      word |= bit;
-    }
-    level_bv[cur_pos >> 6] = word;
+  for (uint64_t cur_pos = start; cur_pos + 64 <= size; cur_pos += 64) {
+    write_bits_word(cur_pos, 64, level_bv, body);
   }
-  if (size & 63ULL) {
-    uint64_t word = 0ULL;
-    for (uint64_t i = cur_pos; i < size; ++i) {
-      uint64_t const bit = body(i);
-      word <<= 1;
-      word |= bit;
-    }
-    word <<= (64 - (size & 63ULL));
-    level_bv[size >> 6] = word;
+  uint64_t const remainder = size & 63ULL;
+  if (remainder) {
+    write_bits_word(size - remainder, remainder, level_bv, body);
+  }
+}
+
+template <typename level_bv_t, typename loop_body_t>
+inline void omp_write_bits_wordwise(uint64_t start,
+                                    uint64_t size,
+                                    level_bv_t const& level_bv,
+                                    loop_body_t body) {
+  const auto omp_rank = omp_get_thread_num();
+  const auto omp_size = omp_get_num_threads();
+
+  #pragma omp for
+  for (int64_t scur_pos = start; scur_pos <= (int64_t(size) - 64);
+       scur_pos += 64) {
+    DCHECK(scur_pos >= 0);
+    write_bits_word(scur_pos, 64, level_bv, body);
+  }
+  uint64_t const remainder = size & 63ULL;
+  if (remainder && ((omp_rank + 1) == omp_size)) {
+    write_bits_word(size - remainder, remainder, level_bv, body);
   }
 }
 
@@ -77,11 +111,9 @@ inline void bottom_up_compute_hist_and_borders_and_optional_zeros(
   ctx.hist_at_level(0)[0] = size;
 }
 
-template <typename ctx_t>
-inline void compute_borders_and_optional_zeros_and_optional_rho(uint64_t level,
-                                                                uint64_t blocks,
-                                                                ctx_t& ctx) {
-  auto&& borders = ctx.borders_at_level(level);
+template <typename ctx_t, typename borders_t>
+inline void compute_borders_and_optional_zeros_and_optional_rho(
+    uint64_t level, uint64_t blocks, ctx_t& ctx, borders_t&& borders) {
   auto&& hist = ctx.hist_at_level(level);
 
   // Compute the starting positions of characters with respect to their
@@ -109,4 +141,19 @@ inline void compute_borders_and_optional_zeros_and_optional_rho(uint64_t level,
     // borders[1] contains the position of the first 1-bit block.
     ctx.zeros()[level - 1] = borders[1];
   }
+}
+
+template <typename bv_t, typename borders_t, typename alphabet_type>
+inline __attribute__((always_inline)) void
+single_scan_write_bit(bv_t& bv,
+                      uint64_t level,
+                      uint64_t levels,
+                      borders_t&& borders,
+                      alphabet_type c) {
+  const uint64_t prefix_shift = (levels - level);
+  const uint64_t cur_bit_shift = prefix_shift - 1;
+  const uint64_t pos = borders[c >> prefix_shift]++;
+  const uint64_t bit =
+      (((c >> cur_bit_shift) & 1ULL) << (63ULL - (pos & 63ULL)));
+  bv[level][pos >> 6] |= bit;
 }

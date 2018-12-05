@@ -27,12 +27,7 @@ void pc_ss(AlphabetType const* const text,
     auto const c = text[i];
     for (uint64_t level = levels - 1; level > 0; --level) {
       auto&& borders = ctx.borders_at_level(level);
-      const uint64_t prefix_shift = (levels - level);
-      const uint64_t cur_bit_shift = prefix_shift - 1;
-      const uint64_t pos = borders[c >> prefix_shift]++;
-      const uint64_t bit =
-          (((c >> cur_bit_shift) & 1ULL) << (63ULL - (pos & 63ULL)));
-      bv[level][pos >> 6] |= bit;
+      single_scan_write_bit(bv, level, levels, borders, c);
     }
   }
 }
