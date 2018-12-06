@@ -16,7 +16,6 @@ void pc_in_external(const InputType& text,
 
   using stxxl_vector_type = InputType;
   using stxxl_reader_type = typename stxxl_vector_type::bufreader_type;
-  using borders_type = std::vector<uint64_t>;
 
   uint64_t cur_max_char = (1 << levels);
   uint64_t cur_pos = 0;
