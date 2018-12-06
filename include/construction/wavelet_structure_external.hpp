@@ -21,6 +21,9 @@ public:
   friend class wavelet_structure_external_factory;
 
   using bv_type = stxxlvector<uint64_t>;
+  using zeros_type = std::vector<uint64_t>;
+  using hists_type = std::vector<std::vector<uint64_t>>;
+
 private:
   uint64_t text_size_;
   uint64_t levels_;
@@ -37,8 +40,8 @@ private:
   std::vector<uint64_t> level_sizes_;
   std::vector<uint64_t> level_offsets_;
 
-  std::vector<uint64_t> zeros_;
-  std::vector<std::vector<uint64_t>> histograms_;
+  zeros_type zeros_;
+  hists_type histograms_;
 
   wavelet_structure_external(uint64_t text_size,
                              uint64_t levels,
