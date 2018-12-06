@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include "building_blocks.hpp"
+
 template <typename InputType, typename ContextType>
 void pc_in_external(const InputType& text,
                     const uint64_t size,
@@ -18,37 +20,20 @@ void pc_in_external(const InputType& text,
   using stxxl_reader_type = typename stxxl_vector_type::bufreader_type;
 
   uint64_t cur_max_char = (1 << levels);
-  uint64_t cur_pos = 0;
 
   auto&& zeros = ctx.zeros();
   auto& bv = ctx.bv();
 
   stxxl_reader_type reader(text);
   auto&& last_level_hist = ctx.hist_at_level(levels);
+
   // While initializing the histogram, we also compute the first level
-  for (; cur_pos + 64 <= size; cur_pos += 64) {
-    uint64_t word = 0ULL;
-    for (uint64_t i = 0; i < 64; ++i) {
+  write_bits_wordwise(0, size, bv[0], [&](uint64_t) {
       const auto cur_char = *reader;
       ++reader;
       ++last_level_hist[cur_char];
-      word <<= 1;
-      word |= ((cur_char >> (levels - 1)) & 1ULL);
-    }
-    bv[0][cur_pos >> 6] = word;
-  }
-  if (size & 63ULL) {
-    uint64_t word = 0ULL;
-    for (uint64_t i = 0; i < size - cur_pos; ++i) {
-      const auto cur_char = *reader;
-      ++reader;
-      ++last_level_hist[cur_char];
-      word <<= 1;
-      word |= ((cur_char >> (levels - 1)) & 1ULL);
-    }
-    word <<= (64 - (size & 63ULL));
-    bv[0][size >> 6] = word;
-  }
+      return ((cur_char >> (levels - 1)) & 1ULL);
+  });
 
   //~ std::cout << "First level done." << std::endl;
 
