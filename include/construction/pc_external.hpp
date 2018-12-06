@@ -16,26 +16,26 @@ void pc_in_external(const InputType& text,
 
   using stxxl_vector_type = InputType;
   using stxxl_reader_type = typename stxxl_vector_type::bufreader_type;
-  using borders_type =
-      typename std::remove_reference<decltype(ctx.borders())>::type;
-  uint64_t borders_size = ctx.borders().size();
+  using borders_type = std::vector<uint64_t>;
+  uint64_t borders_size = ctx.borders_at_level(levels).size();
 
   uint64_t cur_max_char = (1 << levels);
   uint64_t cur_pos = 0;
 
-  auto& zeros = ctx.zeros();
+  auto&& zeros = ctx.zeros();
   auto& bv = ctx.bv();
   std::vector<borders_type> borders_v(levels);
-  borders_type* borders = borders_v.data();
+  auto borders = span<borders_type>(borders_v);
 
   stxxl_reader_type reader(text);
+  auto&& last_level_hist = ctx.hist_at_level(levels);
   // While initializing the histogram, we also compute the first level
   for (; cur_pos + 64 <= size; cur_pos += 64) {
     uint64_t word = 0ULL;
     for (uint64_t i = 0; i < 64; ++i) {
       const auto cur_char = *reader;
       ++reader;
-      ++ctx.hist(levels, cur_char);
+      ++last_level_hist[cur_char];
       word <<= 1;
       word |= ((cur_char >> (levels - 1)) & 1ULL);
     }
@@ -46,7 +46,7 @@ void pc_in_external(const InputType& text,
     for (uint64_t i = 0; i < size - cur_pos; ++i) {
       const auto cur_char = *reader;
       ++reader;
-      ++ctx.hist(levels, cur_char);
+      ++last_level_hist[cur_char];
       word <<= 1;
       word |= ((cur_char >> (levels - 1)) & 1ULL);
     }
@@ -59,19 +59,20 @@ void pc_in_external(const InputType& text,
   // The number of 0s at the last level is the number of "even" characters
   if (ContextType::compute_zeros) {
     for (uint64_t i = 0; i < cur_max_char; i += 2) {
-      zeros[levels - 1] += ctx.hist(levels, i);
+      zeros[levels - 1] += last_level_hist[i];
     }
   }
 
   // Now we compute the WM bottom-up, i.e., the last level first
   for (uint64_t level = levels - 1; level > 0; --level) {
+    auto&& this_hist = ctx.hist_at_level(level);
+    auto&& next_hist = ctx.hist_at_level(level + 1);
 
     // Update the maximum value of a feasible a bit prefix and update the
     // histogram of the bit prefixes
     cur_max_char >>= 1;
     for (uint64_t i = 0; i < cur_max_char; ++i) {
-      ctx.hist(level, i) =
-          ctx.hist(level + 1, i << 1) + ctx.hist(level + 1, (i << 1) + 1);
+      this_hist[i] = next_hist[i << 1] + next_hist[(i << 1) + 1];
     }
 
     borders[level].resize(borders_size);
@@ -79,10 +80,10 @@ void pc_in_external(const InputType& text,
     // bit prefixes and the bit-reversal permutation
     borders[level][0] = 0;
     for (uint64_t i = 1; i < cur_max_char; ++i) {
+      auto const this_rho = ctx.rho(level, i);
       auto const prev_rho = ctx.rho(level, i - 1);
 
-      borders[level][ctx.rho(level, i)] =
-          borders[level][prev_rho] + ctx.hist(level, prev_rho);
+      borders[level][this_rho] = borders[level][prev_rho] + this_hist[prev_rho];
 
       if (ContextType::compute_rho) {
         ctx.set_rho(level - 1, i - 1, prev_rho >> 1);
@@ -109,9 +110,7 @@ void pc_in_external(const InputType& text,
     }
   }
 
-  if (levels > 1) { // TODO check condition
-    ctx.hist(0, 0) = ctx.hist(1, 0) + ctx.hist(1, 1);
-  }
+  ctx.hist_at_level(0)[0] = size;
 }
 
 /******************************************************************************/
