@@ -139,11 +139,13 @@ inline void bottom_up_compute_hist_and_borders_and_optional_zeros(
 
 template <typename bv_t, typename borders_t, typename alphabet_type>
 inline __attribute__((always_inline)) void
-single_scan_write_bit(bv_t& bv,
-                      uint64_t level,
-                      uint64_t levels,
-                      borders_t&& borders,
-                      alphabet_type c) {
+write_symbol_bit(bv_t& bv,
+                 uint64_t level,
+                 uint64_t levels,
+                 borders_t&& borders,
+                 alphabet_type c) {
+  // NB: The computations for `prefix_shift` and `cur_bit_shift` will most
+  // likely be hoisted out of a inner loop by a optimizing compiler
   const uint64_t prefix_shift = (levels - level);
   const uint64_t cur_bit_shift = prefix_shift - 1;
   const uint64_t pos = borders[c >> prefix_shift]++;

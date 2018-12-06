@@ -56,7 +56,7 @@ void ppc_ss(AlphabetType const* text,
     uint64_t level = omp_get_thread_num();
     auto&& borders = ctx.borders_at_level(level);
     for (uint64_t i = 0; i < size; ++i) {
-      single_scan_write_bit(bv, level, levels, borders, text[i]);
+      write_symbol_bit(bv, level, levels, borders, text[i]);
     }
   }
 }
