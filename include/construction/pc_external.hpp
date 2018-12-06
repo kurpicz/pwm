@@ -48,7 +48,7 @@ void pc_in_external(const InputType& text,
   for (uint64_t level = levels - 1; level > 0; --level) {
     auto&& this_hist = ctx.hist_at_level(level);
     auto&& next_hist = ctx.hist_at_level(level + 1);
-    auto&& borders = ctx.borders_at_shard(level);
+    auto&& borders = ctx.borders_at_level(level);
 
     // Update the maximum value of a feasible a bit prefix and update the
     // histogram of the bit prefixes
@@ -76,6 +76,7 @@ void pc_in_external(const InputType& text,
       zeros[level - 1] = borders[1];
     }
   }
+  ctx.hist_at_level(0)[0] = size;
 
   reader.rewind();
   // Now we insert the bits with respect to their bit prefixes
@@ -83,7 +84,7 @@ void pc_in_external(const InputType& text,
     const auto cur_char = *reader;
     ++reader;
     for (uint64_t level = levels - 1; level > 0; --level) {
-      auto&& borders = ctx.borders_at_shard(level);
+      auto&& borders = ctx.borders_at_level(level);
       const uint64_t prefix_shift = (levels - level);
       const uint64_t cur_bit_shift = prefix_shift - 1;
       const uint64_t pos = borders[cur_char >> prefix_shift]++;
@@ -91,8 +92,6 @@ void pc_in_external(const InputType& text,
           (((cur_char >> cur_bit_shift) & 1ULL) << (63ULL - (pos & 63ULL)));
     }
   }
-
-  ctx.hist_at_level(0)[0] = size;
 }
 
 /******************************************************************************/
