@@ -93,16 +93,13 @@ void ppc(AlphabetType const* text,
 
       const uint64_t blocks = (1 << level);
 
-      #pragma omp critical
-      {
-        auto borders = ctx.borders_at_shard(omp_rank).slice(0, blocks);
+      auto borders = ctx.borders_at_shard(omp_rank).slice(0, blocks);
 
-        compute_borders_optional_zeros_rho(level, blocks, ctx, borders);
+      compute_borders_optional_zeros_rho(level, blocks, ctx, borders);
 
-        // Now we insert the bits with respect to their bit prefixes
-        for (uint64_t i = 0; i < size; ++i) {
-          write_symbol_bit(bv, level, levels, borders, text[i]);
-        }
+      // Now we insert the bits with respect to their bit prefixes
+      for (uint64_t i = 0; i < size; ++i) {
+        write_symbol_bit(bv, level, levels, borders, text[i]);
       }
     }
   }
