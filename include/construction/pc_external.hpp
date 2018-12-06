@@ -43,7 +43,7 @@ void pc_in_external(const InputType& text,
   }
 
   // Now we compute the WM bottom-up, i.e., the last level first
-  bottom_up_compute_hist_and_borders_and_optional_zeros(size, levels, ctx);
+  bottom_up_compute_hist_borders_optional_zeros_rho(size, levels, ctx);
 
   reader.rewind();
   // Now we insert the bits with respect to their bit prefixes

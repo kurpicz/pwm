@@ -49,7 +49,7 @@ void ppc_ss(AlphabetType const* text,
     }
   }
 
-  bottom_up_compute_hist_and_borders_and_optional_zeros(size, levels, ctx);
+  bottom_up_compute_hist_borders_optional_zeros_rho(size, levels, ctx);
 
   #pragma omp parallel num_threads(levels)
   {

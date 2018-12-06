@@ -48,9 +48,7 @@ void ps(AlphabetType const* const text,
 
     // Compute the starting positions of characters with respect to their
     // bit prefixes and the bit-reversal permutation
-    compute_borders_and_optional_zeros_and_optional_rho(level,
-                                                        cur_alphabet_size,
-                                                        ctx, borders);
+    compute_borders_optional_zeros_rho(level, cur_alphabet_size, ctx, borders);
 
     // Now we sort the text utilizing counting sort and the starting positions
     // that we have computed before

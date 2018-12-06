@@ -85,8 +85,10 @@ scan_text_compute_first_level_bv_and_last_level_hist(text_t const& text,
 }
 
 template <typename ctx_t, typename borders_t>
-inline void compute_borders_and_optional_zeros_and_optional_rho(
-    uint64_t level, uint64_t blocks, ctx_t& ctx, borders_t&& borders) {
+inline void compute_borders_optional_zeros_rho(uint64_t level,
+                                               uint64_t blocks,
+                                               ctx_t& ctx,
+                                               borders_t&& borders) {
   auto&& hist = ctx.hist_at_level(level);
 
   // Compute the starting positions of characters with respect to their
@@ -117,7 +119,7 @@ inline void compute_borders_and_optional_zeros_and_optional_rho(
 }
 
 template <typename ctx_t>
-inline void bottom_up_compute_hist_and_borders_and_optional_zeros(
+inline void bottom_up_compute_hist_borders_optional_zeros_rho(
     uint64_t const size, uint64_t const levels, ctx_t& ctx) {
   for (uint64_t level = levels - 1; level > 0; --level) {
     auto const blocks = ctx.hist_size(level);
@@ -129,21 +131,17 @@ inline void bottom_up_compute_hist_and_borders_and_optional_zeros(
       hist[pos] = next_hist[pos << 1] + next_hist[(pos << 1) + 1];
     }
 
-    compute_borders_and_optional_zeros_and_optional_rho(level,
-                                                        blocks,
-                                                        ctx,
-                                                        borders);
+    compute_borders_optional_zeros_rho(level, blocks, ctx, borders);
   }
   ctx.hist_at_level(0)[0] = size;
 }
 
 template <typename bv_t, typename borders_t, typename alphabet_type>
-inline __attribute__((always_inline)) void
-write_symbol_bit(bv_t& bv,
-                 uint64_t level,
-                 uint64_t levels,
-                 borders_t&& borders,
-                 alphabet_type c) {
+inline __attribute__((always_inline)) void write_symbol_bit(bv_t& bv,
+                                                            uint64_t level,
+                                                            uint64_t levels,
+                                                            borders_t&& borders,
+                                                            alphabet_type c) {
   // NB: The computations for `prefix_shift` and `cur_bit_shift` will most
   // likely be hoisted out of a inner loop by a optimizing compiler
   const uint64_t prefix_shift = (levels - level);
