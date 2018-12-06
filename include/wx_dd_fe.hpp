@@ -16,11 +16,12 @@
 #include "construction/merge_external.hpp"
 #include "construction/wavelet_structure.hpp"
 #include "construction/wavelet_structure_external.hpp"
+#include "util/permutation.hpp"
 
 #include "wx_base.hpp"
 #include "wx_dd_pc.hpp"
 
-#define DDE_VERBOSE if constexpr (true) atomic_out()
+#define DDE_VERBOSE if constexpr (false) atomic_out()
 
 
 template <typename AlphabetType, bool is_tree_, uint64_t bytesPerBlock = 1024 * 1024 * 1024>
@@ -65,6 +66,8 @@ class wx_dd_fe : public wx_in_out_external<true, true> {
     const uint64_t block_bits;
     const uint64_t result_words;
 
+    const std::vector<uint64_t> bit_reverse;
+
     std::vector<AlphabetType> block_vec1;
     std::vector<AlphabetType> block_vec2;
     AlphabetType * frontIn = block_vec1.data();
@@ -77,8 +80,8 @@ class wx_dd_fe : public wx_in_out_external<true, true> {
 
     text_reader_type text_reader;
 
-    result_type result;
-    result_writer_type result_writer;
+    result_type temp_result;
+    result_writer_type temp_result_writer;
 
     dd_ctx(const InputType &text, const uint64_t size, const uint64_t plevels)
         : levels(plevels),
@@ -93,15 +96,16 @@ class wx_dd_fe : public wx_in_out_external<true, true> {
           block_words(block_level_words * levels),
           block_bits(block_words * 64),
           result_words(result_level_words * levels),
+          bit_reverse(bit_reverse_permutation(levels - 1)),
           block_vec1(block_chars),
           block_vec2(block_chars),
           frontIn(block_vec1.data()),
           backIn(block_vec2.data()),
           block_hists(block_count),
           text_reader(text),
-          result_writer(result) {
-      result = stxxl_files::getVectorTemporary<result_type>(1);
-      result.reserve(result_words);
+          temp_result_writer(temp_result) {
+      temp_result = stxxl_files::getVectorTemporary<result_type>(1);
+      temp_result.reserve(result_words);
       DDE_VERBOSE
           << "Created context for wx_dd_fe "
           << "[blocks: " << block_count << ", "
@@ -140,12 +144,39 @@ class wx_dd_fe : public wx_in_out_external<true, true> {
         ++block_hist_last_level[symbol];
         ++text_reader;
       }
-      // calculate remaining histograms
-      for(int64_t l = levels - 1; l >= 0; l--) {
-        for(uint64_t s = 0; s < block_hists[b][l].size(); s++) {
-          current_block_hist[l][s] =
-              current_block_hist[l + 1][2 * s] +
-              current_block_hist[l + 1][2 * s + 1];
+
+      if constexpr (is_tree_) {
+        // calculate remaining histograms
+        for (int64_t l = levels - 1; l >= 0; l--) {
+          auto &block_hist_level = current_block_hist[l];
+          auto &block_hist_level_plus = current_block_hist[l + 1];
+          for (uint64_t s = 0; s < block_hist_level.size(); s++) {
+            block_hist_level[s] =
+                block_hist_level_plus[2 * s] +
+                block_hist_level_plus[2 * s + 1];
+          }
+        }
+      } else {
+        {
+          auto &block_hist_level = current_block_hist[levels - 1];
+          auto &block_hist_level_plus = current_block_hist[levels];
+          uint64_t block_hist_level_size = block_hist_level.size();
+          for (uint64_t s = 0; s < block_hist_level_size; s++) {
+            auto rho_s = bit_reverse[s];
+            block_hist_level[rho_s] =
+                block_hist_level_plus[2 * s] +
+                block_hist_level_plus[2 * s + 1];
+          }
+        }
+        for (int64_t l = levels - 2; l >= 0; l--) {
+          auto &block_hist_level = current_block_hist[l];
+          auto &block_hist_level_plus = current_block_hist[l + 1];
+          uint64_t block_hist_level_size = block_hist_level.size();
+          for (uint64_t s = 0; s < block_hist_level_size; s++) {
+            block_hist_level[s] =
+                block_hist_level_plus[s] +
+                block_hist_level_plus[s + block_hist_level_size];
+          }
         }
       }
       DDE_VERBOSE << "(load " << b << " done) ";
@@ -177,21 +208,26 @@ class wx_dd_fe : public wx_in_out_external<true, true> {
 
       for(uint64_t l = 0; l < levels; l++) {
         for(uint64_t w = 0; w < current_block_level_words; w++) {
-          result_writer << block_bvs[l][w];
+          temp_result_writer << block_bvs[l][w];
         }
       }
       DDE_VERBOSE << "(save " << b << " done) ";
     }
 
     inline void finish() {
-      result_writer.finish();
+      temp_result_writer.finish();
       DDE_VERBOSE << "\n";
     }
 
 
-    inline void merge(result_type& bvs) {
+    inline void merge(wavelet_structure_external& result) {
       DDE_VERBOSE << "Merging... ";
-      external_merger merger(&result, bvs);
+
+      auto& bvs = wavelet_structure_external_writer::bvs(result);
+      auto& zeros = wavelet_structure_external_writer::zeros(result);
+      auto& hists = wavelet_structure_external_writer::histograms(result);
+      
+      external_merger merger(&temp_result, bvs);
       for(uint64_t l = 0; l < levels; l++) {
         std::vector<uint64_t> block_offsets(block_count);
         for(uint64_t b = 0; b < block_count - 1; b++)
@@ -210,6 +246,28 @@ class wx_dd_fe : public wx_in_out_external<true, true> {
         merger.finishLevel();
       }
       merger.finish();
+
+      for (uint64_t b = 0; b < block_count; ++b) {
+        if constexpr (is_tree_) hists[0][0] += block_hists[b][0][0];
+        for (uint64_t l = 1; l < levels; ++l) {
+          auto &block_hist_level = block_hists[b][l];
+          const uint64_t hist_level_size = block_hist_level.size();
+          if constexpr (is_tree_) {
+            for (uint64_t s = 0; s < hist_level_size; s++) {
+              hists[l][s] += block_hist_level[s];
+//              if(s % 2 == 0) zeros[l - 1] += block_hist_level[s];
+            }
+          } else {
+            for (uint64_t s = 0; s < hist_level_size / 2; s++) {
+//              global_hist_level[s] += block_hist_level[s];
+              zeros[l - 1] += block_hist_level[s];
+            }
+//            for (uint64_t s = hist_level_size / 2; s < hist_level_size; s++) {
+//              global_hist_level[s] += block_hist_level[s];
+//            }
+          }
+        }
+      }
       DDE_VERBOSE << "Done.\n";
     }
   };
@@ -232,12 +290,11 @@ public:
     name << "w" << (is_tree_ ? "t" : "m") << "_dd_fe";
     auto result =
         wavelet_structure_external_factory(is_tree_).
-            histograms().zeros().
+            histograms(is_tree_).zeros(!is_tree_).
             construct(size, levels, name.str(), 0);
     if(size == 0) return result;
 
-    auto& bvs = wavelet_structure_external_writer::bvs(result);
-    bvs.clear();
+    wavelet_structure_external_writer::bvs(result).clear();
 
     using ctx_t = dd_ctx<InputType>;
     ctx_t ctx(text, size, levels);
@@ -279,7 +336,7 @@ public:
     ctx.finish();
 
     //MERGE:
-    ctx.merge(bvs);
+    ctx.merge(result);
 
     return result;
   }

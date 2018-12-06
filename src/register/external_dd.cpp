@@ -15,11 +15,11 @@ struct wx_dd_fe_registry {
   using wt_dd_fe = wx_dd_fe<uint8_t, true, bytesMemory>;
 
 
-//CONSTRUCTION_REGISTER(
-//    "wm_dd_fe",
-//    "Sequential wavelet matrix construction with 8-bit alphabet "
-//    "(using counting, external input).",
-//    wm_dd_fe)
+  CONSTRUCTION_REGISTER_MEMBER(
+      "wm_dd_fe",
+      "Sequential wavelet matrix construction with 8-bit alphabet "
+      "(using counting, external input).",
+      wm_dd_fe)
   CONSTRUCTION_REGISTER_MEMBER(
       "wt_dd_fe",
       "Sequential wavelet tree construction with 8-bit alphabet "
