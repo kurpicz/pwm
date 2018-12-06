@@ -25,12 +25,8 @@ void ps(AlphabetType const* const text,
   scan_text_compute_first_level_bv_and_last_level_hist(text, size, levels, bv,
                                                        ctx);
 
-  // The number of 0s at the last level is the number of "even" characters
-  if (ContextType::compute_zeros) {
-    auto&& hist = ctx.hist_at_level(levels);
-    for (uint64_t i = 0; i < cur_alphabet_size; i += 2) {
-      zeros[levels - 1] += hist[i];
-    }
+  if constexpr (ContextType::compute_zeros) {
+    compute_last_level_zeros(levels, zeros, ctx.hist_at_level(levels));
   }
 
   // Now we compute the WM bottom-up, i.e., the last level first
@@ -48,9 +44,7 @@ void ps(AlphabetType const* const text,
 
     // Compute the starting positions of characters with respect to their
     // bit prefixes and the bit-reversal permutation
-    compute_borders_and_optional_zeros_and_optional_rho(level,
-                                                        cur_alphabet_size,
-                                                        ctx, borders);
+    compute_borders_optional_zeros_rho(level, cur_alphabet_size, ctx, borders);
 
     // Now we sort the text utilizing counting sort and the starting positions
     // that we have computed before

@@ -22,7 +22,6 @@ void ppc_ss(AlphabetType const* text,
             const uint64_t levels,
             ContextType& ctx) {
   auto& bv = ctx.bv();
-  auto&& zeros = ctx.zeros();
 
   const uint64_t alphabet_size = (1 << levels);
 
@@ -49,20 +48,15 @@ void ppc_ss(AlphabetType const* text,
       hist[j] += all_hists[i][j];
     }
   }
-  if constexpr (ContextType::compute_zeros) {
-    for (uint64_t i = 0; i < alphabet_size; i += 2) {
-      zeros[levels - 1] += hist[i];
-    }
-  }
 
-  bottom_up_compute_hist_and_borders_and_optional_zeros(size, levels, ctx);
+  bottom_up_compute_hist_borders_optional_zeros_rho(size, levels, ctx);
 
   #pragma omp parallel num_threads(levels)
   {
     uint64_t level = omp_get_thread_num();
     auto&& borders = ctx.borders_at_level(level);
     for (uint64_t i = 0; i < size; ++i) {
-      single_scan_write_bit(bv, level, levels, borders, text[i]);
+      write_symbol_bit(bv, level, levels, borders, text[i]);
     }
   }
 }

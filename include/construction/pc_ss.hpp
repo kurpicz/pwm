@@ -21,13 +21,13 @@ void pc_ss(AlphabetType const* const text,
   scan_text_compute_first_level_bv_and_last_level_hist(text, size, levels, bv,
                                                        ctx);
 
-  bottom_up_compute_hist_and_borders_and_optional_zeros(size, levels, ctx);
+  bottom_up_compute_hist_borders_optional_zeros_rho(size, levels, ctx);
 
   for (uint64_t i = 0; i < size; ++i) {
     auto const c = text[i];
     for (uint64_t level = levels - 1; level > 0; --level) {
       auto&& borders = ctx.borders_at_level(level);
-      single_scan_write_bit(bv, level, levels, borders, c);
+      write_symbol_bit(bv, level, levels, borders, c);
     }
   }
 }

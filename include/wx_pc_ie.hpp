@@ -11,7 +11,7 @@
 #include <vector>
 
 #include "arrays/memory_types.hpp"
-#include "construction/ctx_single_level.hpp"
+#include "construction/ctx_generic.hpp"
 #include "construction/pc_external.hpp"
 #include "construction/wavelet_structure.hpp"
 
@@ -30,7 +30,12 @@ public:
   static wavelet_structure
   compute(const InputType& text, const uint64_t size, const uint64_t levels) {
 
-    using ctx_t = ctx_single_level<is_tree, true>;
+    using ctx_t = ctx_generic<is_tree,
+                            ctx_options::borders::all_level,
+                            ctx_options::hist::single_level,
+                            ctx_options::live_computed_rho,
+                            ctx_options::bv_initialized,
+                            bit_vectors>;
 
     if (size == 0) {
       if constexpr (is_tree_)
@@ -39,13 +44,13 @@ public:
         return wavelet_structure_matrix();
     }
 
-    auto ctx = ctx_t(size, levels);
+    auto ctx = ctx_t(size, levels, levels);
 
     pc_in_external(text, size, levels, ctx);
 
     if constexpr (ctx_t::compute_zeros) {
       return wavelet_structure_matrix(std::move(ctx.bv()),
-                                      std::move(ctx.zeros()));
+                                      std::move(ctx.take_zeros()));
     } else {
       return wavelet_structure_tree(std::move(ctx.bv()));
     }
