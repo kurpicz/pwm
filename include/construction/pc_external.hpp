@@ -19,8 +19,6 @@ void pc_in_external(const InputType& text,
   using stxxl_vector_type = InputType;
   using stxxl_reader_type = typename stxxl_vector_type::bufreader_type;
 
-  uint64_t cur_max_char = (1 << levels);
-
   auto&& zeros = ctx.zeros();
   auto& bv = ctx.bv();
 
@@ -39,12 +37,13 @@ void pc_in_external(const InputType& text,
 
   // The number of 0s at the last level is the number of "even" characters
   if (ContextType::compute_zeros) {
-    for (uint64_t i = 0; i < cur_max_char; i += 2) {
+    for (uint64_t i = 0; i < last_level_hist.size(); i += 2) {
       zeros[levels - 1] += last_level_hist[i];
     }
   }
 
   // Now we compute the WM bottom-up, i.e., the last level first
+  //bottom_up_compute_hist_and_borders_and_optional_zeros(size, levels, ctx);
   for (uint64_t level = levels - 1; level > 0; --level) {
     auto&& this_hist = ctx.hist_at_level(level);
     auto&& next_hist = ctx.hist_at_level(level + 1);
@@ -52,15 +51,14 @@ void pc_in_external(const InputType& text,
 
     // Update the maximum value of a feasible a bit prefix and update the
     // histogram of the bit prefixes
-    cur_max_char >>= 1;
-    for (uint64_t i = 0; i < cur_max_char; ++i) {
+    for (uint64_t i = 0; i < ctx.hist_size(level); ++i) {
       this_hist[i] = next_hist[i << 1] + next_hist[(i << 1) + 1];
     }
 
     // Compute the starting positions of characters with respect to their
     // bit prefixes and the bit-reversal permutation
     borders[0] = 0;
-    for (uint64_t i = 1; i < cur_max_char; ++i) {
+    for (uint64_t i = 1; i < ctx.hist_size(level); ++i) {
       auto const this_rho = ctx.rho(level, i);
       auto const prev_rho = ctx.rho(level, i - 1);
 

@@ -98,9 +98,10 @@ inline void bottom_up_compute_hist_and_borders_and_optional_zeros(
 
     borders[0] = 0;
     for (uint64_t pos = 1; pos < ctx.hist_size(level); ++pos) {
+      auto const this_rho = ctx.rho(level, pos);
       auto const prev_rho = ctx.rho(level, pos - 1);
 
-      borders[ctx.rho(level, pos)] = borders[prev_rho] + hist[prev_rho];
+      borders[this_rho] = borders[prev_rho] + hist[prev_rho];
     }
 
     // The number of 0s is the position of the first 1 in the previous level
