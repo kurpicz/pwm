@@ -151,3 +151,12 @@ inline __attribute__((always_inline)) void write_symbol_bit(bv_t& bv,
       (((c >> cur_bit_shift) & 1ULL) << (63ULL - (pos & 63ULL)));
   bv[level][pos >> 6] |= bit;
 }
+
+template <typename zeros_t, typename hist_t>
+inline void
+compute_last_level_zeros(uint64_t levels, zeros_t&& zeros, hist_t&& hist) {
+  // The number of 0s at the last level is the number of "even" characters
+  for (uint64_t i = 0; i < hist.size(); i += 2) {
+    zeros[levels - 1] += hist[i];
+  }
+}

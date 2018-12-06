@@ -45,12 +45,13 @@ void pps(AlphabetType const* text,
       });
     }
 
-    // The number of 0's at the last level is the number of "even" characters
     #pragma omp single
-    for (int32_t rank = 0; rank < omp_size; ++rank) {
-      auto&& rank_hist = ctx.hist_at_shard(rank);
-      for (uint64_t i = 0; i < alphabet_size; i += 2) {
-        zeros[levels - 1] += rank_hist[i];
+    {
+      if constexpr (ContextType::compute_zeros) {
+        for (int32_t rank = 0; rank < omp_size; ++rank) {
+          auto&& rank_hist = ctx.hist_at_shard(rank);
+          compute_last_level_zeros(levels, zeros, rank_hist);
+        }
       }
     }
 

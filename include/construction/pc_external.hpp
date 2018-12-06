@@ -35,11 +35,8 @@ void pc_in_external(const InputType& text,
 
   //~ std::cout << "First level done." << std::endl;
 
-  // The number of 0s at the last level is the number of "even" characters
-  if (ContextType::compute_zeros) {
-    for (uint64_t i = 0; i < last_level_hist.size(); i += 2) {
-      zeros[levels - 1] += last_level_hist[i];
-    }
+  if constexpr (ContextType::compute_zeros) {
+    compute_last_level_zeros(levels, zeros, last_level_hist);
   }
 
   // Now we compute the WM bottom-up, i.e., the last level first

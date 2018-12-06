@@ -23,12 +23,8 @@ void pc(AlphabetType const* text,
   scan_text_compute_first_level_bv_and_last_level_hist(text, size, levels, bv,
                                                        ctx);
 
-  // The number of 0s at the last level is the number of "even" characters
   if constexpr (ContextType::compute_zeros) {
-    auto hist = ctx.hist_at_level(levels);
-    for (uint64_t i = 0; i < cur_alphabet_size; i += 2) {
-      zeros[levels - 1] += hist[i];
-    }
+    compute_last_level_zeros(levels, zeros, ctx.hist_at_level(levels));
   }
 
   // Now we compute the WM bottom-up, i.e., the last level first
