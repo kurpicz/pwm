@@ -49,7 +49,7 @@ inline void error_with_message(char const* file,
 
 // Conditionally define DCHECK_INTERNAL
 #ifdef DEBUG
-#define DCHECK_INTERNAL(x, msg, ...) CHECK_INTERNAL(x, msg, __VA_ARGS__)
+#define DCHECK_INTERNAL(x, msg, ...) CHECK_INTERNAL(x, msg, ##__VA_ARGS__)
 #else // DEBUG
 #define DCHECK_INTERNAL(x, msg, ...)
 #endif // DEBUG
@@ -67,7 +67,7 @@ inline void error_with_message(char const* file,
 /// DCHECK(predicate(x));
 /// DCHECK(y.predicate(), << "invariant in y does not hold");
 /// ```
-#define DCHECK(x, ...) DCHECK_INTERNAL(x, #x, __VA_ARGS__)
+#define DCHECK(x) DCHECK_INTERNAL(x, #x, )
 /// Check for equality (==)
 #define DCHECK_EQ(x, y) DCHECK_OP(==, x, y)
 /// Check for inequality (!=)
