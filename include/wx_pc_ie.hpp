@@ -31,7 +31,7 @@ public:
   compute(const InputType& text, const uint64_t size, const uint64_t levels) {
 
     using ctx_t = ctx_generic<is_tree,
-                            ctx_options::borders::single_level,
+                            ctx_options::borders::sharded_single_level,
                             ctx_options::hist::single_level,
                             ctx_options::live_computed_rho,
                             ctx_options::bv_initialized,
@@ -44,7 +44,7 @@ public:
         return wavelet_structure_matrix();
     }
 
-    auto ctx = ctx_t(size, levels, levels);
+    auto ctx = ctx_t(size, levels, levels, levels);
 
     pc_in_external(text, size, levels, ctx);
 
