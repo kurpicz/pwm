@@ -43,38 +43,7 @@ void pc_in_external(const InputType& text,
   }
 
   // Now we compute the WM bottom-up, i.e., the last level first
-  //bottom_up_compute_hist_and_borders_and_optional_zeros(size, levels, ctx);
-  for (uint64_t level = levels - 1; level > 0; --level) {
-    auto&& this_hist = ctx.hist_at_level(level);
-    auto&& next_hist = ctx.hist_at_level(level + 1);
-    auto&& borders = ctx.borders_at_level(level);
-
-    // Update the maximum value of a feasible a bit prefix and update the
-    // histogram of the bit prefixes
-    for (uint64_t i = 0; i < ctx.hist_size(level); ++i) {
-      this_hist[i] = next_hist[i << 1] + next_hist[(i << 1) + 1];
-    }
-
-    // Compute the starting positions of characters with respect to their
-    // bit prefixes and the bit-reversal permutation
-    borders[0] = 0;
-    for (uint64_t i = 1; i < ctx.hist_size(level); ++i) {
-      auto const this_rho = ctx.rho(level, i);
-      auto const prev_rho = ctx.rho(level, i - 1);
-
-      borders[this_rho] = borders[prev_rho] + this_hist[prev_rho];
-
-      if (ContextType::compute_rho) {
-        ctx.set_rho(level - 1, i - 1, prev_rho >> 1);
-      }
-    }
-
-    // The number of 0s is the position of the first 1 in the previous level
-    if (ContextType::compute_zeros) {
-      zeros[level - 1] = borders[1];
-    }
-  }
-  ctx.hist_at_level(0)[0] = size;
+  bottom_up_compute_hist_and_borders_and_optional_zeros(size, levels, ctx);
 
   reader.rewind();
   // Now we insert the bits with respect to their bit prefixes

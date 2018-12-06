@@ -22,7 +22,6 @@ void ppc_ss(AlphabetType const* text,
             const uint64_t levels,
             ContextType& ctx) {
   auto& bv = ctx.bv();
-  auto&& zeros = ctx.zeros();
 
   const uint64_t alphabet_size = (1 << levels);
 
@@ -47,11 +46,6 @@ void ppc_ss(AlphabetType const* text,
   for (uint64_t i = 0; i < all_hists.size(); ++i) {
     for (uint64_t j = 0; j < alphabet_size; ++j) {
       hist[j] += all_hists[i][j];
-    }
-  }
-  if constexpr (ContextType::compute_zeros) {
-    for (uint64_t i = 0; i < alphabet_size; i += 2) {
-      zeros[levels - 1] += hist[i];
     }
   }
 
