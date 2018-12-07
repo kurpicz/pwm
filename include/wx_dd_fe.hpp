@@ -227,7 +227,7 @@ class wx_dd_fe : public wx_in_out_external<true, true> {
       auto& zeros = wavelet_structure_external_writer::zeros(result);
       auto& hists = wavelet_structure_external_writer::histograms(result);
 
-      external_merger merger(&temp_result, bvs);
+      external_merger merger(temp_result, bvs);
       for(uint64_t l = 0; l < levels; l++) {
         std::vector<uint64_t> block_offsets(block_count);
         for(uint64_t b = 0; b < block_count - 1; b++)

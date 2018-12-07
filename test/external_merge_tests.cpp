@@ -52,10 +52,8 @@ TEST(external_merge, random_bvs) {
         << ", bits: " << length * 64
         << ", splits: " << split_count << ")" << std::endl;
 
-
-vec_type test_vec_restored;
-    writer_type writer(test_vec_restored);
-    external_merger merger(writer, test_vec);
+    vec_type test_vec_restored;
+    external_merger merger(test_vec, test_vec_restored);
     for(uint64_t j = 1; j < split_positions.size(); ++j) {
       uint64_t start_pos = split_positions[j - 1];
       uint64_t split_len = split_positions[j] - start_pos;

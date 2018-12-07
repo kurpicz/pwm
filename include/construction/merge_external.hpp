@@ -19,7 +19,7 @@ class external_merger {
   using iter_type = typename vector_type ::const_iterator;
 
   writer_type writer_;
-  const vector_type * vector_;
+  const vector_type& vector_;
   const iter_type vector_begin_;
   const iter_type vector_end_;
 
@@ -39,11 +39,11 @@ class external_merger {
   }
 
 public:
-  external_merger(const vector_type * input, vector_type& output)
+  external_merger(const vector_type& input, vector_type& output)
       : writer_(output),
         vector_(input),
-        vector_begin_(input->begin()),
-        vector_end_(input->end()){
+        vector_begin_(vector_.begin()),
+        vector_end_(vector_.end()){
     static_assert(sizeof(value_type) == 8);
 
     for(uint8_t width = 0; width < 64; width++) {
@@ -114,8 +114,8 @@ public:
     const uint8_t initial_read_length =
         std::min(bitcount, uint64_t(64) - initial_read_offset);
 
-    rstr((*vector_)[initial_word_id]);
-    writeInfix((*vector_)[initial_word_id],
+    rstr(vector_[initial_word_id]);
+    writeInfix(vector_[initial_word_id],
                initial_read_offset,
                initial_read_length);
 
@@ -140,8 +140,8 @@ public:
           (bitcount - initial_read_length + 63) % 64 + 1;
 //          bitcount - initial_read_length - 64 * (final_word_id - initial_word_id - 1);
 
-      rstr((*vector_)[final_word_id]);
-      writeInfix((*vector_)[final_word_id],
+      rstr(vector_[final_word_id]);
+      writeInfix(vector_[final_word_id],
                  final_read_offset,
                  final_read_length);
     }
