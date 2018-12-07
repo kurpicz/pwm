@@ -299,7 +299,7 @@ public:
     using ctx_t = dd_ctx<InputType>;
     ctx_t ctx(text, size, levels);
 
-    if(ctx.block_count <= 2) {
+    if(ctx.block_count < 2) {
       for(uint64_t b = 0; b < ctx.block_count; b++) {
         ctx.loadBackInput(b);
         ctx.swapInputs();
