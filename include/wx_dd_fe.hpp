@@ -226,7 +226,7 @@ class wx_dd_fe : public wx_in_out_external<true, true> {
       auto& bvs = wavelet_structure_external_writer::bvs(result);
       auto& zeros = wavelet_structure_external_writer::zeros(result);
       auto& hists = wavelet_structure_external_writer::histograms(result);
-      
+
       external_merger merger(&temp_result, bvs);
       for(uint64_t l = 0; l < levels; l++) {
         std::vector<uint64_t> block_offsets(block_count);
@@ -308,28 +308,44 @@ public:
         ctx.saveBackResult(b);
       }
     } else {
+      // initialize:
+      //   load first input block
+      //   load second input block (background task)
       ctx.loadBackInput(0);
       ctx.swapInputs();
-      std::thread prepare([&ctx](){ctx.loadBackInput(1);});
-      for(uint64_t b = 0; b < ctx.block_count - 2; b++) {
-        ctx.processFrontInput(b);
-        prepare.join();
-        ctx.swapInputs();
-        ctx.swapResults();
+      std::thread worker_loadBack([&ctx](){ctx.loadBackInput(1);});
+      // no partial result to write to disk yet
+      std::thread worker_saveBack([](){});
 
-        prepare = std::thread(
-            [&ctx, b] () {
-              ctx.saveBackResult(b);
-              ctx.loadBackInput(b + 2);
-            });
+      for(uint64_t b = 0; b < ctx.block_count - 2; b++) {
+        // process current block
+        ctx.processFrontInput(b);
+
+        // wait until next input block is loaded from disk
+        worker_loadBack.join();
+        ctx.swapInputs();
+        // load second next input block from disk (background task)
+        worker_loadBack =
+            std::thread([&ctx, b] () {ctx.loadBackInput(b + 2);});
+
+        // wait until previous result is written to disk
+        worker_saveBack.join();
+        ctx.swapResults();
+        // save current result to disk (background task)
+        worker_saveBack =
+            std::thread([&ctx, b] () {ctx.saveBackResult(b);});
       }
+
       ctx.processFrontInput(ctx.block_count - 2);
-      prepare.join();
+      worker_loadBack.join();
       ctx.swapInputs();
+      worker_saveBack.join();
       ctx.swapResults();
-      prepare = std::thread([&ctx](){ctx.saveBackResult(ctx.block_count - 2);});
+      // save second last result to disk (background task)
+      worker_saveBack =
+          std::thread([&ctx](){ctx.saveBackResult(ctx.block_count - 2);});
       ctx.processFrontInput(ctx.block_count - 1);
-      prepare.join();
+      worker_saveBack.join();
       ctx.swapResults();
       ctx.saveBackResult(ctx.block_count - 1);
     }
