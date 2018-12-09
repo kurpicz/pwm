@@ -114,6 +114,11 @@ class wx_dd_fe : public wx_in_out_external<true, true> {
           << "].\n";
     }
 
+    ~dd_ctx() {
+      delete frontRes;
+      delete backRes;
+    }
+
     inline void swapInputs() {
       std::swap(frontIn, backIn);
     }
