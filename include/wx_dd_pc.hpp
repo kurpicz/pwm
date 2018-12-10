@@ -34,7 +34,9 @@ public:
   template <typename InputType>
   static wavelet_structure compute(const InputType& global_text,
                                    const uint64_t size,
-                                   const uint64_t levels) {
+                                   const uint64_t levels,
+                                   std::vector<uint64_t>*
+                                       global_char_hist = nullptr) {
 
     if (size == 0) {
       if constexpr (ctx_t::compute_zeros) {
@@ -73,9 +75,17 @@ public:
       pc(text, local_size, levels, ctxs[omp_rank]);
     }
 
-    for (auto& ctx : ctxs) {
-      ctx.discard_non_merge_data();
+    if (global_char_hist != nullptr) {
+      for (auto& ctx : ctxs) {
+        ctx.discard_non_merge_data();
+        ctx.copy_last_level_hist(global_char_hist);
+      }
+    } else {
+      for (auto& ctx : ctxs) {
+        ctx.discard_non_merge_data();
+      }
     }
+
     auto _bv = merge_bit_vectors(size, levels, shards, ctxs, rho);
 
     if constexpr (ctx_t::compute_zeros) {

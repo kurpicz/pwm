@@ -25,7 +25,8 @@ public:
   ctx_all_levels() = default;
 
   ctx_all_levels(uint64_t const size, uint64_t const levels, rho_t const& rho)
-      : hist_(levels + 1),
+      : levels_(levels),
+        hist_(levels + 1),
         rho_(&rho),
         borders_(1ULL << levels, 0),
         zeros_(levels, 0),
@@ -74,7 +75,17 @@ public:
     drop_me(std::move(borders_));
   }
 
+  inline void copy_last_level_hist(std::vector<uint64_t> * result) {
+    auto last_level_hist = hist_[levels_];
+    auto& result_hist = *result;
+    uint64_t const chars = 1 << levels_;
+    for(uint64_t i = 0; i < chars; ++i) {
+      result_hist[i] += last_level_hist[i];
+    }
+  }
+
 private:
+  uint64_t levels_;
   pow2_array hist_;
   rho_t const* rho_ = nullptr;
   std::vector<uint64_t> borders_;
