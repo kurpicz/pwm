@@ -84,7 +84,8 @@ private:
 
   template <typename vector_type>
   static vector_type getVector(
-      unsigned dir_id, bool is_permanent, std::string filename) {
+      unsigned dir_id, bool is_permanent, std::string filename, uint64_t cached_pages) {
+    using cache_size_t = typename vector_type::size_type;
     if(dir_id < directories().size()) {
       std::ostringstream file_stream;
       file_stream << directories()[dir_id] << "/" << id() << ".";
@@ -105,13 +106,13 @@ private:
                   << " external vector using file \""
                   << file << "\"" << std::endl;
       }
-      return vector_type(stxxl_file);
+      return vector_type(stxxl_file, cache_size_t(-1), cached_pages);
     } else {
       if (is_verbose()) {
         std::cerr << "Trying to use EM directory with ID \"" << dir_id << "\", ";
         std::cerr << "which has not been specified." << std::endl;
       }
-      return vector_type();
+      return vector_type(cache_size_t(0), cached_pages);
     }
   }
 
@@ -148,14 +149,14 @@ public:
 
   template <typename vector_type>
   static vector_type getVectorTemporary(
-      unsigned dir_id, std::string filename = "") {
-    return getVector<vector_type>(dir_id, false, filename);
+      unsigned dir_id, std::string filename = "", uint64_t cached_pages = 8) {
+    return getVector<vector_type>(dir_id, false, filename, cached_pages);
   }
 
   template <typename vector_type>
   static vector_type getVectorPermanent(
-      unsigned dir_id, std::string filename = "") {
-    return getVector<vector_type>(dir_id, true, filename);
+      unsigned dir_id, std::string filename = "", uint64_t cached_pages = 8) {
+    return getVector<vector_type>(dir_id, true, filename, cached_pages);
   }
 };
 
