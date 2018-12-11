@@ -104,7 +104,7 @@ class wx_dd_pc_fe : public wx_in_out_external<true, true> {
           block_hists(block_count),
           text_reader(text),
           temp_result_writer(temp_result) {
-      temp_result = stxxl_files::getVectorTemporary<result_type>(1, "", 256);
+      temp_result = stxxl_files::getVectorTemporary<result_type>(1);
       temp_result.reserve(result_words);
       DDE_VERBOSE
           << "Created context for wx_dd_fe "
