@@ -68,7 +68,6 @@ struct {
   bool external_out = false;
   std::string em_dirs;
 
-  bool memory = false;
   bool check = false;
   bool debug_print = false;
 
@@ -104,9 +103,9 @@ struct {
       uint64_t max_char = 0;
       uint64_t levels = 0;
       std::vector<uint_t> text_uint;
-#ifdef MALLOC_COUNT
+      #ifdef MALLOC_COUNT
       malloc_count_reset_peak();
-#endif
+      #endif
       if constexpr(!ext_in) {
         text_uint = file_to_vector<width>(path, global_settings.prefix_size);
         text_size = text_uint.size();
@@ -125,12 +124,10 @@ struct {
         levels = levels_for_max_char(max_char);
       }
       std::cout << "Characters: " << text_size << std::endl;
-#ifdef MALLOC_COUNT
-      if (global_settings.memory) {
+      #ifdef MALLOC_COUNT
       std::cout << "Memory peak text: " << malloc_count_peak() << " B, "
                 << malloc_count_peak() / (1024 * 1024) << " MiB" << std::endl;
-    }
-#endif // MALLOC_COUNT
+      #endif // MALLOC_COUNT
       for (const auto& a : algo_list) {
         GUARD_LOOP(global_settings.filter_name == "" || (a->name().compare(global_settings.filter_name) == 0));
         GUARD_LOOP(global_settings.parallel_filter.should_keep(a->is_parallel()));
@@ -138,19 +135,16 @@ struct {
         GUARD_LOOP(global_settings.matrix_filter.should_keep(!a->is_tree()));
 
         std::cout << "RESULT " << "algo=" << a->name() << ' ';
-        if (global_settings.memory) {
-#ifdef MALLOC_COUNT
-          malloc_count_reset_peak();
-          a->memory_peak(input_for_algo, text_size, levels);
-          std::cout << "memory=" << malloc_count_peak() << ' ';
-#else
-          std::cout << "memory=no ";
-#endif // MALLOC_COUNT
-        }
         std::cout << "runs=" << global_settings.nr_runs << " " << std::flush;
         if (global_settings.nr_runs > 0) {
+          #ifdef MALLOC_COUNT
+          malloc_count_reset_peak();
+          #endif // MALLOC_COUNT
           std::cout << "median_time=" << a->median_time(
               input_for_algo, text_size, levels, global_settings.nr_runs) << ' ';
+          #ifdef MALLOC_COUNT
+          std::cout << "memory=" << malloc_count_peak() << ' ';
+          #endif // MALLOC_COUNT
         }
         std::cout << "input=" << path << ' '
                   << "characters=" << text_size << ' '
@@ -406,8 +400,6 @@ int32_t main(int32_t argc, char const* argv[]) {
                     "Use the given directories as external memory"
                     "(split multiple directories using ':').");
 
-  cp.add_flag('m', "memory", global_settings.memory,
-              "Compute peak memory during construction.");
   cp.add_flag('c', "check", global_settings.check,
               "Check the constructed wavelet structure for validity.");
   cp.add_flag('d', "debug_print", global_settings.debug_print,
