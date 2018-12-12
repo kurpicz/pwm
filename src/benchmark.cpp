@@ -104,7 +104,6 @@ struct {
     }
 
     for (const auto& path : global_settings.file_paths) {
-      std::cout << std::endl << "Text: " << path << std::endl;
       in_type input_for_algo;
       uint64_t text_size = 0;
       uint64_t max_char = 0;
@@ -130,13 +129,6 @@ struct {
         text_size = input_for_algo.size();
         levels = levels_for_max_char(max_char);
       }
-      std::cout << "Characters: " << text_size << std::endl;
-#ifdef MALLOC_COUNT
-      if (global_settings.memory) {
-      std::cout << "Memory peak text: " << malloc_count_peak() << " B, "
-                << malloc_count_peak() / (1024 * 1024) << " MiB" << std::endl;
-    }
-#endif // MALLOC_COUNT
       for (const auto& a : algo_list) {
         GUARD_LOOP(global_settings.filter_name == "" ||
                    (a->name().compare(global_settings.filter_name) == 0));
