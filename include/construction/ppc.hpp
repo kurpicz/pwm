@@ -61,14 +61,14 @@ void ppc(AlphabetType const* text,
 
   #pragma omp parallel num_threads(levels)
   {
-    const uint64_t omp_rank_ = omp_get_thread_num();
+    [[maybe_unused]]const uint64_t omp_rank_ = omp_get_thread_num();
     DCHECK(omp_rank_ < levels);
 
     // Compute the histogram for each level of the wavelet structure
     #pragma omp for
     for (uint64_t level = 1; level < levels; ++level) {
       // TODO: remove again
-      const uint64_t omp_rank = omp_get_thread_num();
+      [[maybe_unused]]const uint64_t omp_rank = omp_get_thread_num();
       DCHECK(omp_rank < levels);
       DCHECK(omp_rank == omp_rank_);
 

@@ -51,7 +51,9 @@ private:
         is_huffman_shaped_(is_huffman_shaped),
         save_zeros_(zeros_ != nullptr),
         save_histograms_(histograms_ != nullptr) {
-    if(save_zeros_) DCHECK(zeros_->size() == levels_);
+    if(save_zeros_) {
+      DCHECK(zeros_->size() == levels_);
+    }
     if(save_histograms_) {
       DCHECK(histograms_->size() == levels_ + 1);
       (*histograms_)[0][0] = text_size_;
