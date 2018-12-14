@@ -28,8 +28,11 @@ public:
   using ctx_t = ctx_single_level<is_tree>;
 
   template <typename InputType>
-  static wavelet_structure
-  compute(const InputType& text, const uint64_t size, const uint64_t levels) {
+  static wavelet_structure compute(const InputType& text,
+                                   const uint64_t size,
+                                   const uint64_t levels,
+                                   std::vector<uint64_t>*
+                                       global_char_hist = nullptr) {
 
     if (size == 0) {
       if constexpr (ctx_t::compute_zeros) {
@@ -41,7 +44,7 @@ public:
 
     auto ctx = ctx_t(size, levels);
 
-    pc(text, size, levels, ctx);
+    pc(text, size, levels, ctx, global_char_hist);
 
     if constexpr (ctx_t::compute_zeros) {
       return wavelet_structure_matrix(std::move(ctx.bv()),

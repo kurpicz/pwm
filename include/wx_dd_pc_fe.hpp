@@ -11,6 +11,7 @@
 #include <vector>
 #include <thread>
 #include <sstream>
+#include <omp.h>
 
 #include "arrays/memory_types.hpp"
 #include "construction/merge_external.hpp"
@@ -49,7 +50,9 @@ class wx_dd_pc_fe : public wx_in_out_external<true, true> {
     using result_writer_type = typename result_type::bufwriter_type;
     using text_reader_type = typename InputType::bufreader_type;
     using parallel_algo = wx_dd_pc<AlphabetType, is_tree_>;
+    using sequential_algo = wx_pc<AlphabetType, is_tree_>;
 
+    const uint64_t omp_size;
     const uint64_t levels;
 
     const uint64_t block_chars;
@@ -84,7 +87,8 @@ class wx_dd_pc_fe : public wx_in_out_external<true, true> {
     result_writer_type temp_result_writer;
 
     dd_ctx(const InputType &text, const uint64_t size, const uint64_t plevels)
-        : levels(plevels),
+        : omp_size(omp_get_num_threads()),
+          levels(plevels),
           block_chars(std::min(max_block_chars, size)),
           block_count((size + block_chars - 1) / block_chars),
           last_block_chars(size - ((block_count - 1) * block_chars)),
@@ -157,11 +161,18 @@ class wx_dd_pc_fe : public wx_in_out_external<true, true> {
       auto& current_block_hist = block_hists[b];
 
       frontRes = new wavelet_structure(
-          parallel_algo::compute(
-          frontIn,
-          current_block_chars,
-          levels,
-          &current_block_hist[levels]));
+          (omp_size == 1) ?
+              sequential_algo::compute(
+                  frontIn,
+                  current_block_chars,
+                  levels,
+                  &current_block_hist[levels])
+              :
+              parallel_algo::compute(
+                  frontIn,
+                  current_block_chars,
+                  levels,
+                  &current_block_hist[levels]));
 
       if constexpr (is_tree_) {
         // calculate remaining histograms

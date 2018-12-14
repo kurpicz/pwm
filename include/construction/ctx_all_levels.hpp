@@ -75,13 +75,17 @@ public:
     drop_me(std::move(borders_));
   }
 
-  inline void copy_last_level_hist(std::vector<uint64_t> * result) {
-    auto last_level_hist = hist_[levels_];
+  inline void copy_hist(uint64_t level, std::vector<uint64_t> * result) {
+    auto last_level_hist = hist_[level];
     auto& result_hist = *result;
-    uint64_t const chars = 1 << levels_;
+    uint64_t const chars = 1 << level;
     for(uint64_t i = 0; i < chars; ++i) {
       result_hist[i] += last_level_hist[i];
     }
+  }
+
+  inline void copy_last_level_hist(std::vector<uint64_t> * result) {
+    copy_hist(levels_, result);
   }
 
 private:

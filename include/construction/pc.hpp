@@ -14,7 +14,9 @@ template <typename AlphabetType, typename ContextType>
 void pc(AlphabetType const* text,
         const uint64_t size,
         const uint64_t levels,
-        ContextType& ctx) {
+        ContextType& ctx,
+        std::vector<uint64_t>* global_char_hist = nullptr) {
+
   uint64_t cur_alphabet_size = (1 << levels);
 
   auto& zeros = ctx.zeros();
@@ -23,6 +25,8 @@ void pc(AlphabetType const* text,
 
   scan_text_compute_first_level_bv_and_last_level_hist(text, size, levels, bv,
                                                        ctx);
+  if(global_char_hist != nullptr)
+    ctx.copy_hist(levels, global_char_hist);
 
   // The number of 0s at the last level is the number of "even" characters
   if (ContextType::compute_zeros) {

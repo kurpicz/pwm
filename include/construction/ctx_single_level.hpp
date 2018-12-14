@@ -74,6 +74,14 @@ public:
     // Not used in merge algorithm
   }
 
+  inline void copy_hist(uint64_t level, std::vector<uint64_t> * result) {
+    auto& result_hist = *result;
+    uint64_t const chars = 1 << level;
+    for(uint64_t i = 0; i < chars; ++i) {
+      result_hist[i] += hist_[i];
+    }
+  }
+
 private:
   std::vector<uint64_t> hist_;
   std::vector<uint64_t> borders_;
