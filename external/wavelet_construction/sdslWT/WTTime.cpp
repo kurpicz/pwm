@@ -203,7 +203,7 @@ int parallel_main(int argc, char* argv[]) {
     uintT n = S.n;
     timeWT(S.A, n, rounds, fFile.data(), oFile.data(), check);
 #else
-    _seq<char> S = readStringFromFile(iFile.data());
+    _seq<char> S = readStringFromFile(iFile.data(), prefix_size);
     uintT n = S.n;
     timeWT((unsigned char*) S.A, n, rounds, iFile.data(), oFile.data(), check);
 #endif
