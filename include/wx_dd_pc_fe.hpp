@@ -23,7 +23,7 @@
 #include "wx_dd_pc.hpp"
 #include "wx_pc.hpp"
 
-#define DDE_VERBOSE if constexpr (true) atomic_out()
+#define DDE_VERBOSE if constexpr (false) atomic_out()
 
 
 template <typename AlphabetType, bool is_tree_, uint64_t bytesPerBlock = 1024 * 1024 * 1024>
