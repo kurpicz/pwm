@@ -21,8 +21,9 @@
 
 #include "wx_base.hpp"
 #include "wx_dd_pc.hpp"
+#include "wx_pc.hpp"
 
-#define DDE_VERBOSE if constexpr (false) atomic_out()
+#define DDE_VERBOSE if constexpr (true) atomic_out()
 
 
 template <typename AlphabetType, bool is_tree_, uint64_t bytesPerBlock = 1024 * 1024 * 1024>
@@ -52,7 +53,7 @@ class wx_dd_pc_fe : public wx_in_out_external<true, true> {
     using parallel_algo = wx_dd_pc<AlphabetType, is_tree_>;
     using sequential_algo = wx_pc<AlphabetType, is_tree_>;
 
-    const uint64_t omp_size;
+    uint64_t omp_size;
     const uint64_t levels;
 
     const uint64_t block_chars;
@@ -87,7 +88,7 @@ class wx_dd_pc_fe : public wx_in_out_external<true, true> {
     result_writer_type temp_result_writer;
 
     dd_ctx(const InputType &text, const uint64_t size, const uint64_t plevels)
-        : omp_size(omp_get_num_threads()),
+        : omp_size(1),
           levels(plevels),
           block_chars(std::min(max_block_chars, size)),
           block_count((size + block_chars - 1) / block_chars),
@@ -110,11 +111,18 @@ class wx_dd_pc_fe : public wx_in_out_external<true, true> {
           temp_result_writer(temp_result) {
       temp_result = stxxl_files::getVectorTemporary<result_type>(1);
       temp_result.reserve(result_words);
+
+      #pragma omp parallel
+      {
+        omp_size = omp_get_num_threads();
+      }
+
       DDE_VERBOSE
           << "Created context for wx_dd_fe "
           << "[blocks: " << block_count << ", "
           << "block_chars: " << block_chars << ", "
-          << "last_block_chars: " << last_block_chars
+          << "last_block_chars: " << last_block_chars  << ", "
+          << "omp_size: " << omp_size
           << "].\n";
     }
 
