@@ -342,6 +342,16 @@ public:
         // process current block
         ctx.processFrontInput(b);
 
+//        worker_saveBack.join();
+//        ctx.swapResults();
+//        worker_saveBack = std::thread([&worker_loadBack, &ctx, b] () {
+//            worker_loadBack.join();
+//            ctx.saveBackResult(b);
+//            ctx.swapInputs();
+//            worker_loadBack =
+//                std::thread([&ctx, b] () {ctx.loadBackInput(b + 2);});
+//        });
+
         // wait until next input block is loaded from disk
         worker_loadBack.join();
         ctx.swapInputs();

@@ -120,19 +120,24 @@ public:
                initial_read_length);
 
     if(final_word_id > initial_word_id) {
-      reader_type reader(vector_begin_ + initial_word_id + 1, // skip first
-                         vector_begin_ + final_word_id);      // skip last
+
+      uint64_t current_word_id = initial_word_id + 1; //skip first
+
+//      reader_type reader(vector_begin_ + initial_word_id + 1, // skip first
+//                         vector_begin_ + final_word_id);      // skip last
       if(write_used > 0) {
         uint64_t read_word;
-        while(!reader.empty()) {
-          reader >> read_word;
+//        while(!reader.empty()) {
+        while(current_word_id < final_word_id) {
+          read_word = vector_[current_word_id++];
           rstr(read_word);
           wstr((write_word | (read_word >> write_used)));
           writer_ << (write_word | (read_word >> write_used));
           write_word = (read_word << write_not_used);
         }
       } else {
-        for(;!reader.empty(); ++reader) {rstr(*reader); writer_ << *reader; wstr(*reader);}
+        for(;current_word_id < final_word_id; ++current_word_id) {writer_ << vector_[current_word_id];}
+//        for(;!reader.empty(); ++reader) {rstr(*reader); writer_ << *reader; wstr(*reader);}
       }
 
       constexpr uint8_t final_read_offset = 0;
