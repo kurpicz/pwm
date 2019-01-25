@@ -53,7 +53,7 @@ class wx_dd_pc_fe : public wx_in_out_external<true, true, true> {
     using parallel_algo = wx_dd_pc<AlphabetType, is_tree_>;
     using sequential_algo = wx_pc<AlphabetType, is_tree_>;
 
-    uint64_t omp_size;
+    int omp_size;
     const uint64_t levels;
 
     const uint64_t block_chars;
@@ -72,13 +72,10 @@ class wx_dd_pc_fe : public wx_in_out_external<true, true, true> {
 
     const std::vector<uint64_t> bit_reverse;
 
-    std::vector<AlphabetType> block_vec1;
-    std::vector<AlphabetType> block_vec2;
-    AlphabetType * frontIn = block_vec1.data();
-    AlphabetType * backIn = block_vec2.data();
-
     std::vector<std::vector<std::vector<uint64_t>>> block_hists;
 
+    std::vector<AlphabetType> * frontIn = nullptr;
+    std::vector<AlphabetType> * backIn = nullptr;
     wavelet_structure * frontRes = nullptr;
     wavelet_structure * backRes = nullptr;
 
@@ -104,10 +101,6 @@ class wx_dd_pc_fe : public wx_in_out_external<true, true, true> {
           block_bits(block_words * 64),
           result_words(result_level_words * levels),
           bit_reverse(bit_reverse_permutation(levels - 1)),
-          block_vec1(block_chars),
-          block_vec2(block_chars),
-          frontIn(block_vec1.data()),
-          backIn(block_vec2.data()),
           block_hists(block_count),
           text_reader(text),
           temp_result_writer(temp_result),
@@ -129,11 +122,6 @@ class wx_dd_pc_fe : public wx_in_out_external<true, true, true> {
           << "].\n";
     }
 
-    ~dd_ctx() {
-      if (!is_clean)
-        clean();
-    }
-
     inline void swapInputs() {
       std::swap(frontIn, backIn);
     }
@@ -144,6 +132,9 @@ class wx_dd_pc_fe : public wx_in_out_external<true, true, true> {
 
     inline void loadBackInput(uint64_t b) {
       DDE_VERBOSE << "(load " << b << " start) ";
+
+      backIn = new std::vector<AlphabetType>(block_chars);
+      auto backInData = backIn->data();
 
       block_hists[b].resize(levels + 1);
       block_hists[b][0].resize(1, 0);
@@ -157,7 +148,7 @@ class wx_dd_pc_fe : public wx_in_out_external<true, true, true> {
 
       //read block to internal memory
       for(uint64_t i = 0; i < current_block_chars; i++) {
-        text_reader >> backIn[i];
+        text_reader >> backInData[i];
       }
       DDE_VERBOSE << "(load " << b << " done) ";
     }
@@ -168,22 +159,23 @@ class wx_dd_pc_fe : public wx_in_out_external<true, true, true> {
           (b + 1 < block_count) ?
           block_chars : last_block_chars;
 
-      delete frontRes;
       auto& current_block_hist = block_hists[b];
 
       frontRes = new wavelet_structure(
-          (omp_size == 1) ?
+          (omp_size <= 2) ?
               sequential_algo::compute(
-                  frontIn,
+                  frontIn->data(),
                   current_block_chars,
                   levels,
                   &current_block_hist[levels])
               :
               parallel_algo::compute(
-                  frontIn,
+                  frontIn->data(),
                   current_block_chars,
                   levels,
                   &current_block_hist[levels]));
+
+      delete frontIn;
 
       if constexpr (is_tree_) {
         // calculate remaining histograms
@@ -235,23 +227,12 @@ class wx_dd_pc_fe : public wx_in_out_external<true, true, true> {
           temp_result_writer << block_bvs[l][w];
         }
       }
-      DDE_VERBOSE << "(save " << b << " done) ";
-    }
-
-    inline void clean() {
-      if (is_clean) return;
-      std::vector<AlphabetType> dummy1;
-      std::vector<AlphabetType> dummy2;
-      block_vec1.swap(dummy1);
-      block_vec2.swap(dummy2);
-      delete frontRes;
       delete backRes;
-      is_clean = true;
+      DDE_VERBOSE << "(save " << b << " done) ";
     }
 
     inline void finish() {
       temp_result_writer.finish();
-      clean();
       DDE_VERBOSE << "\n";
     }
 
@@ -313,7 +294,7 @@ public:
   static constexpr uint8_t word_width = sizeof(AlphabetType);
   static constexpr bool is_huffman_shaped = false;
 
-  template <typename InputType, typename stats_type>
+  template <typename InputType, typename stats_type, bool rw_simultaneously = false>
   static wavelet_structure_external
   compute(const InputType& text,
           const uint64_t size,
@@ -337,6 +318,8 @@ public:
     using ctx_t = dd_ctx<InputType>;
     ctx_t ctx(text, size, levels);
 
+    omp_set_num_threads(std::max(1, ctx.omp_size - 1));
+
     if(ctx.block_count < 2) {
       for(uint64_t b = 0; b < ctx.block_count; b++) {
         ctx.loadBackInput(b);
@@ -359,29 +342,33 @@ public:
         // process current block
         ctx.processFrontInput(b);
 
-//        worker_saveBack.join();
-//        ctx.swapResults();
-//        worker_saveBack = std::thread([&worker_loadBack, &ctx, b] () {
-//            worker_loadBack.join();
-//            ctx.saveBackResult(b);
-//            ctx.swapInputs();
-//            worker_loadBack =
-//                std::thread([&ctx, b] () {ctx.loadBackInput(b + 2);});
-//        });
+        if constexpr (rw_simultaneously) {
+          std::thread newLoad([&worker_loadBack, &ctx, b] () {
+            worker_loadBack.join();
+            ctx.swapInputs();
+            worker_loadBack =
+                std::thread([&ctx, b] () {ctx.loadBackInput(b + 2);});
+          });
 
-        // wait until next input block is loaded from disk
-        worker_loadBack.join();
-        ctx.swapInputs();
-        // load second next input block from disk (background task)
-        worker_loadBack =
-            std::thread([&ctx, b] () {ctx.loadBackInput(b + 2);});
+          std::thread newSave([&worker_saveBack, &ctx, b] () {
+            worker_saveBack.join();
+            ctx.swapResults();
+            worker_saveBack =
+                std::thread([&ctx, b] () {ctx.saveBackResult(b);});
+          });
 
-        // wait until previous result is written to disk
-        worker_saveBack.join();
-        ctx.swapResults();
-        // save current result to disk (background task)
-        worker_saveBack =
-            std::thread([&ctx, b] () {ctx.saveBackResult(b);});
+          newLoad.join();
+          newSave.join();
+        }
+        else {
+          worker_loadBack.join();
+          ctx.swapInputs();
+          ctx.swapResults();
+          worker_loadBack = std::thread([&ctx, b]() {
+              ctx.saveBackResult(b);
+              ctx.loadBackInput(b + 2);
+          });
+        }
       }
 
       ctx.processFrontInput(ctx.block_count - 2);

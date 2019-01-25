@@ -92,7 +92,7 @@ public:
 
     if(final_word_id > initial_word_id) {
       // use bufreader for large ranges
-      if(bitcount > 8ULL * 64 * 1024 * 1024) {
+      if(bitcount > 8ULL * 128 * 1024 * 1024) {
         reader_type reader(vector_begin_ + initial_word_id + 1, // skip first
                            vector_begin_ + final_word_id);      // skip last
         if(write_used > 0) {
@@ -121,7 +121,7 @@ public:
             writer_ << vector_[current_word_id];
         }
       }
-      
+
       // write final word
       writeInfix(vector_[final_word_id], 0, final_read_length);
     }
