@@ -87,6 +87,8 @@ class wx_dd_pc_fe : public wx_in_out_external<true, true, true> {
     result_type temp_result;
     result_writer_type temp_result_writer;
 
+    bool is_clean;
+
     dd_ctx(const InputType &text, const uint64_t size, const uint64_t plevels)
         : omp_size(1),
           levels(plevels),
@@ -108,7 +110,8 @@ class wx_dd_pc_fe : public wx_in_out_external<true, true, true> {
           backIn(block_vec2.data()),
           block_hists(block_count),
           text_reader(text),
-          temp_result_writer(temp_result) {
+          temp_result_writer(temp_result),
+          is_clean(false) {
       temp_result = stxxl_files::getVectorTemporary<result_type>(1);
       temp_result.reserve(result_words);
 
@@ -127,8 +130,8 @@ class wx_dd_pc_fe : public wx_in_out_external<true, true, true> {
     }
 
     ~dd_ctx() {
-      delete frontRes;
-      delete backRes;
+      if (!is_clean)
+        clean();
     }
 
     inline void swapInputs() {
@@ -235,11 +238,22 @@ class wx_dd_pc_fe : public wx_in_out_external<true, true, true> {
       DDE_VERBOSE << "(save " << b << " done) ";
     }
 
-    inline void finish() {
-      temp_result_writer.finish();
-      DDE_VERBOSE << "\n";
+    inline void clean() {
+      if (is_clean) return;
+      std::vector<AlphabetType> dummy1;
+      std::vector<AlphabetType> dummy2;
+      block_vec1.swap(dummy1);
+      block_vec2.swap(dummy2);
+      delete frontRes;
+      delete backRes;
+      is_clean = true;
     }
 
+    inline void finish() {
+      temp_result_writer.finish();
+      clean();
+      DDE_VERBOSE << "\n";
+    }
 
     inline void merge(wavelet_structure_external& result) {
       DDE_VERBOSE << "Merging... ";
