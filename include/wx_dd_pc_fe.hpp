@@ -27,7 +27,7 @@
 
 
 template <typename AlphabetType, bool is_tree_, uint64_t bytesPerBlock = 1024 * 1024 * 1024>
-class wx_dd_pc_fe : public wx_in_out_external<true, true> {
+class wx_dd_pc_fe : public wx_in_out_external<true, true, true> {
   static constexpr uint64_t given_block_chars = bytesPerBlock / sizeof(AlphabetType);
   static constexpr uint64_t max_block_chars =
       std::max(uint64_t(64), uint64_t(given_block_chars / 64 * 64));
@@ -299,12 +299,15 @@ public:
   static constexpr uint8_t word_width = sizeof(AlphabetType);
   static constexpr bool is_huffman_shaped = false;
 
-  template <typename InputType>
+  template <typename InputType, typename stats_type>
   static wavelet_structure_external
   compute(const InputType& text,
           const uint64_t size,
-          const uint64_t levels) {
+          const uint64_t levels,
+          stats_type& stats) {
     static_assert(sizeof(typename InputType::value_type) == sizeof(AlphabetType));
+
+    stats.phase("dd");
 
     // create empty result
     std::ostringstream name;
@@ -381,6 +384,8 @@ public:
       ctx.saveBackResult(ctx.block_count - 1);
     }
     ctx.finish();
+
+    stats.phase("merge");
 
     //MERGE:
     ctx.merge(result);

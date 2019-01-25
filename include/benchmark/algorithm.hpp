@@ -22,15 +22,17 @@
 #include "construction/wavelet_structure.hpp"
 #include "util/common.hpp"
 #include "util/type_for_bytes.hpp"
+#include "util/stats.hpp"
 
-template <typename in_type, typename out_type>
+template <bool ext_in, bool ext_out, int word_width>
 class construction_algorithm;
 
 template <typename Algorithm>
 class concrete_algorithm;
 
-template <typename in_type, typename out_type>
+template <bool ext_in, bool ext_out, int word_width>
 class algorithm_list {
+  using calgo_type = construction_algorithm<ext_in, ext_out, word_width>;
 public:
   algorithm_list(const algorithm_list& other) = delete;
   algorithm_list(algorithm_list&& other) = delete;
@@ -43,7 +45,7 @@ public:
   }
 
   inline void
-  register_algorithm(construction_algorithm<in_type, out_type> const* algo) {
+  register_algorithm(calgo_type const* algo) {
     algorithms_.push_back(algo);
   }
 
@@ -56,7 +58,7 @@ public:
 
   template <typename filter_function>
   inline auto filtered(filter_function f) {
-    std::vector<construction_algorithm<in_type, out_type> const*> r;
+    std::vector<calgo_type const*> r;
     for (auto e : *this) {
       if (f(e)) {
         r.push_back(e);
@@ -69,38 +71,45 @@ private:
   algorithm_list() {}
 
   // List of static pointers to the different algorithms
-  std::vector<construction_algorithm<in_type, out_type> const*> algorithms_;
+  std::vector<calgo_type const*> algorithms_;
 }; // class algorithm_list
 
-template <typename in_type, typename out_type>
+template <bool ext_in, bool ext_out, int width>
 class construction_algorithm {
+  using in_type = typename input_type<ext_in, width>::type;
+  using out_type = typename output_type<ext_out>::type;
+  using stats_type = statistics<ext_in | ext_out>;
 public:
   construction_algorithm(std::string name, std::string description)
       : name_(name), description_(description) {
-    algorithm_list<in_type, out_type>::get_algorithm_list().register_algorithm(
-        this);
+    algorithm_list<ext_in, ext_out, width>::get_algorithm_list().
+        register_algorithm(this);
   }
 
   virtual out_type compute_bitvector(const in_type& global_text,
                                      const uint64_t size,
-                                     const uint64_t levels) const = 0;
+                                     const uint64_t levels,
+                                     stats_type& stats) const = 0;
 
-  inline float median_time(const in_type& global_text,
-                           const uint64_t size,
-                           const uint64_t levels,
-                           const uint64_t runs) const {
-    std::vector<float> times;
+  out_type compute_bitvector(const in_type& global_text,
+                             const uint64_t size,
+                             const uint64_t levels) const {
+    stats_type dummy;
+    return compute_bitvector(global_text, size, levels, dummy);
+  }
+
+  inline stats_type median_time_stats(const in_type& global_text,
+                                      const uint64_t size,
+                                      const uint64_t levels,
+                                      const uint64_t runs) const {
+    std::vector<stats_type> stats(runs);
     for (uint64_t run = 0; run < runs; ++run) {
-      auto begin_time = std::chrono::high_resolution_clock::now();
-      compute_bitvector(global_text, size, levels);
-      auto end_time = std::chrono::high_resolution_clock::now();
-      auto duration = end_time - begin_time;
-      auto millis =
-          std::chrono::duration_cast<std::chrono::milliseconds>(duration);
-      times.emplace_back(static_cast<float>(millis.count()));
+      stats[run].start();
+      compute_bitvector(global_text, size, levels, stats[run]);
+      stats[run].finish();
     }
-    std::sort(times.begin(), times.end());
-    return (times[(runs - 1) >> 1] + times[(runs >> 1)]) / 2;
+    std::sort(stats.begin(), stats.end());
+    return stats[(runs - 1) >> 1];
   }
 
   inline void memory_peak(const in_type& global_text,
@@ -111,11 +120,11 @@ public:
 
   virtual bool is_parallel() const = 0;
   virtual bool is_tree() const = 0;
-  virtual uint8_t word_width() const = 0;
   virtual bool is_huffman_shaped() const = 0;
 
-  virtual bool is_input_external() const = 0;
-  virtual bool is_output_external() const = 0;
+  constexpr bool is_input_external() const { return ext_in; }
+  constexpr bool is_output_external() const { return ext_out; }
+  constexpr uint8_t word_width() const {return width; }
 
   std::string name() const {
     return name_;
@@ -138,19 +147,30 @@ private:
 
 template <typename Algorithm>
 class concrete_algorithm
-    : construction_algorithm<typename algo_type<Algorithm>::in,
-                             typename algo_type<Algorithm>::out> {
+    : construction_algorithm<
+        Algorithm::external_in,
+        Algorithm::external_out,
+        Algorithm::word_width> {
 public:
-  using in_type = typename algo_type<Algorithm>::in;
-  using out_type = typename algo_type<Algorithm>::out;
+  using in_type = typename input_type<Algorithm::external_in,
+                                      Algorithm::word_width>::type;
+  using out_type = typename output_type<Algorithm::external_out>::type;
+  using stats_type = statistics<Algorithm::external_in | Algorithm::external_out>;
 
   concrete_algorithm(std::string name, std::string description)
-      : construction_algorithm<in_type, out_type>(name, description) {}
+      : construction_algorithm<
+          Algorithm::external_in,
+          Algorithm::external_out,
+          Algorithm::word_width>(name, description) {}
 
   out_type compute_bitvector(const in_type& global_text,
                              const uint64_t size,
-                             const uint64_t levels) const {
-    return Algorithm::compute(global_text, size, levels);
+                             const uint64_t levels,
+                             stats_type &stats) const {
+    if constexpr (Algorithm::stats_support)
+      return Algorithm::compute(global_text, size, levels, stats);
+    else
+      return Algorithm::compute(global_text, size, levels);
   }
 
   bool is_parallel() const override {
@@ -161,20 +181,8 @@ public:
     return Algorithm::is_tree;
   }
 
-  uint8_t word_width() const override {
-    return Algorithm::word_width;
-  }
-
   bool is_huffman_shaped() const override {
     return Algorithm::is_huffman_shaped;
-  }
-
-  bool is_input_external() const override {
-    return Algorithm::external_in;
-  }
-
-  bool is_output_external() const override {
-    return Algorithm::external_out;
   }
 
 }; // class concrete_algorithm
@@ -184,7 +192,7 @@ public:
       concrete_algorithm<ws>(algo_name, algo_description);
 
 #define CONSTRUCTION_REGISTER_MEMBER(algo_name, algo_description, ws)          \
-  const concrete_algorithm<ws> _cstr_algo_##ws##_register =                               \
+  const concrete_algorithm<ws> _cstr_algo_##ws##_register =                    \
       concrete_algorithm<ws>(algo_name, algo_description);
 
 #endif // ALGORITHM_HEADER

@@ -80,15 +80,15 @@ struct {
   int32_t run() {
     // determine input and output type of the requested algorithms
     using in_type = typename input_type<ext_in, width>::type;
-    using in_type_internal = typename input_type<false, width>::type;
-    using out_type = typename output_type<ext_out>::type;
-    using out_type_internal = typename output_type<false>::type;
+    //using out_type = typename output_type<ext_out>::type;
     using uint_t = typename type_for_bytes<width>::type;
+
 
     int returncode = 0;
 
     // get all algorithms for given types
-    auto& algo_list = algorithm_list<in_type, out_type>::get_algorithm_list();
+    auto& algo_list =
+        algorithm_list<ext_in, ext_out, width>::get_algorithm_list();
     if (global_settings.list_algorithms_only) {
       for (const auto& a : algo_list) {
         a->print_info();
@@ -140,7 +140,7 @@ struct {
           #ifdef MALLOC_COUNT
           malloc_count_reset_peak();
           #endif // MALLOC_COUNT
-          std::cout << "median_time=" << a->median_time(
+          std::cout << a->median_time_stats(
               input_for_algo, text_size, levels, global_settings.nr_runs) << ' ';
           #ifdef MALLOC_COUNT
           std::cout << "memory=" << malloc_count_peak() << ' ';
@@ -187,9 +187,9 @@ struct {
                         << " Can only check texts over 1-byte alphabets\n";
             } else {
               auto& algo_list_check =
-                  algorithm_list<in_type_internal, out_type_internal>::
+                  algorithm_list<false, false, width>::
                       get_algorithm_list();
-              construction_algorithm<in_type_internal, out_type_internal> const* naive =
+              construction_algorithm<false, false, width> const* naive =
                   nullptr;
 
               if ((a->is_tree()) && !(a->is_huffman_shaped())) {

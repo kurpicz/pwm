@@ -12,11 +12,12 @@
 
 // TODO: Add other attributes
 
-template <bool external_in_, bool external_out_>
+template <bool external_in_, bool external_out_, bool stats_support_ = false>
 class wx_in_out_external {
 public:
   static constexpr bool external_in = external_in_;
   static constexpr bool external_out = external_out_;
+  static constexpr bool stats_support = stats_support_;
 }; // class wx_ps
 
 /******************************************************************************/

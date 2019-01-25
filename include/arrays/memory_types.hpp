@@ -42,11 +42,4 @@ struct output_type<memory_mode::external> {
   using type = wavelet_structure_external;
 };
 
-template <typename Algorithm>
-struct algo_type {
-  using in =
-      typename input_type<Algorithm::external_in, Algorithm::word_width>::type;
-  using out = typename output_type<Algorithm::external_out>::type;
-};
-
 /******************************************************************************/
