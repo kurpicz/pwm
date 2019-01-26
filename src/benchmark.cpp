@@ -321,6 +321,7 @@ struct {
         }
       } else {
         std::cout << " No EM directories files given." << std::endl;
+        volatile stxxlvector<bool> allocate;
       }
     }
 
