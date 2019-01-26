@@ -26,7 +26,7 @@
 #define DDE_VERBOSE if constexpr (false) atomic_out()
 
 
-template <typename AlphabetType, bool is_tree_, uint64_t bytesPerBlock = 1024 * 1024 * 1024>
+template <typename AlphabetType, bool is_tree_, uint64_t bytesPerBlock = 1024 * 1024 * 1024, bool rw_simultaneously = true>
 class wx_dd_pc_fe : public wx_in_out_external<true, true, true> {
   static constexpr uint64_t given_block_chars = bytesPerBlock / sizeof(AlphabetType);
   static constexpr uint64_t max_block_chars =
@@ -294,7 +294,7 @@ public:
   static constexpr uint8_t word_width = sizeof(AlphabetType);
   static constexpr bool is_huffman_shaped = false;
 
-  template <typename InputType, typename stats_type, bool rw_simultaneously = false>
+  template <typename InputType, typename stats_type>
   static wavelet_structure_external
   compute(const InputType& text,
           const uint64_t size,
@@ -318,7 +318,7 @@ public:
     using ctx_t = dd_ctx<InputType>;
     ctx_t ctx(text, size, levels);
 
-    omp_set_num_threads(std::max(1, ctx.omp_size - 1));
+//    omp_set_num_threads(std::max(1, ctx.omp_size - 1));
 
     if(ctx.block_count < 2) {
       for(uint64_t b = 0; b < ctx.block_count; b++) {
