@@ -90,31 +90,36 @@ template <bool stxxl_stats>
 class statistics {
 private:
 
+  const statistics *parent_;
   std::string title_;
 
   decltype(std::chrono::high_resolution_clock::now()) start_time_;
   uint64_t total_time_;
 
-  uint64_t start_memory_;
-  uint64_t total_memory_;
+  int64_t start_memory_;
+  int64_t total_memory_;
 
   stxxl_stats_type<stxxl_stats> stxxl_stats_;
 
   std::vector<statistics> phases_;
   bool phase_running_ = false;
 
-  inline statistics(std::string title) :
-      title_(title), stxxl_stats_(title) {}
+  inline statistics(std::string title, const statistics *parent) :
+      parent_(parent), title_(title), stxxl_stats_(title) {
+    if (parent != nullptr)
+      start_memory_ = parent->start_memory_;
+  }
 
 public:
 
-  inline statistics() : statistics("") {}
+  inline statistics() : statistics("", nullptr) {}
 
   inline void start() {
     stxxl_stats_.start();
     #ifdef MALLOC_COUNT
     malloc_count_reset_peak();
-    start_memory_ = malloc_count_peak();
+    if(parent_ == nullptr)
+      start_memory_ = malloc_count_peak();
     #endif // MALLOC_COUNT
     start_time_ = std::chrono::high_resolution_clock::now();
   }
@@ -130,6 +135,8 @@ public:
         std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
     #ifdef MALLOC_COUNT
     total_memory_ = malloc_count_peak() - start_memory_;
+    for (auto phase : phases_)
+      total_memory_ = std::max(total_memory_, phase.total_memory_);
     #endif // MALLOC_COUNT
     stxxl_stats_.finish();
   }
@@ -139,9 +146,13 @@ public:
       phases_[phases_.size() - 1].finish();
 
     phases_.push_back(statistics((title.empty()
-        ? "Phase " + std::to_string(phases_.size() + 1) : title) + "_"));
+        ? "Phase " + std::to_string(phases_.size() + 1) : title) + "_", this));
     phases_[phases_.size() - 1].start();
     phase_running_ = true;
+  }
+
+  uint64_t get_total_memory() const {
+    return total_memory_;
   }
 
   bool operator < (const statistics& other) const {
