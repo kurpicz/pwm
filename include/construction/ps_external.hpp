@@ -385,35 +385,44 @@ struct reader_writer_types<value_type, 2> {
   using writer_type = word_packed_writer_without_padding<value_type>;
 };
 
-template <typename InputType, bool is_tree, int word_packing_mode = 2>
+template <typename InputType, typename stats_type,
+          bool is_tree, int word_packing_mode = 2>
 struct wx_ps_fe_builder {
-  static void build(const InputType& text, wavelet_structure_external& result);
-};
+  static void build(const InputType& text,
+                    wavelet_structure_external& result,
+                    stats_type& stats);};
 
-template <typename InputType, int word_packing_mode>
-struct wx_ps_fe_builder<InputType, false, word_packing_mode> {
-  static void build(const InputType& text, wavelet_structure_external& result);
-};
+template <typename InputType, typename stats_type, int word_packing_mode>
+struct wx_ps_fe_builder<InputType, stats_type, false, word_packing_mode> {
+  static void build(const InputType& text,
+                    wavelet_structure_external& result,
+                    stats_type& stats);};
 
-template <typename InputType, int word_packing_mode>
-struct wx_ps_fe_builder<InputType, true, word_packing_mode> {
-  static void build(const InputType& text, wavelet_structure_external& result);
-};
+template <typename InputType, typename stats_type, int word_packing_mode>
+struct wx_ps_fe_builder<InputType, stats_type, true, word_packing_mode> {
+  static void build(const InputType& text,
+                    wavelet_structure_external& result,
+                    stats_type& stats);};
 
-template <typename InputType>
-struct wx_ps_fe_builder<InputType, false, 0> {
-  static void build(const InputType& text, wavelet_structure_external& result);
-};
+template <typename InputType, typename stats_type>
+struct wx_ps_fe_builder<InputType, stats_type, false, 0> {
+  static void build(const InputType& text,
+                    wavelet_structure_external& result,
+                    stats_type& stats);};
 
-template <typename InputType>
-struct wx_ps_fe_builder<InputType, true, 0> {
-  static void build(const InputType& text, wavelet_structure_external& result);
+template <typename InputType, typename stats_type>
+struct wx_ps_fe_builder<InputType, stats_type, true, 0> {
+  static void build(const InputType& text,
+                    wavelet_structure_external& result,
+                    stats_type& stats);
 };
 
 // MATRIX WITH WORD PACKING
-template <typename InputType, int word_packing_mode>
-void wx_ps_fe_builder<InputType, false, word_packing_mode>::build(
-    const InputType& text, wavelet_structure_external& result) {
+template <typename InputType, typename stats_type, int word_packing_mode>
+void wx_ps_fe_builder<InputType, stats_type, false, word_packing_mode>::build(
+    const InputType& text,
+    wavelet_structure_external& result,
+    stats_type& stats) {
   PSE_VERBOSE std::cout << "PS external (MATRIX, WORDPACKING "
                         << word_packing_mode << ")" << std::endl;
   auto levels = result.levels();
@@ -461,6 +470,7 @@ void wx_ps_fe_builder<InputType, false, word_packing_mode>::build(
   uint64_t left_size = 0;
   uint64_t right_size = 0;
 
+  stats.phase("l" + std::to_string(0));
   PSE_VERBOSE std::cout << "Level 1 of " << levels << " (initial scan)... "
                         << std::endl;
   {
@@ -512,6 +522,7 @@ void wx_ps_fe_builder<InputType, false, word_packing_mode>::build(
 
   // scans (top down WT construction in left-right-buffers)
   for (unsigned i = 1; i < levels - 1; i++) {
+    stats.phase("l" + std::to_string(i));
     PSE_VERBOSE std::cout << "Level " << i + 1 << " of " << levels << "... "
                           << std::endl;
 
@@ -582,6 +593,7 @@ void wx_ps_fe_builder<InputType, false, word_packing_mode>::build(
     delete rightWriter;
   }
 
+  stats.phase("l" + std::to_string(levels - 1));
   PSE_VERBOSE std::cout << "Level " << levels << " of " << levels
                         << " (final scan)... " << std::endl;
 
@@ -625,9 +637,11 @@ void wx_ps_fe_builder<InputType, false, word_packing_mode>::build(
 }
 
 // TREE WITH WORD PACKING
-template <typename InputType, int word_packing_mode>
-void wx_ps_fe_builder<InputType, true, word_packing_mode>::build(
-    const InputType& text, wavelet_structure_external& result) {
+template <typename InputType, typename stats_type, int word_packing_mode>
+void wx_ps_fe_builder<InputType, stats_type, true, word_packing_mode>::build(
+    const InputType& text,
+    wavelet_structure_external& result,
+    stats_type& stats) {
   PSE_VERBOSE std::cout << "PS external (TREE, WORDPACKING "
                         << word_packing_mode << ")" << std::endl;
   auto levels = result.levels();
@@ -675,6 +689,7 @@ void wx_ps_fe_builder<InputType, true, word_packing_mode>::build(
   uint64_t left_size = 0;
   uint64_t right_size = 0;
 
+  stats.phase("l" + std::to_string(0));
   PSE_VERBOSE std::cout << "Level 1 of " << levels << " (initial scan)... "
                         << std::endl;
   // Initial Scan:
@@ -736,6 +751,7 @@ void wx_ps_fe_builder<InputType, true, word_packing_mode>::build(
 
   // scans (top down WT construction in left-right-buffers)
   for (unsigned i = 1; i < levels - 1; i++) {
+    stats.phase("l" + std::to_string(i));
     PSE_VERBOSE std::cout << "Level " << i + 1 << " of " << levels << "... "
                           << std::endl;
 
@@ -821,6 +837,7 @@ void wx_ps_fe_builder<InputType, true, word_packing_mode>::build(
     delete rightWriter;
   }
 
+  stats.phase("l" + std::to_string(levels - 1));
   PSE_VERBOSE std::cout << "Level " << levels << " of " << levels
                         << " (final scan)... " << std::endl;
 
@@ -881,9 +898,11 @@ void wx_ps_fe_builder<InputType, true, word_packing_mode>::build(
 }
 
 // MATRIX WITHOUT WORD PACKING
-template <typename InputType>
-void wx_ps_fe_builder<InputType, false, 0>::build(
-    const InputType& text, wavelet_structure_external& result) {
+template <typename InputType, typename stats_type>
+void wx_ps_fe_builder<InputType, stats_type, false, 0>::build(
+    const InputType& text,
+    wavelet_structure_external& result,
+    stats_type& stats) {
   PSE_VERBOSE std::cout << "PS external (MATRIX, NO WORDPACKING)" << std::endl;
   auto levels = result.levels();
   auto size = result.text_size();
@@ -923,6 +942,7 @@ void wx_ps_fe_builder<InputType, false, 0>::build(
 
   result_writer_type result_writer(bvs);
 
+  stats.phase("l" + std::to_string(0));
   PSE_VERBOSE std::cout << "Level 1 of " << levels << " (initial scan)... "
                         << std::endl;
   {
@@ -972,6 +992,7 @@ void wx_ps_fe_builder<InputType, false, 0>::build(
 
   // scans (top down WT construction in left-right-buffers)
   for (unsigned i = 1; i < levels - 1; i++) {
+    stats.phase("l" + std::to_string(i));
     PSE_VERBOSE std::cout << "Level " << i + 1 << " of " << levels << "... "
                           << std::endl;
 
@@ -1039,6 +1060,7 @@ void wx_ps_fe_builder<InputType, false, 0>::build(
     delete rightWriter;
   }
 
+  stats.phase("l" + std::to_string(levels - 1));
   PSE_VERBOSE std::cout << "Level " << levels << " of " << levels
                         << " (final scan)... " << std::endl;
 
@@ -1084,9 +1106,11 @@ void wx_ps_fe_builder<InputType, false, 0>::build(
 }
 
 // TREE WITHOUT WORD PACKING
-template <typename InputType>
-void wx_ps_fe_builder<InputType, true, 0>::build(
-    const InputType& text, wavelet_structure_external& result) {
+template <typename InputType, typename stats_type>
+void wx_ps_fe_builder<InputType, stats_type, true, 0>::build(
+    const InputType& text,
+    wavelet_structure_external& result,
+    stats_type& stats) {
   PSE_VERBOSE std::cout << "PS external (TREE, NO WORDPACKING)" << std::endl;
   auto levels = result.levels();
   auto size = result.text_size();
@@ -1125,6 +1149,8 @@ void wx_ps_fe_builder<InputType, true, 0>::build(
   writer_type* rightWriter;
 
   result_writer_type result_writer(bvs);
+
+  stats.phase("l0");
 
   PSE_VERBOSE std::cout << "Level 1 of " << levels << " (initial scan)... "
                         << std::endl;
@@ -1185,6 +1211,7 @@ void wx_ps_fe_builder<InputType, true, 0>::build(
 
   // scans (top down WT construction in left-right-buffers)
   for (unsigned i = 1; i < levels - 1; i++) {
+    stats.phase("l" + std::to_string(i));
     PSE_VERBOSE std::cout << "Level " << i + 1 << " of " << levels << "... "
                           << std::endl;
 
@@ -1267,6 +1294,7 @@ void wx_ps_fe_builder<InputType, true, 0>::build(
     delete rightWriter;
   }
 
+  stats.phase("l" + std::to_string(levels - 1));
   PSE_VERBOSE std::cout << "Level " << levels << " of " << levels
                         << " (final scan)... " << std::endl;
 
