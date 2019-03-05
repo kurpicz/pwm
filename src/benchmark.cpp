@@ -218,7 +218,7 @@ struct {
                     return e->name() == "wm_huff_naive";
                 }).at(0);
               }
-              DCHECK(naive != nullptr);
+              CHECK(naive != nullptr);
               auto naive_wx = naive->compute_bitvector(
                   input_for_algo_check, text_size, levels);
               bool err_trigger = false;
@@ -234,6 +234,7 @@ struct {
                             "structures have different level sizes")) {
                 if (!a->is_tree()) {
                   size_t sl = structure.levels();
+                  std::cout << "Compare zeros arrays..." << std::endl;
                   check_err(structure.zeros().size() == sl,
                             "structure zeros too short");
                   if (sl > 0) {
@@ -247,12 +248,24 @@ struct {
                 auto& sbvs = structure.bvs();
                 auto& nbvs = naive_wx.bvs();
                 for (size_t l = 0; l < structure.levels(); l++) {
+                  std::cout << "Compare level " << l << "..." << std::endl;
                   auto sbs = sbvs.level_bit_size(l);
                   auto nbs = nbvs.level_bit_size(l);
                   if(check_err(sbs == nbs,
                                std::string("bit size differs on level ")
                                + std::to_string(l))) {
                     for (uint64_t bi = 0; bi < sbs; bi++) {
+                      constexpr uint64_t entry_bits
+                        = (sizeof(decltype(sbvs[0][0])) * 8);
+
+                      auto sbvs_l_bi = sbvs[l][bi / entry_bits];
+                      auto nbvs_l_bi = nbvs[l][bi / entry_bits];
+
+                      if (((bi % entry_bits) == 0) && (sbvs_l_bi == nbvs_l_bi)) {
+                        bi += (entry_bits - 1);
+                        continue;
+                      }
+
                       if(!check_err(
                           bit_at(sbvs[l], bi) == bit_at(nbvs[l], bi),
                           std::string("bit ")

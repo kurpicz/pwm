@@ -81,4 +81,14 @@ inline void error_with_message(char const* file,
 /// Check for greater-than (>)
 #define DCHECK_GT(x, y) DCHECK_OP(>, x, y)
 
+/// Macro for checking a boolean value. Takes an optional `ostream` message
+/// paramter.
+///
+/// Example:
+/// ```
+/// CHECK(predicate(x));
+/// CHECK(y.predicate(), << "invariant in y does not hold");
+/// ```
+#define CHECK(x) CHECK_INTERNAL(x, #x, )
+
 /******************************************************************************/
