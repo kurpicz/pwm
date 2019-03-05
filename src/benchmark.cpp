@@ -450,7 +450,10 @@ int32_t main(int32_t argc, char const* argv[]) {
     return -1;
   }
 
-  global_settings.number_threads = omp_get_max_threads();
+  std::cout << "omp thread_limit: " << omp_get_thread_limit() << std::endl;
+  std::cout << "omp default num_threads: " << omp_get_max_threads() << std::endl;
+
+  global_settings.number_threads = omp_get_thread_limit();
 
   if (global_settings.external) {
     global_settings.external_in = true;
