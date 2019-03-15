@@ -18,10 +18,10 @@
 #include "wx_base.hpp"
 
 template <typename AlphabetType, bool is_tree_>
-class wx_pc_ie : public wx_in_out_external<true, false> {
+class wx_ppc_ie : public wx_in_out_external<true, false> {
 
 public:
-  static constexpr bool is_parallel = false;
+  static constexpr bool is_parallel = true;
   static constexpr bool is_tree = is_tree_;
   static constexpr uint8_t word_width = sizeof(AlphabetType);
   static constexpr bool is_huffman_shaped = false;
@@ -41,7 +41,7 @@ public:
 
     auto ctx = ctx_t(size, levels);
 
-    pc_in_external(text, size, levels, ctx);
+    pc_in_external_parallel(text, size, levels, ctx);
 
     if constexpr (ctx_t::compute_zeros) {
       return wavelet_structure_matrix(std::move(ctx.bv()),

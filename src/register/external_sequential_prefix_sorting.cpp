@@ -46,6 +46,41 @@ CONSTRUCTION_REGISTER("wt_ps_oe",
                       "alphabet (using sorting, external output).",
                       wt_ps_32_oe)
 
+
+using wm_ps_8_oe_ip = wx_ps_oe<uint8_t, false, true>;
+using wm_ps_16_oe_ip = wx_ps_oe<uint16_t, false, true>;
+using wm_ps_32_oe_ip = wx_ps_oe<uint32_t, false, true>;
+
+using wt_ps_8_oe_ip = wx_ps_oe<uint8_t, true, true>;
+using wt_ps_16_oe_ip = wx_ps_oe<uint16_t, true, true>;
+using wt_ps_32_oe_ip = wx_ps_oe<uint32_t, true, true>;
+
+CONSTRUCTION_REGISTER("wm_ps_oe_inplace",
+                      "Sequential wavelet matrix construction with 8-bit "
+                      "alphabet (using inplace sorting, external output).",
+                      wm_ps_8_oe_ip)
+CONSTRUCTION_REGISTER("wm_ps_oe_inplace",
+                      "Sequential wavelet matrix construction with 16-bit "
+                      "alphabet (using inplace sorting, external output).",
+                      wm_ps_16_oe_ip)
+CONSTRUCTION_REGISTER("wm_ps_oe_inplace",
+                      "Sequential wavelet matrix construction with 32-bit "
+                      "alphabet (using inplace sorting, external output).",
+                      wm_ps_32_oe_ip)
+
+CONSTRUCTION_REGISTER("wt_ps_oe_inplace",
+                      "Sequential wavelet tree construction with 8-bit "
+                      "alphabet (using inplace sorting, external output).",
+                      wt_ps_8_oe_ip)
+CONSTRUCTION_REGISTER("wt_ps_oe_inplace",
+                      "Sequential wavelet tree construction with 16-bit "
+                      "alphabet (using inplace sorting, external output).",
+                      wt_ps_16_oe_ip)
+CONSTRUCTION_REGISTER("wt_ps_oe_inplace",
+                      "Sequential wavelet tree construction with 32-bit "
+                      "alphabet (using inplace sorting, external output).",
+                      wt_ps_32_oe_ip)
+
 // external
 
 using wm_ps_8_fe_wp0 = wx_ps_fe<uint8_t, false, 0>;

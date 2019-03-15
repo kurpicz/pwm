@@ -20,13 +20,21 @@
 #include "util/decode.hpp"
 #include "util/file_util.hpp"
 
+constexpr static bool in_internal_bool = false;
+constexpr static bool in_external_bool = true;
+constexpr static bool out_internal_bool = false;
+constexpr static bool out_external_bool = true;
+
 using in_internal = typename input_type<memory_mode::internal, 1>::type;
 using in_external = typename input_type<memory_mode::external, 1>::type;
 using out_internal = typename output_type<memory_mode::internal>::type;
 using out_external = typename output_type<memory_mode::external>::type;
 
+template <bool in_external_, bool out_external_>
+using a_list = algorithm_list<in_external_, out_external_, 1>;
+
 TEST(wavelet, no_alphabet_reduction) {
-  auto& algo_list = algorithm_list<in_internal, out_internal>::get_algorithm_list();
+  auto& algo_list = a_list<in_internal_bool, out_internal_bool>::get_algorithm_list();
   for (const auto& a : algo_list) {
     if (!a->is_huffman_shaped()) {
       a->print_info();
@@ -47,7 +55,7 @@ TEST(wavelet, no_alphabet_reduction) {
 }
 
 TEST(wavelet, no_alphabet_reduction_external_input) {
-  auto& algo_list = algorithm_list<in_external, out_internal>::get_algorithm_list();
+  auto& algo_list = a_list<in_external_bool, out_internal_bool>::get_algorithm_list();
   for (const auto& a : algo_list) {
     if (!a->is_huffman_shaped()) {
       a->print_info();
@@ -73,7 +81,7 @@ TEST(wavelet, no_alphabet_reduction_external_input) {
 }
 
 TEST(wavelet, no_alphabet_reduction_external_output) {
-  auto& algo_list = algorithm_list<in_internal, out_external>::get_algorithm_list();
+  auto& algo_list = a_list<in_internal_bool, out_external_bool>::get_algorithm_list();
   for (const auto& a : algo_list) {
     if (!a->is_huffman_shaped()) {
       a->print_info();
@@ -95,7 +103,7 @@ TEST(wavelet, no_alphabet_reduction_external_output) {
 }
 
 TEST(wavelet, no_alphabet_reduction_external_input_output) {
-  auto& algo_list = algorithm_list<in_external, out_external>::get_algorithm_list();
+  auto& algo_list = a_list<in_external_bool, out_external_bool>::get_algorithm_list();
   for (const auto& a : algo_list) {
     if (!a->is_huffman_shaped()) {
       a->print_info();
@@ -153,7 +161,7 @@ TEST(construction, wavelet_alphabet_reduction) {
 */
 
 TEST(huffman_shaped_wavelet, alphabet_reduction) {
-  auto& algo_list = algorithm_list<in_internal, out_internal>::get_algorithm_list();
+  auto& algo_list = a_list<in_internal_bool, out_internal_bool>::get_algorithm_list();
   for (const auto& a : algo_list) {
     if (a->is_huffman_shaped()) {
       a->print_info();

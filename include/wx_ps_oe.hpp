@@ -9,12 +9,12 @@
 #pragma once
 
 #include <vector>
-#include "construction/ps_external.hpp"
+#include "construction/ps_semi_external.hpp"
 #include "construction/wavelet_structure_external.hpp"
 
 #include "wx_base.hpp"
 
-template <typename AlphabetType, bool is_tree_>
+template <typename AlphabetType, bool is_tree_, bool inplace_sort = false>
 class wx_ps_oe : public wx_in_out_external<false, true> {
 public:
   static constexpr bool is_parallel = false;
@@ -35,7 +35,10 @@ public:
         construct(size, levels, name.str(), 0);
 
     if (size > 0) {
-      ps_out_external<AlphabetType, is_tree_>(text, result);
+      if constexpr (inplace_sort)
+        ps_out_external_inplace<AlphabetType, is_tree_>(text, result);
+      else
+        ps_out_external<AlphabetType, is_tree_>(text, result);
     }
 
     return result;
