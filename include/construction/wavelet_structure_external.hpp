@@ -33,7 +33,7 @@ private:
   bool save_histograms_;
   bool is_huffman_shaped_;
 
-  bv_type metadata_;
+//  bv_type metadata_;
   bv_type bvs_;
 
   uint64_t data_size_;
@@ -57,8 +57,8 @@ private:
         save_zeros_(save_zeros),
         save_histograms_(save_histograms),
         is_huffman_shaped_(is_huffman_shaped),
-        metadata_(stxxl_files::getVectorPermanent<bv_type>(
-            em_dir, em_name + ".meta")),
+//        metadata_(stxxl_files::getVectorPermanent<bv_type>(
+//            em_dir, em_name + ".meta")),
         bvs_(stxxl_files::getVectorPermanent<bv_type>(
             em_dir, em_name + ".bvs")) {
 
@@ -66,7 +66,7 @@ private:
 
     // make sure disk files are clean
     bvs_.clear();
-    metadata_.clear();
+//    metadata_.clear();
 
     data_size_ = 0;
     level_sizes_.resize(levels_, text_size_);

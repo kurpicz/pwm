@@ -10,6 +10,7 @@
 
 #include <deque>
 
+#include <util/inplace_partition.hpp>
 #include "construction/ctx_single_level_external.hpp"
 #include "construction/wavelet_structure_external.hpp"
 
@@ -145,13 +146,12 @@ void ps_out_external_inplace(
   auto& zeros = wavelet_structure_external_writer::zeros(result);
   auto& hist = wavelet_structure_external_writer::histograms(result);
 
-  auto q0 = std::deque<AlphabetType>();
-  auto q1 = std::deque<AlphabetType>();
-
-
   using result_writer_type =
   typename std::remove_reference<decltype(bvs)>::type::bufwriter_type;
   result_writer_type writer(bvs);
+
+  ps_ip_sort partition(text, size);
+  partition.start_level();
 
   // While initializing the histogram, we also compute the first level
   uint64_t cur_pos = 0;
@@ -161,12 +161,13 @@ void ps_out_external_inplace(
       for (uint64_t i = 0; i < 64; ++i) {
         ++hist[levels][text[cur_pos + i]];
         word <<= 1;
-        if (((text[cur_pos + i] >> (levels - 1)) & 1ULL)) {
-          q1.push_back(text[cur_pos + i]);
+        const auto character = partition.pop0();
+        if (((character >> (levels - 1)) & 1ULL)) {
+          partition.push1(character);
           word |= 1ULL;
         }
         else
-          q0.push_back(text[cur_pos + i]);
+          partition.push0(character);
       }
       writer << word;
     }
@@ -175,19 +176,22 @@ void ps_out_external_inplace(
       for (uint64_t i = 0; i < size - cur_pos; ++i) {
         ++hist[levels][text[cur_pos + i]];
         word <<= 1;
-        if (((text[cur_pos + i] >> (levels - 1)) & 1ULL)) {
-          q1.push_back(text[cur_pos + i]);
+        const auto character = partition.pop0();
+        if (((character >> (levels - 1)) & 1ULL)) {
+          partition.push1(character);
           word |= 1ULL;
         }
         else
-          q0.push_back(text[cur_pos + i]);
+          partition.push0(character);
       }
       word <<= (64 - (size & 63ULL));
       writer << word;
     }
   }
 
-  if constexpr (!is_tree) zeros[0] = q0.size();
+  partition.finish_level();
+
+  if constexpr (!is_tree) zeros[0] = partition.get_zeros();
 
   // compute all histograms
   uint64_t cur_max_char = (1 << levels);
@@ -200,50 +204,105 @@ void ps_out_external_inplace(
   }
 
   // compute all levels (top down)
-  for (uint64_t level = 1; level < levels; ++level) {
-//    std::cout << "ZEROES PRE  " << q0.size() << " -- " << q1.size() << std::endl;
+  for (uint64_t level = 1; level < levels - 1; ++level) {
 
-    auto * q_active = &q0;
-    auto * q_inactive = &q1;
+    partition.start_level();
 
     std::vector<uint64_t> &sizes = hist[level];
     std::vector<uint64_t> matrix_sizes(2);
     // matrix
     if constexpr (!is_tree) {
-      matrix_sizes[0] = q0.size();
-      matrix_sizes[1] = q1.size();
+      matrix_sizes[0] = zeros[level - 1];
+      matrix_sizes[1] = size - zeros[level - 1];
       sizes = matrix_sizes;
     }
 
     uint64_t i = 0;
     uint64_t word = 0ULL;
-    for (const auto node_size : sizes) {
-//      std::cout << "Size " << size << ", current: " << node_size << " (" << (q_active == &q1) << ")" << std::endl;
-      for (uint64_t j = 0; j < node_size; ++j) {
+    for (uint64_t k = 0; k < sizes.size(); k += 2) {
+      const auto node0_size = sizes[k];
+      const auto node1_size = sizes[k + 1];
+
+      for (uint64_t j = 0; j < node0_size; ++j) {
         word <<= 1;
-        if ((q_active->front() >> ((levels - 1) - level)) & 1ULL) {
+        const auto character = partition.pop0();
+        if ((character >> ((levels - 1) - level)) & 1ULL) {
           word |= 1ULL;
-          q1.push_back(q_active->front());
+          partition.push1(character);
         }
-        else
-          q0.push_back(q_active->front());
-        q_active->pop_front();
-        ++i;
-        if (i == 64) {
+        else {
+          partition.push0(character);
+        }
+        if (PWM_UNLIKELY(++i == 64)) {
           writer << word;
           i = 0;
         }
       }
-      std::swap(q_active, q_inactive);
-//      q_active = &q1;
+
+      for (uint64_t j = 0; j < node1_size; ++j) {
+        word <<= 1;
+        const auto character = partition.pop1();
+        if ((character >> ((levels - 1) - level)) & 1ULL) {
+          word |= 1ULL;
+          partition.push1(character);
+        }
+        else
+          partition.push0(character);
+        if (PWM_UNLIKELY(++i == 64)) {
+          writer << word;
+          i = 0;
+        }
+      }
+
     }
     if (i > 0) {
       word <<= (64 - (size & 63ULL));
       writer << word;
     }
-    if constexpr (!is_tree) zeros[level] = q0.size();
+    partition.finish_level();
 
-//    std::cout << "ZEROES POST " << q0.size() << " -- " << q1.size() << std::endl;
+    if constexpr (!is_tree) zeros[level] = partition.get_zeros();
+  }
+
+  partition.start_level();
+
+  std::vector<uint64_t> &sizes = hist[levels - 1];
+  std::vector<uint64_t> matrix_sizes(2);
+  // matrix
+  if constexpr (!is_tree) {
+    matrix_sizes[0] = zeros[levels - 2];
+    matrix_sizes[1] = size - zeros[levels - 2];
+    sizes = matrix_sizes;
+  }
+
+  uint64_t i = 0;
+  uint64_t word = 0ULL;
+  for (uint64_t k = 0; k < sizes.size(); k += 2) {
+    const auto node0_size = sizes[k];
+    const auto node1_size = sizes[k + 1];
+
+    for (uint64_t j = 0; j < node0_size; ++j) {
+      word <<= 1;
+      word |= (partition.pop0() & 1ULL);
+      if (PWM_UNLIKELY(++i == 64)) {
+        writer << word;
+        i = 0;
+      }
+    }
+
+    for (uint64_t j = 0; j < node1_size; ++j) {
+      word <<= 1;
+      word |= (partition.pop1() & 1ULL);
+      if (PWM_UNLIKELY(++i == 64)) {
+        writer << word;
+        i = 0;
+      }
+    }
+
+  }
+  if (i > 0) {
+    word <<= (64 - (size & 63ULL));
+    writer << word;
   }
 }
 
