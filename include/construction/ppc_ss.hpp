@@ -23,42 +23,50 @@ void ppc_ss(AlphabetType const* text,
             ContextType& ctx) {
   auto& bv = ctx.bv();
 
-  const uint64_t alphabet_size = (1 << levels);
-
-  std::vector<std::vector<uint64_t>> all_hists_ =
-      std::vector<std::vector<uint64_t>>(omp_get_max_threads());
-  span<std::vector<uint64_t>> all_hists(all_hists_);
-
-  #pragma omp parallel
+  // compute first level and initial histogram
   {
-    const auto omp_rank = omp_get_thread_num();
-    all_hists[omp_rank] = std::vector<uint64_t>(alphabet_size + 1, 0);
-    auto&& hist = span<uint64_t>(all_hists[omp_rank]);
+    const uint64_t alphabet_size = (1ull << levels);
 
-    omp_write_bits_wordwise(0, size, bv[0], [&](uint64_t i) {
-      hist[text[i]]++;
-      uint64_t const bit = ((text[i] >> (levels - 1)) & 1ULL);
-      return bit;
-    });
-  }
+    // Allocate a histogram buffer per thread
+    helper_array sharded_hists(omp_get_max_threads(), alphabet_size);
 
-  auto&& hist = ctx.hist_at_level(levels);
-  for (uint64_t i = 0; i < all_hists.size(); ++i) {
+    // Write the first level, and fill the histograms in parallel
+    #pragma omp parallel
+    {
+      const auto shard = omp_get_thread_num();
+      auto&& hist = sharded_hists[shard];
+
+      omp_write_bits_wordwise(0, size, bv[0], [&](uint64_t const i) {
+        auto const c = text[i];
+        hist[c]++;
+        uint64_t const bit = ((c >> (levels - 1)) & 1ULL);
+        return bit;
+      });
+    }
+
+    // Accumulate the histograms
+    auto&& hist = ctx.hist_at_level(levels);
+    #pragma omp parallel for
     for (uint64_t j = 0; j < alphabet_size; ++j) {
-      hist[j] += all_hists[i][j];
+      for (uint64_t shard = 0; shard < sharded_hists.levels(); ++shard) {
+        hist[j] += sharded_hists[shard][j];
+      }
     }
   }
 
   bottom_up_compute_hist_borders_optional_zeros_rho(size, levels, ctx);
 
-  #pragma omp parallel num_threads(levels)
-  {
-    uint64_t level = omp_get_thread_num();
+  #pragma omp parallel for schedule(nonmonotonic : dynamic, 1)
+  for (uint64_t level = 1; level < levels; level++) {
     auto&& borders = ctx.borders_at_level(level);
+
     for (uint64_t i = 0; i < size; ++i) {
       write_symbol_bit(bv, level, levels, borders, text[i]);
     }
   }
+
+  ctx.hist_at_level(0)[0] = size;
+  ctx.discard_borders();
 }
 
 /******************************************************************************/
