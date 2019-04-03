@@ -234,7 +234,6 @@ struct {
                             "structures have different level sizes")) {
                 if (!a->is_tree()) {
                   size_t sl = structure.levels();
-                  // std::cout << "Compare zeros arrays..." << std::endl;
                   check_err(structure.zeros().size() == sl,
                             "structure zeros too short");
                   if (sl > 0) {
@@ -248,7 +247,6 @@ struct {
                 auto& sbvs = structure.bvs();
                 auto& nbvs = naive_wx.bvs();
                 for (size_t l = 0; l < structure.levels(); l++) {
-                  // std::cout << "Compare level " << l << "..." << std::endl;
                   auto sbs = sbvs.level_bit_size(l);
                   auto nbs = nbvs.level_bit_size(l);
                   if(check_err(sbs == nbs,
@@ -449,11 +447,6 @@ int32_t main(int32_t argc, char const* argv[]) {
   if (!cp.process(argc, argv)) {
     return -1;
   }
-
-
-  // std::cout << "omp thread_limit: " << omp_get_thread_limit() << std::endl;
-  // std::cout << "omp default num_threads: " << omp_get_max_threads() << std::endl;
-
 
   #pragma omp parallel
   {
