@@ -51,3 +51,5 @@ huff_scan_text_compute_first_level_bv_and_full_hist(text_t const& text,
     bv[0][size >> 6] = word;
   }
 }
+
+/******************************************************************************/

@@ -12,7 +12,7 @@
 #include <cstring>
 
 #include "construction/wavelet_structure.hpp"
-
+#include "huffman/ctx_huffman.hpp"
 #include "construction/ctx_generic.hpp"
 #include "huffman/huff_bit_vectors.hpp"
 #include "huffman/huff_codes.hpp"
@@ -31,12 +31,13 @@ public:
   static constexpr bool is_huffman_shaped = true;
 
   // TODO: review if we can reduce further (change to single level)
-  using ctx_t = ctx_generic<is_tree,
-                            ctx_options::borders::single_level,
-                            ctx_options::hist::all_level,
-                            ctx_options::pre_computed_rho,
-                            ctx_options::bv_initialized,
-                            huff_bit_vectors>;
+  using huffman_codes = canonical_huff_codes<AlphabetType, is_tree>;
+
+  using ctx_t = ctx_huffman<is_tree,
+                             ctx_options::pre_computed_rho,
+                             ctx_options::bv_initialized,
+                             huff_bit_vectors,
+                             huffman_codes>;
 
   static wavelet_structure compute(AlphabetType const* const text,
                                    const uint64_t size,
@@ -44,7 +45,7 @@ public:
 
     histogram<AlphabetType> hist{text, size};
     level_sizes_builder<AlphabetType> builder{std::move(hist)};
-    canonical_huff_codes<AlphabetType, is_tree> codes(builder);
+    huffman_codes codes(builder);
 
     auto const& level_sizes = builder.level_sizes();
     uint64_t const levels = builder.levels();
@@ -58,7 +59,7 @@ public:
     }
 
     const auto rho = rho_dispatch<is_tree>::create(levels);
-    auto ctx = ctx_t(level_sizes, levels, rho);
+    auto ctx = ctx_t(level_sizes, levels, rho, codes);
 
     huff_naive(text, size, levels, codes, ctx, level_sizes);
 

@@ -17,7 +17,7 @@
 
 #include "arrays/span.hpp"
 #include "construction/wavelet_structure.hpp"
-
+#include "huffman/ctx_huffman.hpp"
 #include "construction/ctx_generic.hpp"
 #include "huffman/huff_bit_vectors.hpp"
 #include "huffman/huff_codes.hpp"
@@ -36,14 +36,21 @@ public:
   static constexpr bool is_huffman_shaped = true;
 
   // TODO: Redesign somehow
-  using ctx_t = ctx_generic<is_tree,
-                            std::conditional_t<Algorithm::needs_all_borders,
-                                               ctx_options::borders::all_level,
-                                               ctx_options::borders::single_level>,
-                            ctx_options::hist::all_level,
+  // using ctx_t = ctx_generic<is_tree,
+  //                           std::conditional_t<Algorithm::needs_all_borders,
+  //                                              ctx_options::borders::all_level,
+  //                                              ctx_options::borders::single_level>,
+  //                           ctx_options::hist::all_level,
+  //                           ctx_options::pre_computed_rho,
+  //                           ctx_options::bv_initialized,
+  //                           huff_bit_vectors>;
+  using huffman_codes = canonical_huff_codes<AlphabetType, is_tree>;
+
+  using ctx_t = ctx_huffman<is_tree,
                             ctx_options::pre_computed_rho,
                             ctx_options::bv_initialized,
-                            huff_bit_vectors>;
+                            huff_bit_vectors,
+                            huffman_codes>;
 
   template <typename InputType>
   static wavelet_structure compute(const InputType& global_text_ptr,
@@ -85,8 +92,7 @@ public:
     };
 
     // build huffman codes and calculate level sizes
-    canonical_huff_codes<AlphabetType, is_tree> codes =
-        canonical_huff_codes<AlphabetType, is_tree>(builder);
+    huffman_codes codes = canonical_huff_codes<AlphabetType, is_tree>(builder);
     uint64_t const levels = builder.levels();
 
     if (size == 0) {
@@ -107,7 +113,7 @@ public:
 
       auto const text = get_local_slice(shard, global_text);
 
-      ctxs[shard] = ctx_t(local_level_sizes, levels, rho);
+      ctxs[shard] = ctx_t(local_level_sizes, levels, rho, codes);
 
       Algorithm::calc_huff(text.data(), text.size(), levels, codes,
                            ctxs[shard], local_level_sizes);
