@@ -33,11 +33,17 @@ void huff_pc_ss(AlphabetType const* text,
     auto&& hist = ctx.hist_at_level(level);
 
     borders[0] = 0;
+    uint64_t containing_prev_block = 0;
     for (uint64_t pos = 1; pos < ctx.hist_size(level); ++pos) {
-      auto const prev_block = ctx.rho(level, pos - 1);
+      // This is only required if we compute matrices
+      [[maybe_unused]] auto const prev_block = ctx.rho(level, pos - 1);
       auto const this_block = ctx.rho(level, pos);
 
-      borders[this_block] = borders[prev_block] + hist[prev_block];
+      if (hist.count(this_block) > 0) {
+        borders[this_block] = borders[containing_prev_block] +
+          hist[containing_prev_block];
+        containing_prev_block = this_block;
+      }
       // NB: The above calulcation produces _wrong_ border offsets
       // for huffman codes that are one-shorter than the current level.
       //

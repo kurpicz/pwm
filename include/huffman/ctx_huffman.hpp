@@ -33,18 +33,23 @@ public:
       bv_(levels, size_arg),
       rho_(std::move(rho)),
       levels_(levels) {
-    //TODO Init umaps with zeros at required places
 
-    for (auto const& cp : codes.code_pairs()) {
-      for (uint64_t i = 1; i < std::min(cp.code_length, levels_); ++i) {
-        hist_[i][cp.prefix(i)] = 0;
-        borders_[i][cp.prefix(i)] = 0;
+    for (size_t i = 1; i < levels_; ++i) {
+      //std::cout << "@ LEVEL " << i << std::endl;
+      for (auto const& cp : codes.code_pairs()) {
+        if (cp.code_length >= i) {
+          hist_[i][cp.prefix(i)] = 0;
+          borders_[i][cp.prefix(i)] = 0;
+          //std::cout << "cp.prefix(i) " << cp.prefix(i) << std::endl;
+        }
       }
+      //std::cout << "hist_[" << i << "].size() " << hist_[i].size() << std::endl;
     }
   }
 
   uint64_t hist_size(uint64_t const level) {
     return 1ULL << level;
+    //return hist_[level + 1].size();
   }
 
   auto& hist_at_level(uint64_t const level) {

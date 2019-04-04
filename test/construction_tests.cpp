@@ -76,7 +76,7 @@ TEST(construction, wavelet_alphabet_reduction) {
 TEST(wavelet, huffman_alphabet_reduction) {
   auto& algo_list = algorithm_list<in_internal, out_internal>::get_algorithm_list();
   for (const auto& a : algo_list) {
-    if (a->is_huffman_shaped()) {
+    if (a->is_huffman_shaped() && a->is_tree()) {
       a->print_info();
       test::roundtrip_batch([&](const std::string& s){
         auto vec = std::vector<uint8_t>(s.begin(), s.end());
