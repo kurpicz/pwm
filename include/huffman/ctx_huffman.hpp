@@ -11,6 +11,50 @@
 #include <unordered_map>
 #include <vector>
 
+namespace ctx_huffman_options{
+
+struct single_level : public std::unordered_map<uint64_t, uint64_t> {
+  inline single_level() = default;
+
+  inline auto get(uint64_t /*shard*/, uint64_t /*level*/) {
+    return *this;
+  }
+
+ inline auto get(uint64_t /*shard*/, uint64_t /*level*/) const {
+    return *this;
+  }
+
+  static constexpr bool is_not_sharded = true;
+  static constexpr bool is_not_leveled = true;
+};
+
+struct all_level : public std::vector<std::unordered_map<uint64_t, uint64_t>> {
+  inline all_level() = default;
+
+  inline all_level(uint64_t const levels)
+    : std::vector<std::unordered_map<uint64_t, uint64_t>>(levels) { }
+
+  inline auto get(uint64_t /*shard*/, uint64_t level) {
+    return (*this)[level];
+  }
+  inline auto get(uint64_t /*shard*/, uint64_t level) const {
+    return (*this)[level];
+  }
+  static constexpr bool is_not_sharded = true;
+  static constexpr bool is_not_leveled = false;
+};
+
+namespace huff_borders {
+  using ctx_huffman_options::single_level;
+  using ctx_huffman_options::all_level;
+}
+
+namespace huff_hist {
+  using ctx_huffman_options::all_level;
+}
+
+} // namespace ctx_huffman_options
+
 template <bool is_tree,
           template <bool> typename rho_type,
           bool require_initialization,
@@ -35,21 +79,17 @@ public:
       levels_(levels) {
 
     for (size_t i = 1; i < levels_; ++i) {
-      //std::cout << "@ LEVEL " << i << std::endl;
       for (auto const& cp : codes.code_pairs()) {
         if (cp.code_length >= i) {
           hist_[i][cp.prefix(i)] = 0;
           borders_[i][cp.prefix(i)] = 0;
-          //std::cout << "cp.prefix(i) " << cp.prefix(i) << std::endl;
         }
       }
-      //std::cout << "hist_[" << i << "].size() " << hist_[i].size() << std::endl;
     }
   }
 
   uint64_t hist_size(uint64_t const level) {
     return 1ULL << level;
-    //return hist_[level + 1].size();
   }
 
   auto& hist_at_level(uint64_t const level) {
@@ -109,6 +149,7 @@ private:
 
   help_array hist_;
   help_array borders_;
+  // std::unordered_map<uint64_t, uint64_t> borders_;
   std::vector<uint64_t>  zeros_;
   bv_type<require_initialization> bv_;
   rho_type<is_tree> rho_;
