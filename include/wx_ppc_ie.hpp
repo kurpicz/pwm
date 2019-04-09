@@ -8,10 +8,11 @@
 
 #pragma once
 
+#include <omp.h>
 #include <vector>
 
 #include "arrays/memory_types.hpp"
-#include "construction/ctx_single_level.hpp"
+#include "construction/ctx_all_levels.hpp"
 #include "construction/pc_semi_external.hpp"
 #include "construction/wavelet_structure.hpp"
 
@@ -30,7 +31,7 @@ public:
   static wavelet_structure
   compute(const InputType& text, const uint64_t size, const uint64_t levels) {
 
-    using ctx_t = ctx_single_level<is_tree>;
+    using ctx_t = ctx_all_levels<is_tree>;
 
     if (size == 0) {
       if constexpr (is_tree_)
@@ -39,9 +40,12 @@ public:
         return wavelet_structure_matrix();
     }
 
-    auto ctx = ctx_t(size, levels);
+    const auto rho = rho_dispatch<is_tree>::create(levels);
+    ctx_t ctx(size, levels, rho);
 
     pc_in_external_parallel(text, size, levels, ctx);
+
+    std::cout << "DONE DONE" << std::endl;
 
     if constexpr (ctx_t::compute_zeros) {
       return wavelet_structure_matrix(std::move(ctx.bv()),
