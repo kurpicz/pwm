@@ -9,7 +9,11 @@
 
 #pragma once
 
+#include <algorithm>
+#include <unordered_map>
+
 #include "construction/building_blocks.hpp"
+#include "util/bit_reverse.hpp"
 
 template <typename text_t, typename ctx_t, typename bv_t, typename codes_t>
 inline void
@@ -89,8 +93,43 @@ inline void huff_compute_borders_optional_zeros_rho(uint64_t level,
     // If we compute zeros, we are working on a WM instead of a WT.
     // For a WM, borders is permuted with rho such that
     // borders[1] contains the position of the first 1-bit block.
+    ctx.zeros()[level - 1] = borders[1]; // TODO: This is not correct all the time
+  }
+}
+
+template <typename ctx_t, typename borders_t>
+inline void huff_compute_borders_optional_zeros_rho(uint64_t level,
+                                                    ctx_t& ctx,
+                                                    borders_t&& borders) {
+  auto&& hist = ctx.hist_at_level(level);
+  std::vector<uint64_t> keys;
+  keys.reserve(hist.size());
+  std::for_each(hist.begin(), hist.end(), [&](auto const item) {
+    keys.push_back(item.first);
+  });
+
+  if constexpr (ctx_t::compute_zeros) /* is wavelet matrix */ {
+    std::sort(keys.begin(), keys.end(), [](uint64_t const a, uint64_t const b) {
+      return reverse_bits(a) < reverse_bits(b);
+    });
+  } else /* is wavelet tree */{
+    std::sort(keys.begin(), keys.end());
+  }
+
+  // Compute the starting positions of characters with respect to their
+  // bit prefixes and the bit-reversal permutation
+  borders[0] = 0;
+  for (uint64_t i = 1; i < keys.size(); ++i) {
+    borders[i] = borders[i - 1] + hist[i - 1];
+  }
+
+  if constexpr (ctx_t::compute_zeros) {
+    // If we compute zeros, we are working on a WM instead of a WT.
+    // For a WM, borders is permuted with rho such that
+    // borders[1] contains the position of the first 1-bit block.
     ctx.zeros()[level - 1] = borders[1];
   }
 }
+
 
 /******************************************************************************/

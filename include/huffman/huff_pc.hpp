@@ -39,11 +39,10 @@ void huff_pc(AlphabetType const* text,
   // Now we compute the WX top-down, since the histograms are already computed
   for (uint64_t level = levels - 1; level > 0; --level) {
     auto&& borders = ctx.borders_at_level(level);
-    uint64_t blocks = 1ULL << level;
 
     // Compute the starting positions of characters with respect to their
     // bit prefixes and the bit-reversal permutation
-    huff_compute_borders_optional_zeros_rho(level, blocks, ctx, borders);
+    huff_compute_borders_optional_zeros_rho(level, ctx, borders);
 
     // Now we insert the bits with respect to their bit prefixes
     for (uint64_t i = 0; i < size; ++i) {

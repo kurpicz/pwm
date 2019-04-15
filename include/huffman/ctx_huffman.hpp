@@ -16,11 +16,13 @@ namespace ctx_huffman_options{
 struct single_level : public std::unordered_map<uint64_t, uint64_t> {
   inline single_level() = default;
 
-  inline auto get(uint64_t /*shard*/, uint64_t /*level*/) {
+  inline single_level(uint64_t /*levels*/) { }
+
+  inline auto& get(uint64_t /*level*/) {
     return *this;
   }
 
- inline auto get(uint64_t /*shard*/, uint64_t /*level*/) const {
+  inline auto& get(uint64_t /*level*/) const {
     return *this;
   }
 
@@ -34,10 +36,10 @@ struct all_level : public std::vector<std::unordered_map<uint64_t, uint64_t>> {
   inline all_level(uint64_t const levels)
     : std::vector<std::unordered_map<uint64_t, uint64_t>>(levels) { }
 
-  inline auto get(uint64_t /*shard*/, uint64_t level) {
+  inline auto& get(uint64_t level) {
     return (*this)[level];
   }
-  inline auto get(uint64_t /*shard*/, uint64_t level) const {
+  inline auto& get(uint64_t level) const {
     return (*this)[level];
   }
   static constexpr bool is_not_sharded = true;
@@ -56,6 +58,8 @@ namespace huff_hist {
 } // namespace ctx_huffman_options
 
 template <bool is_tree,
+          typename borders_array,
+          typename hist_array,
           template <bool> typename rho_type,
           bool require_initialization,
           template <bool> typename bv_type,
@@ -81,8 +85,7 @@ public:
     for (size_t i = 1; i < levels_; ++i) {
       for (auto const& cp : codes.code_pairs()) {
         if (cp.code_length >= i) {
-          hist_[i][cp.prefix(i)] = 0;
-          borders_[i][cp.prefix(i)] = 0;
+          hist_.get(i)[cp.prefix(i)] = 0;
         }
       }
     }
@@ -93,16 +96,16 @@ public:
   }
 
   auto& hist_at_level(uint64_t const level) {
-    return hist_[level];
+    return hist_.get(level);
   }
 
   auto hist_at_level(uint64_t const level) const {
-    return hist_[level];
+    return hist_.get(level);
   }
 
 
   auto& borders_at_level(uint64_t const level) {
-    return borders_[level];
+    return borders_.get(level);
   }
 
   uint64_t rho(size_t level, size_t i) {
@@ -145,11 +148,8 @@ public:
   }
 
 private:
-  using help_array = std::vector<std::unordered_map<uint64_t, uint64_t>>;
-
-  help_array hist_;
-  help_array borders_;
-  // std::unordered_map<uint64_t, uint64_t> borders_;
+  hist_array hist_;
+  borders_array borders_;
   std::vector<uint64_t>  zeros_;
   bv_type<require_initialization> bv_;
   rho_type<is_tree> rho_;

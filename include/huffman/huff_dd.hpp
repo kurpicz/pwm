@@ -47,6 +47,12 @@ public:
   using huffman_codes = canonical_huff_codes<AlphabetType, is_tree>;
 
   using ctx_t = ctx_huffman<is_tree,
+                            std::conditional_t<Algorithm::needs_all_borders,
+                                               ctx_huffman_options::huff_borders
+                                               ::all_level,
+                                               ctx_huffman_options::huff_borders
+                                               ::single_level>,
+                            ctx_huffman_options::huff_hist::all_level,
                             ctx_options::pre_computed_rho,
                             ctx_options::bv_initialized,
                             huff_bit_vectors,
