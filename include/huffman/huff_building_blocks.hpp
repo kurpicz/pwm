@@ -32,7 +32,7 @@ huff_scan_text_compute_first_level_bv_and_full_hist(text_t const& text,
     // do O(level) individual add operations.
     //
     // Eg, just adding at code_length, and summing all up afterwards?
-    for (size_t level = 1; level <= cp.code_length; level++) {
+    for (size_t level = 1; level <= cp.code_length(); level++) {
       auto&& hist = ctx.hist_at_level(level);
       auto prefix = cp.prefix(level);
       hist[prefix]++;
@@ -118,7 +118,6 @@ inline void huff_compute_borders_optional_zeros_rho(uint64_t level,
 
   // Compute the starting positions of characters with respect to their
   // bit prefixes and the bit-reversal permutation
-  std::cout << "keys.size() " << keys.size() << std::endl;
   borders.clear();
   borders[0] = 0;
   for (uint64_t i = 1; i < keys.size(); ++i) {

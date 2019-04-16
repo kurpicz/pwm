@@ -14,52 +14,74 @@
 #include <map>
 #include <queue>
 #include <type_traits>
-
+#include "util/bit_reverse.hpp"
 #include "util/common.hpp"
 #include "util/debug_assert.hpp"
 #include "util/histogram.hpp"
 #include "util/macros.hpp"
 
 struct code_pair {
-  uint64_t code_length;
-  uint64_t code_word;
+  code_pair() = default;
+  code_pair(uint64_t const code_length, uint64_t const code_word)
+    : code_length_(code_length), code_word_(code_word) { }
+
+  uint64_t& code_word() {
+    return code_word_;
+  }
+
+  uint64_t code_word() const {
+    return code_word_;
+  }
+
+  uint64_t& code_length() { 
+    return code_length_;
+  }
+
+  uint64_t code_length() const { 
+    return code_length_;
+  }
+
 
   // Get the size-length prefix. This is necessary as shifting may not yield the
   // correct result due to the different length of the code words
   uint64_t prefix(const uint64_t size) const {
-    DCHECK(size <= code_length);
-    return code_word >> (code_length - size);
+    DCHECK(size <= code_length_);
+    return code_word_ >> (code_length_ - size);
   }
 
   // Get the index-th bit of the code word. Note that we cannot simply shift
   // all the code words where they are used, as they have different lengths.
   bool operator[](const uint64_t index) const {
-    DCHECK(index < code_length);
-    return (code_word >> (code_length - index - 1)) & 1ULL;
+    DCHECK(index < code_length_);
+    return (code_word_ >> (code_length_ - index - 1)) & 1ULL;
   }
 
   bool operator==(const code_pair& other) const {
-    return std::tie(code_length, code_word) ==
-           std::tie(other.code_length, other.code_word);
+    return std::tie(code_length_, code_word_) ==
+           std::tie(other.code_length_, other.code_word_);
   }
 
   bool operator<(const code_pair& other) const {
-    return std::tie(code_length, code_word) <
-           std::tie(other.code_length, other.code_word);
+    return std::tie(code_length_, code_word_) <
+           std::tie(other.code_length_, other.code_word_);
   }
 
   friend std::ostream& operator<<(std::ostream& os, const code_pair& cp) {
     os << "[ "
-       << "length:" << cp.code_length << ", word: " << cp.code_word
+       << "length:" << cp.code_length_ << ", word: " << cp.code_word_
        << ", bits: ";
-    for (size_t i = 0; i < cp.code_length; i++) {
+    for (size_t i = 0; i < cp.code_length_; i++) {
       os << int(cp[i]);
     }
     os << " ]";
-    DCHECK((cp.code_word >> cp.code_length) == 0);
+    DCHECK((cp.code_word >> cp.code_length_) == 0);
     return os;
   }
-} PWM_ATTRIBUTE_PACKED; // struct code_pair
+
+private:
+  uint64_t code_length_;
+  uint64_t code_word_;
+}; // struct code_pair
 
 // Class constructing canonical huffman codes for a text. The codes can then be
 // used for WT or WM construction (note the template parameter).
@@ -81,11 +103,11 @@ public:
   }
 
   uint64_t code_length(const AlphabetType symbol) const {
-    return code_pairs_[symbol].code_length;
+    return code_pairs_[symbol].code_length();
   }
 
   uint64_t code_word(const AlphabetType symbol) const {
-    return code_pairs_[symbol].code_word;
+    return code_pairs_[symbol].code_word();
   }
 
   // This for TESTING purposes ONLY!
@@ -137,7 +159,7 @@ private:
 
     // Corner case: Text consists of just one character
     if (PWM_UNLIKELY(frequency_tree.size() == 1)) {
-      ++code_pairs_[frequency_tree.top().covered_symbols.front()].code_length;
+      ++code_pairs_[frequency_tree.top().covered_symbols.front()].code_length();
     }
 
     // Implicitly create the frequency tree
@@ -149,7 +171,7 @@ private:
       std::move(ft2.covered_symbols.begin(), ft2.covered_symbols.end(),
                 std::back_inserter(ft1.covered_symbols));
       for (const auto c : ft1.covered_symbols) {
-        ++code_pairs_[c].code_length;
+        ++code_pairs_[c].code_length();
       }
       frequency_tree.emplace(frequency_tree_item{
           ft1.occurrences + ft2.occurrences, ft1.covered_symbols});
@@ -161,11 +183,12 @@ private:
     }
     std::sort(code_length_order.begin(), code_length_order.end(),
               [&](const uint64_t a, const uint64_t b) {
-                return code_pairs_[a].code_length < code_pairs_[b].code_length;
+                return code_pairs_[a].code_length() <
+                  code_pairs_[b].code_length();
               });
 
     level_sizes.allocate_levels(
-        code_pairs_[code_length_order.back()].code_length);
+        code_pairs_[code_length_order.back()].code_length());
 
     if constexpr (!is_tree) {
       uint64_t code_nr = 0;
@@ -173,14 +196,15 @@ private:
       std::vector<uint64_t> code_words{0ULL, 1ULL};
 
       while (code_nr < code_pairs_.size() &&
-             code_pairs_[code_length_order[code_nr]].code_length == 0) {
+             code_pairs_[code_length_order[code_nr]].code_length() == 0) {
         ++code_nr;
       }
 
       while (code_nr < code_pairs_.size()) {
-        if (code_pairs_[code_length_order[code_nr]].code_length > cur_length) {
+        if (code_pairs_[code_length_order[code_nr]].code_length() >
+            cur_length) {
           for (uint i = cur_length;
-               i < code_pairs_[code_length_order[code_nr]].code_length; ++i) {
+               i < code_pairs_[code_length_order[code_nr]].code_length(); ++i) {
             std::vector<uint64_t> new_code_words;
 
             new_code_words.reserve(code_words.size() << 1);
@@ -192,16 +216,16 @@ private:
             }
             code_words = std::move(new_code_words);
           }
-          cur_length = code_pairs_[code_length_order[code_nr]].code_length;
+          cur_length = code_pairs_[code_length_order[code_nr]].code_length();
         }
         while (code_nr < code_pairs_.size() &&
-               code_pairs_[code_length_order[code_nr]].code_length ==
+               code_pairs_[code_length_order[code_nr]].code_length() ==
                    cur_length) {
           const uint64_t cur_code_pos = code_length_order[code_nr++];
-          code_pairs_[cur_code_pos].code_word = code_words.back();
+          code_pairs_[cur_code_pos].code_word() = code_words.back();
           code_words.pop_back();
 
-          level_sizes.count(code_pairs_[cur_code_pos].code_length - 1,
+          level_sizes.count(code_pairs_[cur_code_pos].code_length() - 1,
                             cur_code_pos);
           decode_table_.emplace(std::make_pair(code_pairs_[cur_code_pos],
                                                AlphabetType(cur_code_pos)));
@@ -213,7 +237,7 @@ private:
       // The code lengths are correct, move to the second code word that has a
       // code_length > 0. The first one gets code_word = 0ULL.
       while (code_nr < code_pairs_.size() &&
-             code_pairs_[code_length_order[code_nr]].code_length == 0) {
+             code_pairs_[code_length_order[code_nr]].code_length() == 0) {
         ++code_nr;
       }
 
@@ -225,12 +249,12 @@ private:
         // cut of to the right. We also set all bits that do not belong to the
         // code word to 0. This helps when we decode naively when testing.
 
-        cur_code_pair.code_word =
-            (~code_word) & ((1ULL << cur_code_pair.code_length) - 1);
+        cur_code_pair.code_word() =
+            (~code_word) & ((1ULL << cur_code_pair.code_length()) - 1);
         decode_table_.emplace(std::make_pair(cur_code_pair, cur_code_pos));
 
         // Count the number of symbols that occur for each code length
-        level_sizes.count(cur_code_pair.code_length - 1, cur_code_pos);
+        level_sizes.count(cur_code_pair.code_length() - 1, cur_code_pos);
       };
 
       generate_next_code();
@@ -238,8 +262,8 @@ private:
         // Create new code word
         code_word =
             (code_word + 1)
-            << (code_pairs_[code_length_order[code_nr]].code_length -
-                code_pairs_[code_length_order[code_nr - 1]].code_length);
+            << (code_pairs_[code_length_order[code_nr]].code_length() -
+                code_pairs_[code_length_order[code_nr - 1]].code_length());
 
         generate_next_code();
       }

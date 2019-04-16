@@ -27,8 +27,8 @@ TEST(huffman_code_tests, wt_codes) {
     std::vector<uint64_t> code_lengths;
     for (const auto c : text) {
       const auto code = chc.encode_symbol(c);
-      encoded_text.emplace_back(code.code_word);
-      code_lengths.emplace_back(code.code_length);
+      encoded_text.emplace_back(code.code_word());
+      code_lengths.emplace_back(code.code_length());
     }
     ASSERT_EQ(encoded_text.size(), text.size());
     for (uint64_t i = 0; i < encoded_text.size(); ++i) {
@@ -51,8 +51,8 @@ TEST(huffman_code_tests, wt_codes_reduced) {
     std::vector<uint64_t> code_lengths;
     for (const auto c : text) {
       const auto code = chc.encode_symbol(c);
-      encoded_text.emplace_back(code.code_word);
-      code_lengths.emplace_back(code.code_length);
+      encoded_text.emplace_back(code.code_word());
+      code_lengths.emplace_back(code.code_length());
     }
     ASSERT_EQ(encoded_text.size(), text.size());
     for (uint64_t i = 0; i < encoded_text.size(); ++i) {
@@ -73,8 +73,8 @@ TEST(huffman_code_tests, wm_codes) {
     std::vector<uint64_t> code_lengths;
     for (const auto c : text) {
       const auto code = chc.encode_symbol(c);
-      encoded_text.emplace_back(code.code_word);
-      code_lengths.emplace_back(code.code_length);
+      encoded_text.emplace_back(code.code_word());
+      code_lengths.emplace_back(code.code_length());
     }
     ASSERT_EQ(encoded_text.size(), text.size());
     for (uint64_t i = 0; i < encoded_text.size(); ++i) {
@@ -97,8 +97,8 @@ TEST(huffman_code_tests, wm_codes_reduced) {
     std::vector<uint64_t> code_lengths;
     for (const auto c : text) {
       const auto code = chc.encode_symbol(c);
-      encoded_text.emplace_back(code.code_word);
-      code_lengths.emplace_back(code.code_length);
+      encoded_text.emplace_back(code.code_word());
+      code_lengths.emplace_back(code.code_length());
     }
     ASSERT_EQ(encoded_text.size(), text.size());
     for (uint64_t i = 0; i < encoded_text.size(); ++i) {

@@ -45,7 +45,7 @@ void huff_ps(AlphabetType const* text,
 
       // TODO: Make use of previously reduced sorted_text to
       // reduce iteration time?
-      if (level < cp.code_length) {
+      if (level < cp.code_length()) {
         uint64_t const prefix = cp.prefix(level);
         uint64_t const pos = borders[prefix]++;
         sorted_text[pos] = cur_char;

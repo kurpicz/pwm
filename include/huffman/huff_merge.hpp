@@ -243,7 +243,7 @@ inline auto huff_merge_bit_vectors(std::vector<uint64_t> const& level_sizes,
         DCHECK(write_offset <= lctx(merge_shard).write_end_offset);
       }
     }
-  triple_loop_exit:; // we are done
+triple_loop_exit:; // we are done
   }
 
   // TODO: remove redundant argument

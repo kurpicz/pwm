@@ -82,7 +82,9 @@ TEST(wavelet, huffman_alphabet_reduction) {
         auto vec = std::vector<uint8_t>(s.begin(), s.end());
         auto max_char = reduce_alphabet(vec);
         uint64_t levels = levels_for_max_char(max_char);
+        std::cout << "Start construction " << std::endl;
         auto bvz = a->compute_bitvector(vec.data(), vec.size() , levels);
+        std::cout << "Finish construction" << std::endl;
         histogram<uint8_t> hist { vec.data(), vec.size() };
         level_sizes_builder<uint8_t> builder { std::move(hist) };
         if (a->is_tree()) {

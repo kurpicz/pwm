@@ -84,7 +84,7 @@ public:
 
     for (size_t i = 1; i < levels_; ++i) {
       for (auto const& cp : codes.code_pairs()) {
-        if (cp.code_length >= i) {
+        if (cp.code_length() >= i) {
           hist_.get(i)[cp.prefix(i)] = 0;
         }
       }

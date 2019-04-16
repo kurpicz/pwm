@@ -63,7 +63,7 @@ void huff_pc_ss(AlphabetType const* text,
 
   for (uint64_t i = 0; i < size; ++i) {
     const code_pair cp = codes.encode_symbol(text[i]);
-    for (uint64_t level = cp.code_length - 1; level > 0; --level) {
+    for (uint64_t level = cp.code_length() - 1; level > 0; --level) {
       auto&& borders = ctx.borders_at_level(level);
       uint64_t const prefix = cp.prefix(level);
       uint64_t const pos = borders[prefix]++;

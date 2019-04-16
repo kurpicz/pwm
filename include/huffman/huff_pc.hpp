@@ -55,7 +55,7 @@ void huff_pc(AlphabetType const* text,
     uint64_t write_pos = 0;
     for (uint64_t i = 0; i < text_length; ++i) {
       const code_pair cp = codes.encode_symbol(mutable_text[i]);
-      if (level + 1 < cp.code_length) {
+      if (level + 1 < cp.code_length()) {
         mutable_text[write_pos++] = mutable_text[i];
       }
       uint64_t const prefix = cp.prefix(level);

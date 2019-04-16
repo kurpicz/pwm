@@ -40,19 +40,19 @@ decode_wt_huff(const base_bit_vectors& bv,
   for (uint64_t level = 0; level < bv.levels(); ++level) {
     uint64_t bit_pos = 0;
     for (; bit_pos < bv.level_bit_size(level); ++bit_pos) {
-      icps[bit_pos].cp.code_word <<= 1;
-      icps[bit_pos].cp.code_word |= bit_at(bv[level], bit_pos);
+      icps[bit_pos].cp.code_word() <<= 1;
+      icps[bit_pos].cp.code_word() |= bit_at(bv[level], bit_pos);
     }
     while (bit_pos < bv.level_bit_size(((level == 0) ? 0 : level - 1))) {
-      icps[bit_pos++].cp.code_length = level;
+      icps[bit_pos++].cp.code_length() = level;
     }
     std::stable_sort(icps.begin(), icps.begin() + bv.level_bit_size(level),
                      [](const icp& a, const icp& b) {
-                       return a.cp.code_word < b.cp.code_word;
+                       return a.cp.code_word() < b.cp.code_word();
                      });
   }
   for (uint64_t i = 0; i < bv.level_bit_size(bv.levels() - 1); ++i) {
-    icps[i].cp.code_length = bv.levels();
+    icps[i].cp.code_length() = bv.levels();
   }
 
   std::sort(icps.begin(), icps.end(),
@@ -60,7 +60,8 @@ decode_wt_huff(const base_bit_vectors& bv,
 
   std::string result;
   for (const auto& icp : icps) {
-    result.push_back(codes.decode_symbol(icp.cp.code_length, icp.cp.code_word));
+    result.push_back(codes.decode_symbol(icp.cp.code_length(),
+                                         icp.cp.code_word()));
   }
   return result;
 }
@@ -90,19 +91,20 @@ decode_wm_huff(const base_bit_vectors& bv,
   for (uint64_t level = 0; level < bv.levels(); ++level) {
     uint64_t bit_pos = 0;
     for (; bit_pos < bv.level_bit_size(level); ++bit_pos) {
-      icps[bit_pos].cp.code_word <<= 1;
-      icps[bit_pos].cp.code_word |= bit_at(bv[level], bit_pos);
+      icps[bit_pos].cp.code_word() <<= 1;
+      icps[bit_pos].cp.code_word() |= bit_at(bv[level], bit_pos);
     }
     while (bit_pos < bv.level_bit_size(((level == 0) ? 0 : level - 1))) {
-      icps[bit_pos++].cp.code_length = level;
+      icps[bit_pos++].cp.code_length() = level;
     }
     std::stable_sort(icps.begin(), icps.begin() + bv.level_bit_size(level),
                      [](const icp& a, const icp& b) {
-                       return (a.cp.code_word & 1ULL) < (b.cp.code_word & 1ULL);
+                       return (a.cp.code_word() & 1ULL) <
+                         (b.cp.code_word() & 1ULL);
                      });
   }
   for (uint64_t i = 0; i < bv.level_bit_size(bv.levels() - 1); ++i) {
-    icps[i].cp.code_length = bv.levels();
+    icps[i].cp.code_length() = bv.levels();
   }
 
   std::sort(icps.begin(), icps.end(),
@@ -110,7 +112,8 @@ decode_wm_huff(const base_bit_vectors& bv,
 
   std::string result;
   for (const auto& icp : icps) {
-    result.push_back(codes.decode_symbol(icp.cp.code_length, icp.cp.code_word));
+    result.push_back(codes.decode_symbol(icp.cp.code_length(),
+                                         icp.cp.code_word()));
   }
   return result;
 }
