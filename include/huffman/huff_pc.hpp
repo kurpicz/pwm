@@ -10,7 +10,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <chrono>
 #include <iostream>
 
 #include "huffman/huff_building_blocks.hpp"
@@ -38,38 +37,22 @@ void huff_pc(AlphabetType const* text,
 
     // Compute the starting positions of characters with respect to their
     // bit prefixes and the bit-reversal permutation
-    
-    auto begin_time = std::chrono::high_resolution_clock::now();
-
     huff_compute_borders_optional_zeros_rho(level, ctx, borders);
-    auto end_time = std::chrono::high_resolution_clock::now();
-    auto duration = end_time - begin_time;
-    auto millis =
-      std::chrono::duration_cast<std::chrono::milliseconds>(duration);
-
-    std::cout << "huffman_borders=" << millis.count() << std::endl;
 
     // Now we insert the bits with respect to their bit prefixes
-    
-    begin_time = std::chrono::high_resolution_clock::now();
     uint64_t write_pos = 0;
     for (uint64_t i = 0; i < text_length; ++i) {
-      const code_pair cp = codes.encode_symbol(mutable_text[i]);
+      code_pair const cp = codes.encode_symbol(mutable_text[i]);
       if (level + 1 < cp.code_length()) {
         mutable_text[write_pos++] = mutable_text[i];
       }
-      uint64_t const prefix = cp.prefix(level);
+
+      auto const [prefix, bit] = cp.prefix_bit(level);
       uint64_t const pos = borders[prefix]++;
-      uint64_t const bit = cp[level];
       uint64_t const word_pos = 63ULL - (pos & 63ULL);
       bv[level][pos >> 6] |= (bit << word_pos);
     }
     text_length = write_pos;
-    end_time = std::chrono::high_resolution_clock::now();
-    duration = end_time - begin_time;
-    millis = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
-
-    std::cout << "huffman_fill=" << millis.count() << std::endl;
   }
 }
 

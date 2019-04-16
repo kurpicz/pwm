@@ -23,7 +23,8 @@
 struct code_pair {
   code_pair() = default;
   code_pair(uint64_t const code_length, uint64_t const code_word)
-    : code_length_(code_length), code_word_(code_word) { }
+    : code_length_(code_length), code_word_(code_word),
+      shift_offset_(code_length - 1) { }
 
   uint64_t& code_word() {
     return code_word_;
@@ -41,6 +42,9 @@ struct code_pair {
     return code_length_;
   }
 
+  void update_shift_offset() {
+    shift_offset_ = code_length_ - 1;
+  }
 
   // Get the size-length prefix. This is necessary as shifting may not yield the
   // correct result due to the different length of the code words
@@ -53,7 +57,12 @@ struct code_pair {
   // all the code words where they are used, as they have different lengths.
   bool operator[](const uint64_t index) const {
     DCHECK(index < code_length_);
-    return (code_word_ >> (code_length_ - index - 1)) & 1ULL;
+    return (code_word_ >> (shift_offset_ - index)) & 1ULL;
+  }
+
+  std::pair<uint64_t, bool> prefix_bit(const uint64_t level) const {
+    uint64_t const base = code_word_ >> (shift_offset_ - level);
+    return std::make_pair(base >> 1, base & 1ULL);
   }
 
   bool operator==(const code_pair& other) const {
@@ -81,6 +90,7 @@ struct code_pair {
 private:
   uint64_t code_length_;
   uint64_t code_word_;
+  uint64_t shift_offset_;
 }; // struct code_pair
 
 // Class constructing canonical huffman codes for a text. The codes can then be
@@ -223,6 +233,7 @@ private:
                    cur_length) {
           const uint64_t cur_code_pos = code_length_order[code_nr++];
           code_pairs_[cur_code_pos].code_word() = code_words.back();
+          code_pairs_[cur_code_pos].update_shift_offset();
           code_words.pop_back();
 
           level_sizes.count(code_pairs_[cur_code_pos].code_length() - 1,
@@ -251,6 +262,7 @@ private:
 
         cur_code_pair.code_word() =
             (~code_word) & ((1ULL << cur_code_pair.code_length()) - 1);
+        cur_code_pair.update_shift_offset();
         decode_table_.emplace(std::make_pair(cur_code_pair, cur_code_pos));
 
         // Count the number of symbols that occur for each code length
