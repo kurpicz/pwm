@@ -48,21 +48,22 @@ struct code_pair {
 
   // Get the size-length prefix. This is necessary as shifting may not yield the
   // correct result due to the different length of the code words
-  uint64_t prefix(const uint64_t size) const {
+  uint64_t prefix(uint64_t const size) const {
     DCHECK(size <= code_length_);
     return code_word_ >> (code_length_ - size);
   }
 
   // Get the index-th bit of the code word. Note that we cannot simply shift
   // all the code words where they are used, as they have different lengths.
-  bool operator[](const uint64_t index) const {
+  bool operator[](uint64_t const index) const {
     DCHECK(index < code_length_);
     return (code_word_ >> (shift_offset_ - index)) & 1ULL;
   }
 
-  std::pair<uint64_t, bool> prefix_bit(const uint64_t level) const {
-    uint64_t const base = code_word_ >> (shift_offset_ - level);
-    return std::make_pair(base >> 1, base & 1ULL);
+  std::tuple<uint64_t, uint64_t> prefix_bit(uint64_t const level) const {
+    uint64_t const shift = code_length_ - level;
+    return std::make_tuple(code_word_ >> shift,
+                           code_word_ >> (shift - 1) & 1ULL);
   }
 
   bool operator==(const code_pair& other) const {
