@@ -144,8 +144,6 @@ inline auto huff_merge_bit_vectors(std::vector<uint64_t> const& level_sizes,
     // | m. shard | m. shard |m. shard |
     //
     for (size_t i = 0; i < blocks * shards; i++) {
-      // std::cout << "[offsets]   i: " << i << "\n";
-
       // returns merge level context of merge_shard
       auto lctx = [&level, &ctxs](auto merge_shard) -> MergeLevelCtx& {
         return ctxs[merge_shard].levels[level];
@@ -213,7 +211,7 @@ inline auto huff_merge_bit_vectors(std::vector<uint64_t> const& level_sizes,
           nxt_lctx(merge_shard).first_read_block = i;
 
           // if there is a merge_shard to the right
-          // of the next merge shard, intialize
+          // of the next merge shard, initialize
           // its local read offsets with those of the next shard
           if (merge_shard + 2 < shards) {
             for (size_t s = 0; s < shards; s++) {

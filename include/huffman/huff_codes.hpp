@@ -84,7 +84,7 @@ struct code_pair {
       os << int(cp[i]);
     }
     os << " ]";
-    DCHECK((cp.code_word >> cp.code_length_) == 0);
+    DCHECK((cp.code_word_ >> cp.code_length_) == 0);
     return os;
   }
 

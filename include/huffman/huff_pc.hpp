@@ -32,7 +32,7 @@ void huff_pc(AlphabetType const* text,
 
   // Now we compute the WX top-down, since the histograms are already computed
   uint64_t text_length = size;
-  for (uint64_t level = 1; level < levels; ++level) {
+  for (uint64_t level = 1; level < levels && bv[level].size() > 0; ++level) {
     auto&& borders = ctx.borders_at_level(level);
 
     // Compute the starting positions of characters with respect to their
