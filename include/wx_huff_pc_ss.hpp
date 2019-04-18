@@ -33,6 +33,7 @@ public:
   using huffman_codes = canonical_huff_codes<AlphabetType, is_tree>;
 
   using ctx_t = ctx_huffman<is_tree,
+                            ctx_options::borders::all_level,
                             ctx_huffman_options::huff_borders::all_level,
                             ctx_huffman_options::huff_hist::all_level,
                             ctx_options::pre_computed_rho,
@@ -61,7 +62,6 @@ public:
 
     const auto rho = rho_dispatch<is_tree>::create(levels);
     auto ctx = ctx_t(level_sizes, levels, rho, codes);
-
     huff_pc_ss(text, size, levels, codes, ctx, level_sizes);
 
     auto& bv = ctx.bv();

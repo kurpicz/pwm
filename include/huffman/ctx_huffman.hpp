@@ -11,6 +11,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "util/debug_assert.hpp"
+
 namespace ctx_huffman_options{
 
 struct single_level : public std::unordered_map<uint64_t, uint64_t> {
@@ -58,7 +60,8 @@ namespace huff_hist {
 } // namespace ctx_huffman_options
 
 template <bool is_tree,
-          typename borders_array,
+          typename upper_borders_array,
+          typename lower_borders_array,
           typename hist_array,
           template <bool> typename rho_type,
           bool require_initialization,
@@ -67,6 +70,11 @@ template <bool is_tree,
 class ctx_huffman {
 
 public:
+  // Number of levels that we use consecutive memory to store the histogram and
+  // borders, because access is faster.
+  static constexpr uint64_t MAX_UPPER_LEVELS = 7;
+  static constexpr uint64_t UPPER_LEVEL_SIZE = MAX_UPPER_LEVELS + 1;
+
   ctx_huffman() = default;
   
   template<typename BvSizeArg>
@@ -76,7 +84,9 @@ public:
               huffman_codes& codes,
               [[maybe_unused]] uint64_t const shards = 1)
     : hist_(levels + 1),
-      borders_(levels + 1),
+      upper_borders_(std::min(levels, UPPER_LEVEL_SIZE) + 1, 1),
+      lower_borders_((levels > UPPER_LEVEL_SIZE ?
+                      levels - UPPER_LEVEL_SIZE : 0) + 1),
       zeros_(levels, 0),
       bv_(levels, size_arg),
       rho_(std::move(rho)),
@@ -91,7 +101,7 @@ public:
     }
   }
 
-  uint64_t hist_size(uint64_t const level) {
+  uint64_t hist_size(uint64_t const level) const {
     return 1ULL << level;
   }
 
@@ -103,10 +113,16 @@ public:
     return hist_.get(level);
   }
 
-
-  auto& borders_at_level(uint64_t const level) {
-    return borders_.get(level);
+  auto& lower_borders_at_level(uint64_t const level) {
+    DCHECK_GT(level, MAX_UPPER_LEVELS);
+    return lower_borders_.get(level - MAX_UPPER_LEVELS);
   }
+
+  auto upper_borders_at_level(uint64_t const level) {
+    DCHECK_LE(level, MAX_UPPER_LEVELS);
+    return upper_borders_.get(0 /* TODO: 0 is arbitrary here*/, level);
+  }
+
 
   uint64_t rho(size_t level, size_t i) {
     return rho_.get(level, i);
@@ -140,7 +156,8 @@ public:
   }
 
   void discard_borders() {
-    drop_me(std::move(borders_));
+    drop_me(std::move(upper_borders_));
+    drop_me(std::move(lower_borders_));
   }
 
   void discard_rho() {
@@ -149,7 +166,8 @@ public:
 
 private:
   hist_array hist_;
-  borders_array borders_;
+  upper_borders_array upper_borders_;
+  lower_borders_array lower_borders_;
   std::vector<uint64_t>  zeros_;
   bv_type<require_initialization> bv_;
   rho_type<is_tree> rho_;

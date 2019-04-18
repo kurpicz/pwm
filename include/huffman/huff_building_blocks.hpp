@@ -10,6 +10,7 @@
 #pragma once
 
 #include <algorithm>
+#include <type_traits>
 #include <unordered_map>
 
 #include "construction/building_blocks.hpp"
@@ -118,7 +119,10 @@ inline void huff_compute_borders_optional_zeros_rho(uint64_t level,
 
   // Compute the starting positions of characters with respect to their
   // bit prefixes and the bit-reversal permutation
-  borders.clear();
+  if constexpr (std::is_same<borders_t,
+                ctx_huffman_options::huff_borders::single_level>::value) {
+    borders.clear();
+  }
   borders[0] = 0;
   for (uint64_t i = 1; i < keys.size(); ++i) {
     borders[i] = borders[i - 1] + hist[i - 1];

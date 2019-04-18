@@ -50,7 +50,7 @@ TEST(wavelet, no_alphabet_reduction) {
 TODO: Broken due to levels == 0 corner case
 
 TEST(construction, wavelet_alphabet_reduction) {
-  auto& algo_list = algorithm_list::get_algorithm_list();
+  auto& algo_list = algorithm_list<in_internal, out_internal>::get_algorithm_list();
   for (const auto& a : algo_list) {
     if (a->word_width() == 1 && !a->is_huffman_shaped()) {
       a->print_info();
@@ -58,7 +58,7 @@ TEST(construction, wavelet_alphabet_reduction) {
         auto vec = std::vector<uint8_t>(s.begin(), s.end());
         auto max_char = reduce_alphabet(vec);
         uint64_t levels = levels_for_max_char(max_char);
-        wavelet_structure bvz = a->compute_bitvector(&vec, vec.size() , levels);
+        wavelet_structure bvz = a->compute_bitvector(vec.data(), vec.size() , levels);
         if (a->is_tree()) {
           auto decoded_s = decode_wt(bvz.bvs(), vec.size());
           auto decoded_vec = std::vector<uint8_t>(decoded_s.begin(), decoded_s.end());
@@ -73,6 +73,7 @@ TEST(construction, wavelet_alphabet_reduction) {
   }
 }
 */
+
 TEST(wavelet, huffman_alphabet_reduction) {
   auto& algo_list = algorithm_list<in_internal, out_internal>::get_algorithm_list();
   for (const auto& a : algo_list) {

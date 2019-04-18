@@ -28,8 +28,45 @@ void huff_pc_ss(AlphabetType const* text,
   huff_scan_text_compute_first_level_bv_and_full_hist(text, size, bv, ctx,
                                                       codes);
 
-  for (uint64_t level = levels - 1; level > 0; --level) {
-    auto&& borders = ctx.borders_at_level(level);
+  for (uint64_t level = levels - 1; level > ContextType::MAX_UPPER_LEVELS;
+       --level) {
+    auto&& borders = ctx.lower_borders_at_level(level);
+    auto&& hist = ctx.hist_at_level(level);
+
+    if (borders.size() > 0) {
+      borders[0] = 0;
+    }
+    uint64_t containing_prev_block = 0;
+    for (uint64_t pos = 1; pos < ctx.hist_size(level); ++pos) {
+      // This is only required if we compute matrices
+      [[maybe_unused]] auto const prev_block = ctx.rho(level, pos - 1);
+      auto const this_block = ctx.rho(level, pos);
+
+      if (hist.count(this_block) > 0) {
+        borders[this_block] = borders[containing_prev_block] +
+          hist[containing_prev_block];
+        containing_prev_block = this_block;
+      }
+      // NB: The above calulcation produces _wrong_ border offsets
+      // for huffman codes that are one-shorter than the current level.
+      //
+      // Since those codes will not be used in the loop below, this does not
+      // produce wrong or out-of-bound accesses.
+
+      if (ContextType::compute_rho) {
+        ctx.set_rho(level - 1, pos - 1, prev_block >> 1);
+      }
+    }
+
+    // The number of 0s is the position of the first 1 in the previous level
+    if constexpr (ContextType::compute_zeros) {
+      ctx.zeros()[level - 1] = borders[1];
+    }
+  }
+
+  for (uint64_t level = std::min(levels - 1, ContextType::MAX_UPPER_LEVELS);
+       level > 0; --level) {
+    auto&& borders = ctx.upper_borders_at_level(level);
     auto&& hist = ctx.hist_at_level(level);
 
     borders[0] = 0;
@@ -60,11 +97,21 @@ void huff_pc_ss(AlphabetType const* text,
       ctx.zeros()[level - 1] = borders[1];
     }
   }
-
+  
   for (uint64_t i = 0; i < size; ++i) {
     const code_pair cp = codes.encode_symbol(text[i]);
-    for (uint64_t level = cp.code_length() - 1; level > 0; --level) {
-      auto&& borders = ctx.borders_at_level(level);
+    for (uint64_t level = cp.code_length() - 1;
+         level > ContextType::MAX_UPPER_LEVELS; --level) {
+      auto&& borders = ctx.lower_borders_at_level(level);
+      auto const [prefix, bit] = cp.prefix_bit(level);
+      uint64_t const pos = borders[prefix]++;
+      uint64_t const word_pos = 63ULL - (pos & 63ULL);
+      bv[level][pos >> 6] |= (bit << word_pos);
+    }
+    for (uint64_t level = std::min(cp.code_length() - 1,
+                                   ContextType::MAX_UPPER_LEVELS);
+         level > 0; --level) {
+      auto&& borders = ctx.upper_borders_at_level(level);
       auto const [prefix, bit] = cp.prefix_bit(level);
       uint64_t const pos = borders[prefix]++;
       uint64_t const word_pos = 63ULL - (pos & 63ULL);

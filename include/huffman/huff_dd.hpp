@@ -48,6 +48,10 @@ public:
 
   using ctx_t = ctx_huffman<is_tree,
                             std::conditional_t<Algorithm::needs_all_borders,
+                                               ctx_options::borders::all_level,
+                                               ctx_options::borders
+                                               ::single_level>,
+                            std::conditional_t<Algorithm::needs_all_borders,
                                                ctx_huffman_options::huff_borders
                                                ::all_level,
                                                ctx_huffman_options::huff_borders

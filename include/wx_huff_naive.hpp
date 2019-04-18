@@ -34,6 +34,7 @@ public:
   using huffman_codes = canonical_huff_codes<AlphabetType, is_tree>;
 
   using ctx_t = ctx_huffman<is_tree,
+                            ctx_options::borders::single_level,
                             ctx_huffman_options::huff_borders::single_level,
                             ctx_huffman_options::huff_hist::all_level,
                             ctx_options::pre_computed_rho,
