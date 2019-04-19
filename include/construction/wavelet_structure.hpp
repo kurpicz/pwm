@@ -34,6 +34,10 @@ public:
 
   virtual ~base_wavelet_structure() = default;
 
+  inline base_bit_vectors const& bvs() const {
+    return bvs_;
+  }
+
 private:
   base_bit_vectors bvs_;
   size_t text_size_;

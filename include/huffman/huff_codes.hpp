@@ -155,9 +155,9 @@ private:
     }
 
     // Sort single symbols by number ob occurrence
-    std::priority_queue<frequency_tree_item, std::vector<frequency_tree_item>,
-                        std::greater<frequency_tree_item>>
-        frequency_tree;
+    std::priority_queue<frequency_tree_item,
+                        std::vector<frequency_tree_item>,
+                        std::greater<frequency_tree_item>> frequency_tree;
 
     code_pairs_ = std::vector<code_pair>(histogram.max_symbol() + 1,
                                          code_pair{0ULL, 0ULL});

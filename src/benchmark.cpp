@@ -146,6 +146,8 @@ struct {
           std::cout << "memory=no ";
 #endif // MALLOC_COUNT
         }
+        auto bit_size = a->huffman_bit_size(input_for_algo, text_size, levels);
+        std::cout << "bit_size=" << bit_size << ' ';
         std::cout << "runs=" << global_settings.nr_runs << " ";
         if (global_settings.nr_runs > 0) {
           auto median_time =  a->median_time(input_for_algo, text_size, levels,

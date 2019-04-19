@@ -123,7 +123,6 @@ public:
     return upper_borders_.get(0 /* TODO: 0 is arbitrary here*/, level);
   }
 
-
   uint64_t rho(size_t level, size_t i) {
     return rho_.get(level, i);
   }

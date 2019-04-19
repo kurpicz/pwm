@@ -119,7 +119,9 @@ public:
   virtual bool is_tree() const = 0;
   virtual uint8_t word_width() const = 0;
   virtual bool is_huffman_shaped() const = 0;
-
+  virtual uint64_t huffman_bit_size(const in_type& global_text,
+                                    const uint64_t size,
+                                    const uint64_t levels) const = 0;
   virtual bool is_input_external() const = 0;
   virtual bool is_output_external() const = 0;
 
@@ -173,6 +175,22 @@ public:
 
   bool is_huffman_shaped() const override {
     return Algorithm::is_huffman_shaped;
+  }
+
+  inline uint64_t huffman_bit_size([[maybe_unused]] const in_type& global_text,
+                                   [[maybe_unused]] const uint64_t size,
+                                   [[maybe_unused]] const uint64_t levels)
+    const override {
+
+    uint64_t bit_size = 0;
+    if constexpr (Algorithm::is_huffman_shaped) {
+      auto&& wx = compute_bitvector(global_text, size, levels);
+      auto&& bit_vecs = wx.bvs();
+      for (uint64_t i = 0; i < bit_vecs.levels(); ++i) {
+        bit_size += bit_vecs.level_bit_size(i);
+      }
+    }
+    return bit_size;
   }
 
   bool is_input_external() const override {
