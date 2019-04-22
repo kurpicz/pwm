@@ -2,6 +2,7 @@
  * include/huffman/huff_pc.hpp
  *
  * Copyright (C) 2018 Marvin Löbel <loebel.marvin@gmail.com>
+ * Copyright (C) 2019 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
  *
  * All rights reserved. Published under the BSD-2 license in the LICENSE file.
  ******************************************************************************/
@@ -24,7 +25,7 @@ void huff_pc(AlphabetType const* text,
              span<uint64_t const> const) {
   auto& bv = ctx.bv();
 
-  std::vector<uint8_t> mutable_text(text, text + size);
+  std::vector<AlphabetType> mutable_text(text, text + size);
 
   // While calculating the histogram, we also compute the first level
   huff_scan_text_compute_first_level_bv_and_full_hist(text, size, bv, ctx,
@@ -32,8 +33,9 @@ void huff_pc(AlphabetType const* text,
 
   // Now we compute the WX top-down, since the histograms are already computed
   uint64_t text_length = size;
-  for (uint64_t level = 1; level < std::min(levels, ContextType::UPPER_LEVEL_SIZE) &&
-       bv[level].size() > 0; ++level) {
+  for (uint64_t level = 1;
+       level < std::min(levels, ContextType::UPPER_LEVEL_SIZE) &&
+         bv[level].size() > 0; ++level) {
     auto&& borders = ctx.upper_borders_at_level(level);
 
     // Compute the starting positions of characters with respect to their
