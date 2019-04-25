@@ -155,6 +155,10 @@ public:
     return total_memory_;
   }
 
+  uint64_t get_total_time() const {
+    return total_time_;
+  }
+
   bool operator < (const statistics& other) const {
     return (start_time_ < other.start_time_);
   }

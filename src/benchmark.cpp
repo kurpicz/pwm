@@ -18,6 +18,7 @@
 #include "util/file_util.hpp"
 #include "util/print.hpp"
 #include "util/structure_decode.hpp"
+#include "util/stats.hpp"
 
 #ifdef MALLOC_COUNT
 #include "benchmark/malloc_count.h"
@@ -67,6 +68,8 @@ struct {
   //filter_by_property external_out_filter;
   bool external_out = false;
   std::string em_dirs;
+
+  bool diskbench = false;
 
   bool check = false;
   bool debug_print = false;
@@ -403,6 +406,9 @@ int32_t main(int32_t argc, char const* argv[]) {
                     "Use the given directories as external memory"
                     "(split multiple directories using ':').");
 
+  cp.add_flag('\0', "stxxlbench", global_settings.diskbench,
+              "Benchmark the current STXXL configuration.");
+
   cp.add_flag('c', "check", global_settings.check,
               "Check the constructed wavelet structure for validity.");
   cp.add_flag('d', "debug_print", global_settings.debug_print,
@@ -419,7 +425,79 @@ int32_t main(int32_t argc, char const* argv[]) {
     global_settings.external_out = true;
   }
 
-  return execution.start();
+  if (global_settings.diskbench) {
+    const uint64_t prefix_size =
+        (global_settings.prefix_size == 0) ?
+        (128ULL * 1024ULL * 1024ULL) :
+        (global_settings.prefix_size);
+
+    const uint64_t runs =
+        std::max((unsigned int)(1), global_settings.nr_runs);
+
+    std::vector<statistics<true>> stats_w(runs);
+    std::vector<statistics<true>> stats_r(runs);
+    std::vector<statistics<true>> stats_rw(runs);
+
+    for (uint64_t run = 0; run < runs; ++run) {
+      stxxlvector<uint8_t> vec1, vec2;
+      vec1.reserve(prefix_size);
+      vec2.reserve(prefix_size);
+
+      std::cout << "Starting write test " << (run + 1) << "..." << std::endl;
+      {
+        stxxlwriter<uint8_t> writer(vec1);
+        stats_w[run].start();
+        for (uint64_t i = 0; i < prefix_size; ++i) {
+          writer << 0;
+        }
+        stats_w[run].finish();
+      }
+      std::cout << "Done." << std::endl;
+
+      std::cout << "Starting read test" << (run + 1) << "..." << std::endl;
+      {
+        stxxlreader<uint8_t> reader(vec1);
+        stats_r[run].start();
+        uint8_t val;
+        for (;!reader.empty(); ++reader) {
+          reader >> val;
+        }
+        stats_r[run].finish();
+      }
+      std::cout << "Done." << std::endl;
+
+      std::cout << "Starting read-write test" << (run + 1) << "..." << std::endl;
+      {
+        stxxlreader<uint8_t> reader(vec1);
+        stxxlwriter<uint8_t> writer(vec2);
+        stats_rw[run].start();
+        for (;!reader.empty(); ++reader) {
+          writer << *reader;
+        }
+        stats_rw[run].finish();
+      }
+      std::cout << "Done." << std::endl;
+    }
+
+    std::sort(stats_r.begin(), stats_r.end());
+    std::sort(stats_w.begin(), stats_w.end());
+    std::sort(stats_rw.begin(), stats_rw.end());
+
+    std::cout << "RESULT algo=stxxlbench_read characters=" << prefix_size
+              << " mibs=" << ((1000.0 * prefix_size) / stats_r[(runs - 1) >> 1].get_total_time()) / 1024 / 1024
+              << " " << stats_r[(runs - 1) >> 1] << " word_width=1" << std::endl;
+
+    std::cout << "RESULT algo=stxxlbench_write characters=" << prefix_size
+              << " mibs=" << ((1000.0 * prefix_size) / stats_w[(runs - 1) >> 1].get_total_time()) / 1024 / 1024
+              << " " << stats_w[(runs - 1) >> 1] << " word_width=1" << std::endl;
+
+    std::cout << "RESULT algo=stxxlbench_readwrite characters=" << prefix_size
+              << " mibs=" << ((1000.0 * prefix_size) / stats_rw[(runs - 1) >> 1].get_total_time()) / 1024 / 1024
+              << " " << stats_rw[(runs - 1) >> 1] << " word_width=1" << std::endl;
+
+    return 0;
+  }
+  else return execution.start();
 }
 
 /******************************************************************************/
