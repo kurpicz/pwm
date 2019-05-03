@@ -454,7 +454,7 @@ int32_t main(int32_t argc, char const* argv[]) {
       }
       std::cout << "Done." << std::endl;
 
-      std::cout << "Starting read test" << (run + 1) << "..." << std::endl;
+      std::cout << "Starting read test " << (run + 1) << "..." << std::endl;
       {
         stxxlreader<uint8_t> reader(vec1);
         stats_r[run].start();
@@ -466,7 +466,7 @@ int32_t main(int32_t argc, char const* argv[]) {
       }
       std::cout << "Done." << std::endl;
 
-      std::cout << "Starting read-write test" << (run + 1) << "..." << std::endl;
+      std::cout << "Starting read-write test " << (run + 1) << "..." << std::endl;
       {
         stxxlreader<uint8_t> reader(vec1);
         stxxlwriter<uint8_t> writer(vec2);

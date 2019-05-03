@@ -33,74 +33,74 @@ using out_external = typename output_type<memory_mode::external>::type;
 template <bool in_external_, bool out_external_>
 using a_list = algorithm_list<in_external_, out_external_, 1>;
 
-TEST(wavelet, no_alphabet_reduction) {
-  auto& algo_list = a_list<in_internal_bool, out_internal_bool>::get_algorithm_list();
-  for (const auto& a : algo_list) {
-    if (!a->is_huffman_shaped()) {
-      a->print_info();
-      test::roundtrip_batch([&](const std::string& s){
-        auto vec = std::vector<uint8_t>(s.begin(), s.end());
-        uint64_t levels = no_reduction_alphabet(vec);
-        wavelet_structure bvz = a->compute_bitvector(vec.data(), vec.size() , levels);
-        if (a->is_tree()) {
-          auto decoded_s = decode_wt(bvz.bvs(), vec.size());
-          ASSERT_EQ(s, decoded_s) << "Failure (Algorithm): " << a->name();
-        } else {
-          auto decoded_s = decode_wm(bvz.bvs(), bvz.zeros(), vec.size());
-          ASSERT_EQ(s, decoded_s) << "Failure (Algorithm): " << a->name();
-        }
-      });
-    }
-  }
-}
-
-TEST(wavelet, no_alphabet_reduction_external_input) {
-  auto& algo_list = a_list<in_external_bool, out_internal_bool>::get_algorithm_list();
-  for (const auto& a : algo_list) {
-    if (!a->is_huffman_shaped()) {
-      a->print_info();
-      test::roundtrip_batch([&](const std::string& s){
-        auto vec = std::vector<uint8_t>(s.begin(), s.end());
-        uint64_t levels = no_reduction_alphabet(vec);
-
-        in_external vec_external;
-        for(const auto symbol : vec)
-          vec_external.push_back(symbol);
-
-        wavelet_structure bvz = a->compute_bitvector(vec_external, vec.size() , levels);
-        if (a->is_tree()) {
-          auto decoded_s = decode_wt(bvz.bvs(), vec.size());
-          ASSERT_EQ(s, decoded_s) << "Failure (Algorithm): " << a->name();
-        } else {
-          auto decoded_s = decode_wm(bvz.bvs(), bvz.zeros(), vec.size());
-          ASSERT_EQ(s, decoded_s) << "Failure (Algorithm): " << a->name();
-        }
-      });
-    }
-  }
-}
-
-TEST(wavelet, no_alphabet_reduction_external_output) {
-  auto& algo_list = a_list<in_internal_bool, out_external_bool>::get_algorithm_list();
-  for (const auto& a : algo_list) {
-    if (!a->is_huffman_shaped()) {
-      a->print_info();
-      test::roundtrip_batch([&](const std::string& s){
-          auto vec = std::vector<uint8_t>(s.begin(), s.end());
-          uint64_t levels = no_reduction_alphabet(vec);
-          auto bvz = a->compute_bitvector(vec.data(), vec.size() , levels)
-              .getInternalStructure();
-          if (a->is_tree()) {
-            auto decoded_s = decode_wt(bvz.bvs(), vec.size());
-            ASSERT_EQ(s, decoded_s) << "Failure (Algorithm): " << a->name();
-          } else {
-            auto decoded_s = decode_wm(bvz.bvs(), bvz.zeros(), vec.size());
-            ASSERT_EQ(s, decoded_s) << "Failure (Algorithm): " << a->name();
-          }
-      });
-    }
-  }
-}
+//TEST(wavelet, no_alphabet_reduction) {
+//  auto& algo_list = a_list<in_internal_bool, out_internal_bool>::get_algorithm_list();
+//  for (const auto& a : algo_list) {
+//    if (!a->is_huffman_shaped()) {
+//      a->print_info();
+//      test::roundtrip_batch([&](const std::string& s){
+//        auto vec = std::vector<uint8_t>(s.begin(), s.end());
+//        uint64_t levels = no_reduction_alphabet(vec);
+//        wavelet_structure bvz = a->compute_bitvector(vec.data(), vec.size() , levels);
+//        if (a->is_tree()) {
+//          auto decoded_s = decode_wt(bvz.bvs(), vec.size());
+//          ASSERT_EQ(s, decoded_s) << "Failure (Algorithm): " << a->name();
+//        } else {
+//          auto decoded_s = decode_wm(bvz.bvs(), bvz.zeros(), vec.size());
+//          ASSERT_EQ(s, decoded_s) << "Failure (Algorithm): " << a->name();
+//        }
+//      });
+//    }
+//  }
+//}
+//
+//TEST(wavelet, no_alphabet_reduction_external_input) {
+//  auto& algo_list = a_list<in_external_bool, out_internal_bool>::get_algorithm_list();
+//  for (const auto& a : algo_list) {
+//    if (!a->is_huffman_shaped()) {
+//      a->print_info();
+//      test::roundtrip_batch([&](const std::string& s){
+//        auto vec = std::vector<uint8_t>(s.begin(), s.end());
+//        uint64_t levels = no_reduction_alphabet(vec);
+//
+//        in_external vec_external;
+//        for(const auto symbol : vec)
+//          vec_external.push_back(symbol);
+//
+//        wavelet_structure bvz = a->compute_bitvector(vec_external, vec.size() , levels);
+//        if (a->is_tree()) {
+//          auto decoded_s = decode_wt(bvz.bvs(), vec.size());
+//          ASSERT_EQ(s, decoded_s) << "Failure (Algorithm): " << a->name();
+//        } else {
+//          auto decoded_s = decode_wm(bvz.bvs(), bvz.zeros(), vec.size());
+//          ASSERT_EQ(s, decoded_s) << "Failure (Algorithm): " << a->name();
+//        }
+//      });
+//    }
+//  }
+//}
+//
+//TEST(wavelet, no_alphabet_reduction_external_output) {
+//  auto& algo_list = a_list<in_internal_bool, out_external_bool>::get_algorithm_list();
+//  for (const auto& a : algo_list) {
+//    if (!a->is_huffman_shaped()) {
+//      a->print_info();
+//      test::roundtrip_batch([&](const std::string& s){
+//          auto vec = std::vector<uint8_t>(s.begin(), s.end());
+//          uint64_t levels = no_reduction_alphabet(vec);
+//          auto bvz = a->compute_bitvector(vec.data(), vec.size() , levels)
+//              .getInternalStructure();
+//          if (a->is_tree()) {
+//            auto decoded_s = decode_wt(bvz.bvs(), vec.size());
+//            ASSERT_EQ(s, decoded_s) << "Failure (Algorithm): " << a->name();
+//          } else {
+//            auto decoded_s = decode_wm(bvz.bvs(), bvz.zeros(), vec.size());
+//            ASSERT_EQ(s, decoded_s) << "Failure (Algorithm): " << a->name();
+//          }
+//      });
+//    }
+//  }
+//}
 
 TEST(wavelet, no_alphabet_reduction_external_input_output) {
   auto& algo_list = a_list<in_external_bool, out_external_bool>::get_algorithm_list();

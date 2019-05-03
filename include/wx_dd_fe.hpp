@@ -14,7 +14,7 @@
 #include <omp.h>
 
 #include "arrays/memory_types.hpp"
-#include "construction/merge_external.hpp"
+#include "construction/pc_dd_fe/merge_external.hpp"
 #include "construction/wavelet_structure.hpp"
 #include "construction/wavelet_structure_external.hpp"
 #include "util/permutation.hpp"

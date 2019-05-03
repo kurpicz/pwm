@@ -13,7 +13,7 @@
 
 #include "util/util.hpp"
 #include "util/debug.hpp"
-#include "construction/merge_external.hpp"
+#include "construction/pc_dd_fe/merge_external.hpp"
 
 TEST(external_merge, random_bvs) {
   using vec_type = stxxlvector<uint64_t>;

@@ -14,7 +14,7 @@
 #include <omp.h>
 
 #include "arrays/memory_types.hpp"
-#include "construction/merge_external.hpp"
+#include "construction/pc_dd_fe/merge_external.hpp"
 #include "construction/wavelet_structure.hpp"
 #include "construction/wavelet_structure_external.hpp"
 #include "util/permutation.hpp"
@@ -236,15 +236,18 @@ class wx_dd_pc_fe : public wx_in_out_external<true, true, true> {
       DDE_VERBOSE << "\n";
     }
 
-    inline void merge(wavelet_structure_external& result) {
+    template <typename stats_type>
+    inline void merge(wavelet_structure_external& result, stats_type& stats) {
       DDE_VERBOSE << "Merging... ";
 
+      stats.phase("merge_prepare");
       auto& bvs = wavelet_structure_external_writer::bvs(result);
       auto& zeros = wavelet_structure_external_writer::zeros(result);
       auto& hists = wavelet_structure_external_writer::histograms(result);
 
       external_merger merger(temp_result, bvs);
       for(uint64_t l = 0; l < levels; l++) {
+        stats.phase("merge_" + std::to_string(l));
         std::vector<uint64_t> block_offsets(block_count);
         for(uint64_t b = 0; b < block_count - 1; b++)
           block_offsets[b] = b * block_bits + l * block_level_bits;
@@ -261,6 +264,8 @@ class wx_dd_pc_fe : public wx_in_out_external<true, true, true> {
         }
         merger.finishLevel();
       }
+      stats.phase("merge_finalize");
+
       merger.finish();
 
       for (uint64_t b = 0; b < block_count; ++b) {
@@ -386,10 +391,8 @@ public:
     }
     ctx.finish();
 
-    stats.phase("merge");
-
     //MERGE:
-    ctx.merge(result);
+    ctx.merge(result, stats);
 
     return result;
   }
