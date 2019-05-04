@@ -26,7 +26,7 @@
 #include "wx_dd_pc.hpp"
 #include "wx_pc.hpp"
 
-#define DDE2_VERBOSE if constexpr (false) atomic_out()
+#define DDE2_VERBOSE if constexpr (true) atomic_out()
 
 
 template <typename AlphabetType, bool is_tree_, uint64_t bytes_memory_ = 1024 * 1024 * 1024, bool rw_simultaneously = false>
@@ -56,6 +56,7 @@ class wx_dd_pc_fe2 : public wx_in_out_external<true, true, true> {
   struct dd_ctx {
     using char_type = typename InputType::value_type;
     using result_type = typename wavelet_structure_external::bv_type;
+    using result_reader_type = typename result_type::bufreader_type;
     using result_writer_type = typename result_type::bufwriter_type;
     using text_reader_type = typename InputType::bufreader_type;
 
@@ -70,8 +71,7 @@ class wx_dd_pc_fe2 : public wx_in_out_external<true, true, true> {
     const uint64_t number_of_blocks_;
     const uint64_t input_chars_last_block_;
 
-    std::vector<pow2_array> block_hists_;
-    std::deque<char_type *> text_blocks_;
+    std::vector<std::vector<uint64_t>> block_hists_;
 
     result_type unmerged_result;
 
@@ -83,6 +83,11 @@ class wx_dd_pc_fe2 : public wx_in_out_external<true, true, true> {
     void run() {
       text_reader_type reader(text_);
       result_writer_type writer(unmerged_result);
+
+      std::deque<char_type *> text_blocks;
+      for (uint64_t i = 0; i < omp_size_; ++i) {
+        text_blocks.push_back((char_type*)malloc(input_chars_per_block_ * sizeof(char_type)));
+      }
 
       char_type** read = new char_type*[number_of_blocks_ + omp_size_];
       ctx_partial** compute = new ctx_partial*[number_of_blocks_ + omp_size_];
@@ -102,9 +107,9 @@ class wx_dd_pc_fe2 : public wx_in_out_external<true, true, true> {
         {
           if constexpr (!rw_simultaneously) omp_set_lock(&rw_lock);
           const uint64_t block_size = get_chars_per_block(b);
-          char_type * text_block = text_blocks_.front();
-          text_blocks_.pop_front();
-          text_blocks_.push_back(text_block);
+          char_type * text_block = text_blocks.front();
+          text_blocks.pop_front();
+          text_blocks.push_back(text_block);
           for (uint64_t i = 0; i < block_size; ++i) {
             reader >> text_block[i];
           }
@@ -130,7 +135,7 @@ class wx_dd_pc_fe2 : public wx_in_out_external<true, true, true> {
           if constexpr (!rw_simultaneously) omp_set_lock(&rw_lock);
           DDE2_VERBOSE << "START Write " << b << " (bs " << get_chars_per_block(b) << ")\n";
           ctx_partial * ctx_block = compute[b + omp_size_];
-          block_hists_.emplace_back(ctx_block->extract_final_hist());
+          block_hists_.emplace_back(ctx_block->flat_hist());
           const auto &block_bvs = ctx_block->bv();
           const auto &level_data_sizes = ctx_block->level_data_sizes();
           DDE2_VERBOSE << "Levels " << levels_ << ", ds " << ctx_block->data_size() << "\n";
@@ -154,7 +159,32 @@ class wx_dd_pc_fe2 : public wx_in_out_external<true, true, true> {
       delete compute;
       delete write;
 
+      merge();
     }
+
+    void merge() {
+      result_reader_type reader(unmerged_result);
+
+      const uint64_t number_of_intervals = (1ULL << levels_) - 1;
+      std::vector<uint64_t> global_flat_hist(number_of_intervals, 0);
+      std::vector<uint64_t> global_flat_borders(number_of_intervals, 0);
+
+      global_flat_hist[0] = size_;
+      #pragma omp parallel for
+      for (uint64_t i = 1; i < number_of_intervals; ++i) {
+        for (uint64_t b = 0; b < number_of_blocks_; ++b) {
+          global_flat_hist[i] += block_hists_[b][i];
+        }
+      }
+
+      std::cout << "0   0   " << size_ << std::endl;
+      for (uint64_t i = 1; i < number_of_intervals; ++i) {
+        global_flat_borders[i] = global_flat_borders[i - 1] +
+                                 global_flat_hist[i - 1];
+        std::cout << i << "   " << global_flat_borders[i] << "   " << global_flat_hist[i] << std::endl;
+      }
+    }
+
 
     dd_ctx(const InputType &text, const uint64_t size, const uint64_t levels)
         : omp_size_(get_omp_size()),
@@ -165,9 +195,6 @@ class wx_dd_pc_fe2 : public wx_in_out_external<true, true, true> {
           input_chars_last_block_(size_ - input_chars_per_block_ * (number_of_blocks_ - 1)) {
 
       block_hists_.reserve(number_of_blocks_);
-      for (uint64_t i = 0; i < omp_size_; ++i) {
-        text_blocks_.push_back((char_type*)malloc(input_chars_per_block_ * sizeof(char_type)));
-      }
       unmerged_result.reserve((size_ * sizeof(char_type)) / 7);
 
       DDE2_VERBOSE
@@ -177,13 +204,6 @@ class wx_dd_pc_fe2 : public wx_in_out_external<true, true, true> {
         << "last_block_chars: " << input_chars_last_block_  << ", "
         << "omp_size: " << omp_size_
         << "].\n";
-    }
-
-    ~dd_ctx() {
-      while(!text_blocks_.empty()) {
-        delete text_blocks_.front();
-        text_blocks_.pop_front();
-      }
     }
   };
 

@@ -74,9 +74,21 @@ public:
     return hist_;
   }
 
-  pow2_array extract_final_hist() {
-    return std::move(hist_);
+  std::vector<uint64_t> flat_hist() {
+    std::vector<uint64_t> result((1ULL << levels_) - 1);
+    uint64_t i = 0;
+    for (uint64_t l = 0; l < levels_; ++l) {
+      const uint64_t level_hist_size = hist_size(l);
+      for (uint64_t h = 0; h < level_hist_size; ++h) {
+        result[i++] = hist_[l][h];
+      }
+    }
+    return result;
   }
+
+//  pow2_array extract_final_hist() {
+//    return std::move(hist_);
+//  }
 
   uint64_t& data_size() {
     return data_size_;
