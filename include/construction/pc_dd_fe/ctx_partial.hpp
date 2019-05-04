@@ -22,13 +22,16 @@
 //    Only tree implementation
 class ctx_partial {
 private:
-  uint64_t size_;
+  const uint64_t size_;
   const uint64_t levels_;
   const uint64_t max_overhead_; // 63 bits per WT interval
 
   pow2_array hist_;
   std::vector<uint64_t> borders_;
   bit_vectors bv_;
+
+  uint64_t data_size_;
+  std::vector<uint64_t> level_data_sizes_;
 
 public:
 
@@ -39,7 +42,9 @@ public:
         max_overhead_(((1ULL << levels) - 1) * 63),
         hist_(levels_ + 1),
         borders_(1ULL << levels_, 0),
-        bv_(levels_, size_ + max_overhead_) {}
+        bv_(levels_, size_ + max_overhead_),
+        data_size_(0),
+        level_data_sizes_(levels, 0) {}
 
   uint64_t hist_size(uint64_t const level) {
     return 1ULL << level;
@@ -71,6 +76,22 @@ public:
 
   pow2_array extract_final_hist() {
     return std::move(hist_);
+  }
+
+  uint64_t& data_size() {
+    return data_size_;
+  }
+
+  uint64_t data_size() const {
+    return data_size_;
+  }
+
+  std::vector<uint64_t>& level_data_sizes() {
+    return level_data_sizes_;
+  }
+
+  const std::vector<uint64_t>& level_data_sizes() const {
+    return level_data_sizes_;
   }
 
   uint64_t size() const {

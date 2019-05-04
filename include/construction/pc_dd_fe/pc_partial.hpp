@@ -23,6 +23,8 @@ void pc_partial(AlphabetType const* text, ctx_partial * ctx) {
   auto& borders = ctx->borders();
   auto& hist = ctx->hist();
   auto& bv = ctx->bv();
+  auto& data_size = ctx->data_size();
+  auto& level_data_sizes = ctx->level_data_sizes();
 
   scan_text_compute_first_level_bv_and_last_level_hist(text, size, levels, bv,
                                                        *ctx);
@@ -46,6 +48,9 @@ void pc_partial(AlphabetType const* text, ctx_partial * ctx) {
       borders[i] = borders[i - 1] + (((cur_hist[i - 1] + 63) >> 6) << 6);
       cur_hist[i] = prev_hist[i << 1] + prev_hist[(i << 1) + 1];
     }
+    level_data_sizes[level] = (borders[cur_alphabet_size - 1] >> 6) +
+                              ((cur_hist[cur_alphabet_size - 1] + 63) >> 6);
+    data_size += level_data_sizes[level];
 
     // Now we insert the bits with respect to their bit prefixes
     for (uint64_t i = 0; i < size; ++i) {
@@ -55,6 +60,8 @@ void pc_partial(AlphabetType const* text, ctx_partial * ctx) {
     }
   }
 
+  level_data_sizes[0] = ((size + 63) >> 6);
+  data_size += level_data_sizes[0];
   hist[0][0] = size;
 }
 

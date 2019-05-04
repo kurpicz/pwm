@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <bitset>
 #include <vector>
 #include <thread>
 #include <sstream>
@@ -25,10 +26,10 @@
 #include "wx_dd_pc.hpp"
 #include "wx_pc.hpp"
 
-#define DDE2_VERBOSE if constexpr (true) atomic_out()
+#define DDE2_VERBOSE if constexpr (false) atomic_out()
 
 
-template <typename AlphabetType, bool is_tree_, uint64_t bytes_memory_ = 1024 * 1024 * 1024>
+template <typename AlphabetType, bool is_tree_, uint64_t bytes_memory_ = 1024 * 1024 * 1024, bool rw_simultaneously = false>
 class wx_dd_pc_fe2 : public wx_in_out_external<true, true, true> {
 
   class atomic_out {
@@ -72,13 +73,24 @@ class wx_dd_pc_fe2 : public wx_in_out_external<true, true, true> {
     std::vector<pow2_array> block_hists_;
     std::deque<char_type *> text_blocks_;
 
+    result_type unmerged_result;
+
+    uint64_t get_chars_per_block(const uint64_t block) {
+      return ((block + 1) == number_of_blocks_) ?
+             input_chars_last_block_ : input_chars_per_block_;
+    }
+
     void run() {
       text_reader_type reader(text_);
-      block_hists_.reserve(number_of_blocks_);
+      result_writer_type writer(unmerged_result);
 
       char_type** read = new char_type*[number_of_blocks_ + omp_size_];
       ctx_partial** compute = new ctx_partial*[number_of_blocks_ + omp_size_];
       bool* write = new bool[number_of_blocks_ + omp_size_];
+
+      omp_lock_t rw_lock;
+      if constexpr (!rw_simultaneously)
+        omp_init_lock(&rw_lock);
 
       #pragma omp parallel
       {
@@ -88,9 +100,8 @@ class wx_dd_pc_fe2 : public wx_in_out_external<true, true, true> {
 
         #pragma omp task depend(in: read[b + omp_size_ - 1], compute[b]) depend(out: read[b + omp_size_])
         {
-          const uint64_t block_size = ((b + 1) == number_of_blocks_) ?
-                                      input_chars_last_block_ : input_chars_per_block_;
-
+          if constexpr (!rw_simultaneously) omp_set_lock(&rw_lock);
+          const uint64_t block_size = get_chars_per_block(b);
           char_type * text_block = text_blocks_.front();
           text_blocks_.pop_front();
           text_blocks_.push_back(text_block);
@@ -100,30 +111,40 @@ class wx_dd_pc_fe2 : public wx_in_out_external<true, true, true> {
           read[b + omp_size_] = text_block;
 
           DDE2_VERBOSE << "Read " << b << " (bs " << block_size << ")\n";
+          if constexpr (!rw_simultaneously) omp_unset_lock(&rw_lock);
         }
 
         #pragma omp task depend(in: read[b + omp_size_], write[b]), depend(out: compute[b + omp_size_])
         {
-          const uint64_t block_size = ((b + 1) == number_of_blocks_) ?
-                                      input_chars_last_block_ : input_chars_per_block_;
-
+          const uint64_t block_size = get_chars_per_block(b);
           char_type * text_block = read[b + omp_size_];
+          DDE2_VERBOSE << "START Compute " << b << " " << text_block[1] << " (bs " << block_size << ")\n";
           ctx_partial * ctx_block = new ctx_partial(block_size, levels_);
           pc_partial(text_block, ctx_block);
           compute[b + omp_size_] = ctx_block;
-
-          DDE2_VERBOSE << "Compute " << b << " " << text_block[1] << " (bs " << block_size << ")\n";
+          DDE2_VERBOSE << "DONE Compute " << b << " " << text_block[1] << " (bs " << block_size << ")\n";
         }
 
         #pragma omp task depend(in: compute[b + omp_size_], write[b + omp_size_ - 1]) depend(out: write[b + omp_size_])
         {
-          const uint64_t block_size = ((b + 1) == number_of_blocks_) ?
-                                      input_chars_last_block_ : input_chars_per_block_;
+          if constexpr (!rw_simultaneously) omp_set_lock(&rw_lock);
+          DDE2_VERBOSE << "START Write " << b << " (bs " << get_chars_per_block(b) << ")\n";
           ctx_partial * ctx_block = compute[b + omp_size_];
-          block_hists_.push_back(ctx_block->extract_final_hist());
-
-          delete compute[b + omp_size_];
-          DDE2_VERBOSE << "Write " << b << " (bs " << block_size << ")\n";
+          block_hists_.emplace_back(ctx_block->extract_final_hist());
+          const auto &block_bvs = ctx_block->bv();
+          const auto &level_data_sizes = ctx_block->level_data_sizes();
+          DDE2_VERBOSE << "Levels " << levels_ << ", ds " << ctx_block->data_size() << "\n";
+          for (uint64_t l = 0; l < levels_; ++l) {
+            const auto level_data_size = level_data_sizes[l];
+            DDE2_VERBOSE << "    Level " << l << ", ds " << level_data_size << "\n";
+            for (uint64_t w = 0; w < level_data_size; ++w) {
+              writer << block_bvs[l][w];
+              DDE2_VERBOSE << std::bitset<64>(block_bvs[l][w]).to_string() << "\n";
+            }
+          }
+          delete ctx_block;
+          DDE2_VERBOSE << "DONE Write " << b << " (bs " << get_chars_per_block(b) << ")\n";
+          if constexpr (!rw_simultaneously) omp_unset_lock(&rw_lock);
         }
       }
       }
@@ -143,9 +164,11 @@ class wx_dd_pc_fe2 : public wx_in_out_external<true, true, true> {
           number_of_blocks_((size + input_chars_per_block_ - 1) / input_chars_per_block_),
           input_chars_last_block_(size_ - input_chars_per_block_ * (number_of_blocks_ - 1)) {
 
+      block_hists_.reserve(number_of_blocks_);
       for (uint64_t i = 0; i < omp_size_; ++i) {
         text_blocks_.push_back((char_type*)malloc(input_chars_per_block_ * sizeof(char_type)));
       }
+      unmerged_result.reserve((size_ * sizeof(char_type)) / 7);
 
       DDE2_VERBOSE
         << "Created context for wx_dd_fe "
