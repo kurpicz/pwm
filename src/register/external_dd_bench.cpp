@@ -8,6 +8,6 @@
 
 #include "external_dd.cpp"
 
-static const wx_dd_fe_registry<8ULL * 1024 * 1024 * 1024> wx_dd_fe_large;
+static const wx_dd_fe_registry<10ULL * 1024 * 1024 * 1024> wx_dd_fe_large;
 
 /******************************************************************************/

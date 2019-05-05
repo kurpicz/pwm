@@ -8,6 +8,8 @@
 
 #pragma once
 
+#define WX_DD_PC_FE_VERBOSE if constexpr (false) atomic_out()
+
 #include <bitset>
 #include <vector>
 #include <thread>
@@ -23,8 +25,6 @@
 
 #include "wx_base.hpp"
 #include "wx_dd_pc_fe.hpp"
-
-#define WX_DD_PC_FE_VERBOSE if constexpr (true) atomic_out()
 
 template <typename AlphabetType, bool is_tree_, uint64_t bytes_memory_, bool rw_simultaneously>
 class wx_dd_pc_fe2 : public wx_in_out_external<true, true, true> {

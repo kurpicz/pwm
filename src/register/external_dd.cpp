@@ -52,11 +52,11 @@ struct wx_dd_fe_registry {
 //      "(using domain decomposition and prefix counting, fully external).",
 //      wm_dd_pc_fe_1)
 
-//  CONSTRUCTION_REGISTER_MEMBER(
-//      "wt_dd_pc_feNEW_1",
-//      "Parallel wavelet tree construction with 8-bit alphabet "
-//      "(using domain decomposition and prefix counting, fully external).",
-//      wt_dd_pc_feNEW_1)
+  CONSTRUCTION_REGISTER_MEMBER(
+      "wt_dd_pc_feNEW_1",
+      "Parallel wavelet tree construction with 8-bit alphabet "
+      "(using domain decomposition and prefix counting, fully external).",
+      wt_dd_pc_feNEW_1)
 
   CONSTRUCTION_REGISTER_MEMBER(
       "wt_dd_pc_feNEW_2",
@@ -70,11 +70,11 @@ struct wx_dd_fe_registry {
       "(using domain decomposition and prefix counting, fully external).",
       wt_dd_pc_fe_1)
 
-//  CONSTRUCTION_REGISTER_MEMBER(
-//      "wt_dd_pc_fe_2",
-//      "Parallel wavelet tree construction with 8-bit alphabet "
-//      "(using domain decomposition and prefix counting, fully external).",
-//      wt_dd_pc_fe_2)
+  CONSTRUCTION_REGISTER_MEMBER(
+      "wt_dd_pc_fe_2",
+      "Parallel wavelet tree construction with 8-bit alphabet "
+      "(using domain decomposition and prefix counting, fully external).",
+      wt_dd_pc_fe_2)
 };
 
 /******************************************************************************/

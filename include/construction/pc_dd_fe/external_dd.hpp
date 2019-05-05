@@ -61,7 +61,7 @@ public:
   external_dd_ctx(const InputType &text, const uint64_t size, const uint64_t levels)
       : omp_size_(get_omp_size()),
         text_(text), size_(size), levels_(levels),
-        input_bytes_per_block_(std::min((bytes_memory / omp_size_) >> 1, (uint64_t)8)),
+        input_bytes_per_block_(std::max((bytes_memory / omp_size_) >> 1, (uint64_t)8)),
         input_chars_per_block_(input_bytes_per_block_ / sizeof(char_type)),
         number_of_blocks_((size + input_chars_per_block_ - 1) / input_chars_per_block_),
         input_chars_last_block_(size_ - input_chars_per_block_ * (number_of_blocks_ - 1)) {
@@ -95,13 +95,16 @@ public:
     if constexpr (!rw_simultaneously)
       omp_init_lock(&rw_lock);
 
-#pragma omp parallel
+    #pragma omp parallel
     {
-#pragma omp single
+      #pragma omp single
       {
         for (uint64_t b = 0; b < number_of_blocks_; ++b) {
 
-#pragma omp task depend(in: read[b + omp_size_ - 1], compute[b]) depend(out: read[b + omp_size_])
+          #pragma omp task \
+          priority(number_of_blocks_ - b) \
+          depend(in: read[b + omp_size_ - 1], compute[b]) \
+          depend(out: read[b + omp_size_])
           {
             if constexpr (!rw_simultaneously) omp_set_lock(&rw_lock);
             const uint64_t block_size = get_chars_per_block(b);
@@ -117,7 +120,10 @@ public:
             if constexpr (!rw_simultaneously) omp_unset_lock(&rw_lock);
           }
 
-#pragma omp task depend(in: read[b + omp_size_], write[b]), depend(out: compute[b + omp_size_])
+          #pragma omp task \
+          priority(0) \
+          depend(in: read[b + omp_size_], write[b]), \
+          depend(out: compute[b + omp_size_])
           {
             const uint64_t block_size = get_chars_per_block(b);
             char_type * text_block = read[b + omp_size_];
@@ -128,7 +134,10 @@ public:
             EXT_DD_CTX_VERBOSE << "DONE Compute " << b << " " << text_block[1] << " (bs " << block_size << ")\n";
           }
 
-#pragma omp task depend(in: compute[b + omp_size_], write[b + omp_size_ - 1]) depend(out: write[b + omp_size_])
+          #pragma omp task \
+          priority(number_of_blocks_ - b) \
+          depend(in: compute[b + omp_size_], write[b + omp_size_ - 1]) \
+          depend(out: write[b + omp_size_])
           {
             if constexpr (!rw_simultaneously) omp_set_lock(&rw_lock);
             EXT_DD_CTX_VERBOSE << "START Write " << b << " (bs " << get_chars_per_block(b) << ")\n";
