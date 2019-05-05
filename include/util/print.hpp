@@ -211,4 +211,18 @@ static void print_hist(std::ostream& out, Ctx& ctx, size_t levels) {
   }
 }
 
+struct atomic_out {
+private:
+  std::ostringstream stream_;
+public:
+  template <typename in_type>
+  atomic_out& operator<<(const in_type& in) {
+    stream_ << in;
+    return *this;
+  }
+  ~atomic_out() {
+    std::cout << stream_.str() << std::flush;
+  }
+};
+
 /******************************************************************************/

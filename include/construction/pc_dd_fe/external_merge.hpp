@@ -9,8 +9,14 @@
 
 #pragma once
 
-
 #include <deque>
+#include "util/print.hpp"
+
+#ifdef EXT_DD_CTX_VERBOSE
+#define EXT_MERGE_VERBOSE EXT_DD_CTX_VERBOSE
+#else
+#define EXT_MERGE_VERBOSE if constexpr (false) atomic_out()
+#endif
 
 class em_merge_allocator {
 private:
@@ -123,14 +129,14 @@ public:
       const uint64_t words = div64(next_bits + 63);
       hist_.pop_front();
 
-//      std::cout << "BITS " << next_bits << " WORDS " << words << " SHIFT " << shift << std::endl;
+      EXT_MERGE_VERBOSE << "BITS " << next_bits << " WORDS " << words << " SHIFT " << shift << "\n";
 
       if (PWM_UNLIKELY(shift == 0)) {
         // all full words are perfectly aligned with the em vector
         // write full words
         for (uint64_t i = 0; i < (words - 1); ++i) {
           const uint64_t word = pop();
-//          std::cout << bitstring(word, "POP -> WRITE (FULL ALIGN)\n");
+          EXT_MERGE_VERBOSE << bitstring(word, "POP -> WRITE (FULL ALIGN)\n");
           writer << word;
         }
 
@@ -138,14 +144,14 @@ public:
         if (PWM_UNLIKELY(shift == 0)) {
           // last word is also full word
           const uint64_t word = pop();
-//          std::cout << bitstring(word, "POP -> WRITE (FULL ALIGN AFTER FULL ALIGN)\n");
+          EXT_MERGE_VERBOSE << bitstring(word, "POP -> WRITE (FULL ALIGN AFTER FULL ALIGN)\n");
           writer << word;
           initial_word = 0ULL;
         }
         else {
           // last word is prefix
           initial_word = pop();
-//          std::cout << bitstring(initial_word, "POP -> INITIAL WORD AFTER ALIGN\n");
+          EXT_MERGE_VERBOSE << bitstring(initial_word, "POP -> INITIAL WORD AFTER ALIGN\n");
         }
       }
       else {
@@ -153,32 +159,31 @@ public:
         for (uint64_t i = 0; i < (words - 1); ++i) {
           const uint64_t word = pop();
           writer << (initial_word | (word >> shift));
-//          std::cout << bitstring((initial_word | (word >> shift)), "POP -> WRITE (NO ALIGN)\n");
+          EXT_MERGE_VERBOSE << bitstring((initial_word | (word >> shift)), "POP -> WRITE (NO ALIGN)\n");
           initial_word = (word << inverse_shift);
-//          std::cout << bitstring(initial_word, "    -> INITIAL WORD AFTER NO ALIGN\n");
+          EXT_MERGE_VERBOSE << bitstring(initial_word, "    -> INITIAL WORD AFTER NO ALIGN\n");
         }
 
         const uint64_t last_bits = mod64(next_bits + 63) + 1;
         if (last_bits >= inverse_shift) {
           const uint64_t word = pop();
           writer << (initial_word | (word >> shift));
-//          std::cout << bitstring((initial_word | (word >> shift)), "POP -> WRITE (NO ALIGN)\n");
+          EXT_MERGE_VERBOSE << bitstring((initial_word | (word >> shift)), "POP -> WRITE (NO ALIGN)\n");
           initial_word = (word << inverse_shift);
           shift = last_bits - inverse_shift;
-//          if (shift > 0)
-//            std::cout << bitstring(initial_word, "    -> INITIAL WORD AFTER NO ALIGN\n");
+          EXT_MERGE_VERBOSE << ((shift > 0) ? bitstring(initial_word, "    -> INITIAL WORD AFTER NO ALIGN\n") : "");
         }
         else {
           const uint64_t word = pop();
           initial_word = (initial_word | (word >> shift));
-//          std::cout << bitstring(initial_word, "POP -> INITIAL WORD AFTER NO ALIGN\n");
+          EXT_MERGE_VERBOSE << bitstring(initial_word, "POP -> INITIAL WORD AFTER NO ALIGN\n");
           shift = mod64(shift + next_bits);
         }
       }
     }
 
     if (PWM_LIKELY(shift > 0)) {
-//      std::cout << bitstring(initial_word) << std::endl;
+      EXT_MERGE_VERBOSE << bitstring(initial_word) << "\n";
       writer << (initial_word | suffix(*writer, 64 - shift));
     }
     clear();

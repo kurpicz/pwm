@@ -11,7 +11,7 @@
 #include "construction/building_blocks.hpp"
 #include "construction/pc_dd_fe/ctx_partial.hpp"
 
-
+// compute local wavelet tree with word aligned intervals
 template <typename AlphabetType>
 void pc_partial(AlphabetType const* text, ctx_partial * ctx) {
 
