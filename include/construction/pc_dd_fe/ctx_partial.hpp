@@ -1,8 +1,7 @@
 /*******************************************************************************
- * include/util/ctx_all_levels.hpp
+ * include/construction/pc_dd_fe/ctx_partial.hpp
  *
- * Copyright (C) 2017 Marvin Löbel <loebel.marvin@gmail.com>
- * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
+ * Copyright (C) 2019 Jonas Ellert <jonas.ellert@tu-dortmund.de>
  *
  * All rights reserved. Published under the BSD-2 license in the LICENSE file.
  ******************************************************************************/
@@ -11,9 +10,6 @@
 
 #include "arrays/bit_vectors.hpp"
 #include "arrays/pow2_array.hpp"
-#include "util/permutation.hpp"
-
-// TODO: WM/WT abstract that selects zeros and rho
 
 // Context for partial results:
 //    Keep histograms of all levels

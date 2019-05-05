@@ -1,7 +1,7 @@
 /*******************************************************************************
- * include/util/pc.hpp
+ * include/construction/pc_dd_fe/pc_partial.hpp
  *
- * Copyright (C) 2019 Jonas ELlert <jonas.ellert@tu-dortmund.de>
+ * Copyright (C) 2019 Jonas Ellert <jonas.ellert@tu-dortmund.de>
  *
  * All rights reserved. Published under the BSD-2 license in the LICENSE file.
  ******************************************************************************/

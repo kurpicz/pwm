@@ -8,6 +8,6 @@
 
 #include "external_dd.cpp"
 
-static const wx_dd_fe_registry<256> wx_dd_fe_small;
+static const wx_dd_fe_registry<1024> wx_dd_fe_small;
 
 /******************************************************************************/

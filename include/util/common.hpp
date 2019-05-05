@@ -41,6 +41,21 @@ constexpr uint64_t pwmlog2(uint64_t n) {
   return (n < 2) ? 1 : 1 + log2(n / 2);
 }
 
+template <typename T>
+inline static T mul64(const T t) {
+  return t << 6;
+}
+
+template <typename T>
+inline static T div64(const T t) {
+  return t >> 6;
+}
+
+template <typename T>
+inline static T mod64(const T t) {
+  return t - mul64(div64(t));
+}
+
 template <typename WordType = uint64_t, typename bv_t>
 inline auto bit_at(const bv_t& bv, uint64_t i) -> bool {
   constexpr WordType BITS = (sizeof(WordType) * CHAR_BIT);

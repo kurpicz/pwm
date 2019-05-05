@@ -392,7 +392,7 @@ public:
     ctx.finish();
 
     //MERGE:
-//    ctx.merge(result, stats);
+    ctx.merge(result, stats);
 
     return result;
   }
