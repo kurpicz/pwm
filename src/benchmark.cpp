@@ -426,62 +426,65 @@ int32_t main(int32_t argc, char const* argv[]) {
   }
 
   if (global_settings.diskbench) {
-    const uint64_t prefix_size =
-        (global_settings.prefix_size == 0) ?
-        (128ULL * 1024ULL * 1024ULL) :
-        (global_settings.prefix_size);
+    if (global_settings.prefix_size == 0) {
+      std::cerr << "Disk bench aborted: No size has been given (argument --length)" << std::endl;
+      return -1;
+    }
+
+    const uint64_t prefix_size = (global_settings.prefix_size / 8) * 8;
+    const uint64_t prefix_size_words = prefix_size / 8;
 
     const uint64_t runs =
         std::max((unsigned int)(1), global_settings.nr_runs);
 
     std::vector<statistics<true>> stats_w(runs);
     std::vector<statistics<true>> stats_r(runs);
-    std::vector<statistics<true>> stats_rw(runs);
+
+    stxxlvector<uint64_t> vec_read, vec_write;
+    vec_read.resize(prefix_size_words * runs);
+    vec_write.resize(prefix_size_words * runs);
+
+    std::cout << "Disk bench: Filling EM vector.." << std::endl;
+    {
+      stxxlwriter<uint64_t> writer(vec_read.begin());
+      for (uint64_t run = 0; run < runs; ++run) {
+        for (uint64_t i = 0; i < prefix_size_words; ++i) {
+          writer << i;
+        }
+      }
+    }
+
+    stxxlreader<uint64_t> read_bench(vec_read);
+    stxxlwriter<uint64_t> write_bench(vec_write.begin());
 
     for (uint64_t run = 0; run < runs; ++run) {
-      stxxlvector<uint8_t> vec1, vec2;
-      vec1.reserve(prefix_size);
-      vec2.reserve(prefix_size);
-
-      std::cout << "Starting write test " << (run + 1) << "..." << std::endl;
-      {
-        stxxlwriter<uint8_t> writer(vec1);
-        stats_w[run].start();
-        for (uint64_t i = 0; i < prefix_size; ++i) {
-          writer << 0;
-        }
-        stats_w[run].finish();
-      }
-      std::cout << "Done." << std::endl;
+      uint64_t * mem = (uint64_t *) malloc(prefix_size);
 
       std::cout << "Starting read test " << (run + 1) << "..." << std::endl;
       {
-        stxxlreader<uint8_t> reader(vec1);
         stats_r[run].start();
-        uint8_t val;
-        for (;!reader.empty(); ++reader) {
-          reader >> val;
+        for (uint64_t i = 0; i < prefix_size_words; ++i) {
+          read_bench >> mem[i];
         }
         stats_r[run].finish();
       }
       std::cout << "Done." << std::endl;
 
-      std::cout << "Starting read-write test " << (run + 1) << "..." << std::endl;
+      std::cout << "Starting write test " << (run + 1) << "..." << std::endl;
       {
-        stxxlreader<uint8_t> reader(vec1);
-        stxxlwriter<uint8_t> writer(vec2);
-        stats_rw[run].start();
-        for (;!reader.empty(); ++reader) {
-          writer << *reader;
+        stats_w[run].start();
+        for (uint64_t i = 0; i < prefix_size_words; ++i) {
+          write_bench << mem[i];
         }
-        stats_rw[run].finish();
+        stats_w[run].finish();
       }
       std::cout << "Done." << std::endl;
+
+      delete mem;
     }
 
     std::sort(stats_r.begin(), stats_r.end());
     std::sort(stats_w.begin(), stats_w.end());
-    std::sort(stats_rw.begin(), stats_rw.end());
 
     std::cout << "RESULT algo=stxxlbench_read characters=" << prefix_size
               << " mibs=" << ((1000.0 * prefix_size) / stats_r[(runs - 1) >> 1].get_total_time()) / 1024 / 1024
@@ -490,10 +493,6 @@ int32_t main(int32_t argc, char const* argv[]) {
     std::cout << "RESULT algo=stxxlbench_write characters=" << prefix_size
               << " mibs=" << ((1000.0 * prefix_size) / stats_w[(runs - 1) >> 1].get_total_time()) / 1024 / 1024
               << " " << stats_w[(runs - 1) >> 1] << " word_width=1" << std::endl;
-
-    std::cout << "RESULT algo=stxxlbench_readwrite characters=" << prefix_size
-              << " mibs=" << ((1000.0 * prefix_size) / stats_rw[(runs - 1) >> 1].get_total_time()) / 1024 / 1024
-              << " " << stats_rw[(runs - 1) >> 1] << " word_width=1" << std::endl;
 
     return 0;
   }
