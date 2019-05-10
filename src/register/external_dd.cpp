@@ -16,12 +16,15 @@ struct wx_dd_fe_registry {
 //  using wt_dd_fe = wx_dd_fe<uint8_t, true, bytesMemory>;
 
 //  using wm_dd_pc_fe_0 = wx_dd_pc_fe2<uint8_t, false, bytesMemory>;
-  using wt_dd_pc_feNEW_1 = wx_dd_pc_fe2<uint8_t, true, bytesMemory, false>;
-  using wt_dd_pc_feNEW_2 = wx_dd_pc_fe2<uint8_t, true, bytesMemory, true>;
+  using wt_dd_pc_fe1 = wx_dd_pc_fe2<uint8_t, true, bytesMemory, false>;
+  using wt_dd_pc_fe2 = wx_dd_pc_fe2<uint8_t, true, bytesMemory, true>;
+
+  using wm_dd_pc_fe1 = wx_dd_pc_fe2<uint8_t, false, bytesMemory, false>;
+  using wm_dd_pc_fe2 = wx_dd_pc_fe2<uint8_t, false, bytesMemory, true>;
 
 //  using wm_dd_pc_fe_1 = wx_dd_pc_fe<uint8_t, false, bytesMemory, false>;
-  using wt_dd_pc_fe_1 = wx_dd_pc_fe<uint8_t, true, bytesMemory / 8, false>;
-  using wt_dd_pc_fe_2 = wx_dd_pc_fe<uint8_t, true, bytesMemory / 8, true>;
+//  using wt_dd_pc_fe_1 = wx_dd_pc_fe<uint8_t, true, bytesMemory / 8, false>;
+//  using wt_dd_pc_fe_2 = wx_dd_pc_fe<uint8_t, true, bytesMemory / 8, true>;
 
 
 //  CONSTRUCTION_REGISTER_MEMBER(
@@ -53,28 +56,40 @@ struct wx_dd_fe_registry {
 //      wm_dd_pc_fe_1)
 
   CONSTRUCTION_REGISTER_MEMBER(
-      "wt_dd_pc_feNEW_1",
+      "wt_dd_pc_fe1",
       "Parallel wavelet tree construction with 8-bit alphabet "
       "(using domain decomposition and prefix counting, fully external).",
-      wt_dd_pc_feNEW_1)
+      wt_dd_pc_fe1)
 
   CONSTRUCTION_REGISTER_MEMBER(
-      "wt_dd_pc_feNEW_2",
+      "wt_dd_pc_fe2",
       "Parallel wavelet tree construction with 8-bit alphabet "
       "(using domain decomposition and prefix counting, fully external).",
-      wt_dd_pc_feNEW_2)
+      wt_dd_pc_fe2)
 
   CONSTRUCTION_REGISTER_MEMBER(
-      "wt_dd_pc_fe_1",
-      "Parallel wavelet tree construction with 8-bit alphabet "
+      "wm_dd_pc_fe1",
+      "Parallel wavelet matrix construction with 8-bit alphabet "
       "(using domain decomposition and prefix counting, fully external).",
-      wt_dd_pc_fe_1)
+      wm_dd_pc_fe1)
 
   CONSTRUCTION_REGISTER_MEMBER(
-      "wt_dd_pc_fe_2",
-      "Parallel wavelet tree construction with 8-bit alphabet "
+      "wm_dd_pc_fe2",
+      "Parallel wavelet matrix construction with 8-bit alphabet "
       "(using domain decomposition and prefix counting, fully external).",
-      wt_dd_pc_fe_2)
+      wm_dd_pc_fe2)
+
+//  CONSTRUCTION_REGISTER_MEMBER(
+//      "wt_dd_pc_fe_1",
+//      "Parallel wavelet tree construction with 8-bit alphabet "
+//      "(using domain decomposition and prefix counting, fully external).",
+//      wt_dd_pc_fe_1)
+//
+//  CONSTRUCTION_REGISTER_MEMBER(
+//      "wt_dd_pc_fe_2",
+//      "Parallel wavelet tree construction with 8-bit alphabet "
+//      "(using domain decomposition and prefix counting, fully external).",
+//      wt_dd_pc_fe_2)
 };
 
 /******************************************************************************/

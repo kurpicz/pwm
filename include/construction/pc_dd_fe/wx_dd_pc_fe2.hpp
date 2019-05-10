@@ -57,7 +57,7 @@ public:
 
     ctx.dd();
     stats.phase("merge");
-    ctx.merge(result);
+    ctx.template merge<is_tree>(result);
 
 //    print_structure(std::cout, result.getInternalStructure(), true);
 //

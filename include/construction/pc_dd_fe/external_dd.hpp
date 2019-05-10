@@ -10,6 +10,7 @@
 #pragma once
 
 #include "util/print.hpp"
+#include "util/permutation.hpp"
 #include "construction/pc_dd_fe/ctx_partial.hpp"
 #include "construction/pc_dd_fe/pc_partial.hpp"
 #include "construction/pc_dd_fe/external_merge.hpp"
@@ -172,11 +173,14 @@ public:
     }
   }
 
+  template <bool is_tree>
   void merge(wavelet_structure_external& result) {
     auto& bvs = wavelet_structure_external_writer::bvs(result);
 
+
     EXT_DD_CTX_VERBOSE << "STARTING MERGER. TEXT_SIZE " << size_
-                       << " LEVELS " << levels_ << " BV_SIZE " << bvs.size() << "\n";
+                       << " LEVELS " << levels_ << " BV_SIZE "
+                       << bvs.size() << " IS TREE " << is_tree << "\n";
 
     const uint64_t number_of_intervals = (1ULL << levels_) - 1;
     std::vector<uint64_t> global_flat_hist(number_of_intervals, 0);
@@ -190,22 +194,37 @@ public:
       }
     }
 
+    auto rho = rho_dispatch<is_tree>::create(levels_);
+
     global_flat_borders[0] = 0;
-//      DDE2_VERBOSE << "0   0   " << size_ << "\n";
+
+    uint64_t s = 1;
     for (uint64_t l = 1; l < levels_; ++l) {
       const uint64_t level_hist_size = 1ULL << l;
-      const uint64_t start_idx = level_hist_size - 1;
-      const uint64_t end_idx = start_idx + level_hist_size;
-      global_flat_borders[start_idx] = global_flat_borders[start_idx - 1] +
-                                       global_flat_hist[start_idx - 1];
-      global_flat_borders[start_idx] = mul64(div64(global_flat_borders[start_idx] + 63));
-//        DDE2_VERBOSE << start_idx << "   " << global_flat_borders[start_idx] << "   " << global_flat_hist[start_idx] << "\n";
-      for (uint64_t i = start_idx + 1; i < end_idx; ++i) {
-        global_flat_borders[i] = global_flat_borders[i - 1] +
-                                 global_flat_hist[i - 1];
-//          DDE2_VERBOSE << i << "   " << global_flat_borders[i] << "   " << global_flat_hist[i] << "\n";
+      global_flat_borders[s] = global_flat_borders[s - 1] +
+                                   global_flat_hist[s - 1];
+      global_flat_borders[s] = mul64(div64(global_flat_borders[s] + 63));
+
+      for (uint64_t i = 1; i < level_hist_size; ++i) {
+        global_flat_borders[s + rho(l, i)] =
+            global_flat_borders[s + rho(l, i - 1)] +
+            global_flat_hist[s + rho(l, i - 1)];
+      }
+      s += level_hist_size;
+    }
+
+    if constexpr (!is_tree) {
+      auto& zeros = wavelet_structure_external_writer::zeros(result);
+      uint64_t s = 1;
+      for (uint64_t l = 1; l <= levels_; ++l) {
+        const uint64_t level_hist_size = 1ULL << l;
+        for (uint64_t i = 0; i < level_hist_size; i += 2) {
+          zeros[l - 1] += global_flat_hist[s + i];
+        }
+        s += level_hist_size;
       }
     }
+
 
     result_reader_type reader(unmerged_result);
     EXT_DD_CTX_VERBOSE << "Initializing buffers. ";

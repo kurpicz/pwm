@@ -103,6 +103,9 @@ using a_list = algorithm_list<in_external_, out_external_, 1>;
 //}
 
 TEST(wavelet, no_alphabet_reduction_external_input_output) {
+  {
+    volatile stxxlvector<bool> dummy;
+  }
   auto& algo_list = a_list<in_external_bool, out_external_bool>::get_algorithm_list();
   for (const auto& a : algo_list) {
     if (!a->is_huffman_shaped()) {
