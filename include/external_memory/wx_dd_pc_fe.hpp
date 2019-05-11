@@ -18,16 +18,16 @@
 
 #include "util/print.hpp"
 #include "arrays/memory_types.hpp"
-#include "construction/pc_dd_fe/external_dd.hpp"
+#include "external_memory/full/dd/external_dd.hpp"
 #include "construction/wavelet_structure.hpp"
-#include "construction/wavelet_structure_external.hpp"
+#include "wavelet_structure_external.hpp"
 
 
 #include "wx_base.hpp"
-#include "wx_dd_pc_fe.hpp"
+#include "external_memory/wx_dd_pc_fe.hpp"
 
 template <typename AlphabetType, bool is_tree_, uint64_t bytes_memory_, bool rw_simultaneously>
-class wx_dd_pc_fe2 : public wx_in_out_external<true, true, true> {
+class wx_dd_pc_fe : public wx_in_out_external<true, true, true> {
 public:
   static constexpr bool is_parallel = true;
   static constexpr bool is_tree = is_tree_;

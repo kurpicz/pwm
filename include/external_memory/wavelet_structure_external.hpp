@@ -9,7 +9,7 @@
 #pragma once
 
 #include <vector>
-#include "arrays/stxxl_helper.hpp"
+#include "stxxl_helper.hpp"
 #include "construction/wavelet_structure.hpp"
 #include "util/debug_assert.hpp"
 

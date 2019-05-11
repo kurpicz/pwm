@@ -10,11 +10,12 @@
 
 #include "util/type_for_bytes.hpp"
 
-#include "memory_modes.hpp"
-#include "stxxl_helper.hpp"
+#include "external_memory/stxxl_helper.hpp"
 
 #include "construction/wavelet_structure.hpp"
-#include "construction/wavelet_structure_external.hpp"
+#include "external_memory/wavelet_structure_external.hpp"
+
+enum memory_mode : bool { internal = false, external = true };
 
 template <bool external, int word_width>
 struct input_type;

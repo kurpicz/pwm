@@ -9,8 +9,8 @@
 #pragma once
 
 #include <vector>
-#include "construction/ps_semi_external.hpp"
-#include "construction/wavelet_structure_external.hpp"
+#include "external_memory/semi_out/ps_semi_external.hpp"
+#include "wavelet_structure_external.hpp"
 
 #include "wx_base.hpp"
 

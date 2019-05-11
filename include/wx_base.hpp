@@ -8,8 +8,6 @@
 
 #pragma once
 
-#include "arrays/memory_modes.hpp"
-
 // TODO: Add other attributes
 
 template <bool external_in_, bool external_out_, bool stats_support_ = false>

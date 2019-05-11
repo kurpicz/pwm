@@ -24,7 +24,7 @@
 #include <cstdint> // IWYU pragma: export
 
 #include "arrays/memory_types.hpp"
-#include "arrays/stxxl_helper.hpp"
+#include "external_memory/stxxl_helper.hpp"
 #include "construction/wavelet_structure.hpp"
 #include "util/common.hpp"
 #include "util/type_for_bytes.hpp"

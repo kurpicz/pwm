@@ -10,8 +10,8 @@
 
 #include <vector>
 #include <sstream>
-#include "construction/ps_external.hpp"
-#include "construction/wavelet_structure_external.hpp"
+#include "external_memory/full/ps_external.hpp"
+#include "wavelet_structure_external.hpp"
 
 #include "wx_base.hpp"
 

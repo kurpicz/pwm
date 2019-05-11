@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include "construction/ctx_single_level_external.hpp"
-#include "construction/wavelet_structure_external.hpp"
+#include "external_memory/ctx_single_level_external.hpp"
+#include "external_memory/wavelet_structure_external.hpp"
 #include "util/debug_assert.hpp"
 
 #define PSE_VERBOSE if constexpr (false)

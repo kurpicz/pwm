@@ -9,7 +9,7 @@
 #pragma once
 
 #include "construction/building_blocks.hpp"
-#include "construction/pc_dd_fe/ctx_partial.hpp"
+#include "ctx_partial.hpp"
 
 // compute local wavelet tree with word aligned intervals
 template <typename AlphabetType>

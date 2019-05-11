@@ -11,8 +11,8 @@
 #include <deque>
 
 #include <util/inplace_partition.hpp>
-#include "construction/ctx_single_level_external.hpp"
-#include "construction/wavelet_structure_external.hpp"
+#include "external_memory/ctx_single_level_external.hpp"
+#include "external_memory/wavelet_structure_external.hpp"
 
 template <typename AlphabetType, bool is_tree, typename InputType>
 void ps_out_external(

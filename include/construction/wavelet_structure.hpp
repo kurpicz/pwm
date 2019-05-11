@@ -13,7 +13,6 @@
 #include <typeinfo>
 #include <vector>
 
-#include "arrays/memory_modes.hpp"
 #include "arrays/bit_vectors.hpp"
 #include "huffman/huff_codes.hpp"
 #include "util/debug_assert.hpp"

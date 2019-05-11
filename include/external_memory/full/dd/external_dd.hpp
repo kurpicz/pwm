@@ -11,9 +11,9 @@
 
 #include "util/print.hpp"
 #include "util/permutation.hpp"
-#include "construction/pc_dd_fe/ctx_partial.hpp"
-#include "construction/pc_dd_fe/pc_partial.hpp"
-#include "construction/pc_dd_fe/external_merge.hpp"
+#include "ctx_partial.hpp"
+#include "pc_partial.hpp"
+#include "external_merge.hpp"
 
 #ifdef WX_DD_PC_FE_VERBOSE
 #define EXT_DD_CTX_VERBOSE WX_DD_PC_FE_VERBOSE

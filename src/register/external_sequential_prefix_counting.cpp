@@ -7,7 +7,7 @@
  ******************************************************************************/
 
 #include "benchmark/algorithm.hpp"
-#include "wx_pc_ie.hpp"
+#include "external_memory/wx_pc_ie.hpp"
 
 using wm_pc_8_ie = wx_pc_ie<uint8_t, false>;
 using wm_pc_16_ie = wx_pc_ie<uint16_t, false>;

@@ -7,8 +7,8 @@
  ******************************************************************************/
 
 #include "benchmark/algorithm.hpp"
-#include "wx_ps_fe.hpp"
-#include "wx_ps_oe.hpp"
+#include "external_memory/wx_ps_fe.hpp"
+#include "external_memory/wx_ps_oe.hpp"
 
 // semi-external
 

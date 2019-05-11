@@ -13,7 +13,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "arrays/stxxl_helper.hpp"
+#include "external_memory/stxxl_helper.hpp"
 
 template <typename AlphabetType>
 static uint64_t reduce_alphabet(std::vector<AlphabetType>& text) {
