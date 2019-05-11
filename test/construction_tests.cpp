@@ -20,18 +20,9 @@
 #include "util/decode.hpp"
 #include "util/file_util.hpp"
 
-constexpr static bool in_internal_bool = false;
-constexpr static bool in_external_bool = true;
-constexpr static bool out_internal_bool = false;
-constexpr static bool out_external_bool = true;
 
-using in_internal = typename input_type<memory_mode::internal, 1>::type;
-using in_external = typename input_type<memory_mode::external, 1>::type;
-using out_internal = typename output_type<memory_mode::internal>::type;
-using out_external = typename output_type<memory_mode::external>::type;
-
-template <bool in_external_, bool out_external_>
-using a_list = algorithm_list<in_external_, out_external_, 1>;
+template <bool ext_in, bool ext_out>
+using a_list = algorithm_list<ext_in, ext_out, 1>;
 
 
 template <bool ext_in, bool ext_out>
@@ -42,7 +33,7 @@ void no_alphabet_reduction() {
   }
 
   using in_type = typename input_type<ext_in, 1>::type;
-  auto& algo_list = algorithm_list<ext_in, ext_out, 1>::get_algorithm_list();
+  auto& algo_list = a_list<ext_in, ext_out>::get_algorithm_list();
   for (const auto& a : algo_list) {
     if (!a->is_huffman_shaped()) {
       a->print_info();
@@ -118,7 +109,7 @@ TEST(construction, wavelet_alphabet_reduction) {
 */
 
 TEST(wavelet, huffman_alphabet_reduction) {
-  auto& algo_list = algorithm_list<false, false, 1>::get_algorithm_list();
+  auto& algo_list = a_list<false, false>::get_algorithm_list();
   for (const auto& a : algo_list) {
     if (a->is_huffman_shaped() && a->is_tree()) {
       a->print_info();
