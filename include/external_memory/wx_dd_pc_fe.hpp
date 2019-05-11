@@ -21,12 +21,13 @@
 #include "external_memory/full/dd/external_dd.hpp"
 #include "construction/wavelet_structure.hpp"
 #include "wavelet_structure_external.hpp"
+#include "internal_memory_bound.hpp"
 
 
 #include "wx_base.hpp"
 #include "external_memory/wx_dd_pc_fe.hpp"
 
-template <typename AlphabetType, bool is_tree_, uint64_t bytes_memory_, bool rw_simultaneously>
+template <typename AlphabetType, bool is_tree_, bool rw_simultaneously>
 class wx_dd_pc_fe : public wx_in_out_external<true, true, true> {
 public:
   static constexpr bool is_parallel = true;
@@ -42,8 +43,11 @@ public:
           stats_type& stats) {
     static_assert(sizeof(typename InputType::value_type) == sizeof(AlphabetType));
 
-    stats.phase("dd");
+    WX_DD_PC_FE_VERBOSE << "Starting wx_dd_pc_fe. MiB memory: "
+                        << (internal_memory_bound::value() / 1024ULL / 1024ULL)
+                        << ".\n";
 
+    stats.phase("dd");
     WX_DD_PC_FE_VERBOSE << "Initializing result...\n";
     // create empty result
     std::ostringstream name;
@@ -55,7 +59,8 @@ public:
     if(size == 0) return result;
 
     WX_DD_PC_FE_VERBOSE << "Creating context...\n";
-    external_dd_ctx<InputType, bytes_memory_, rw_simultaneously> ctx(text, size, levels);
+    external_dd_ctx<InputType, rw_simultaneously> ctx(
+        text, size, levels, internal_memory_bound::value());
 
     WX_DD_PC_FE_VERBOSE << "Running dd phase...\n";
 
@@ -64,11 +69,6 @@ public:
     WX_DD_PC_FE_VERBOSE << "Running merge phase...\n";
     stats.phase("merge");
     ctx.template merge<is_tree>(result);
-
-//    print_structure(std::cout, result.getInternalStructure(), true);
-//
-//    auto result2 = wx_dd_pc_fe<typename InputType::value_type, true, bytes_memory_ / 8>::compute(text, size, levels, stats);
-//    print_structure(std::cout, result2.getInternalStructure(), true);
 
     return result;
   }

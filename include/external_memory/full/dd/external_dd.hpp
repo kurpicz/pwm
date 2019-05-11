@@ -21,7 +21,7 @@
 #define EXT_DD_CTX_VERBOSE if constexpr (false) atomic_out()
 #endif
 
-template <typename InputType, uint64_t bytes_memory, bool rw_simultaneously>
+template <typename InputType, bool rw_simultaneously>
 struct external_dd_ctx {
 private:
 
@@ -36,6 +36,8 @@ private:
   const InputType& text_;
   const uint64_t size_;
   const uint64_t levels_;
+
+  const uint64_t bytes_memory_;
 
   const uint64_t input_bytes_per_block_;
   const uint64_t input_chars_per_block_;
@@ -59,10 +61,11 @@ private:
   }
 
 public:
-  external_dd_ctx(const InputType &text, const uint64_t size, const uint64_t levels)
+  external_dd_ctx(const InputType &text, const uint64_t size, const uint64_t levels, const uint64_t bytes_memory)
       : omp_size_(get_omp_size()),
         text_(text), size_(size), levels_(levels),
-        input_bytes_per_block_(std::max((bytes_memory / omp_size_) >> 1, (uint64_t)8)),
+        bytes_memory_(bytes_memory),
+        input_bytes_per_block_(std::max((bytes_memory_ / omp_size_) >> 1, (uint64_t)8)),
         input_chars_per_block_(input_bytes_per_block_ / sizeof(char_type)),
         number_of_blocks_((size + input_chars_per_block_ - 1) / input_chars_per_block_),
         input_chars_last_block_(size_ - input_chars_per_block_ * (number_of_blocks_ - 1)) {
@@ -228,7 +231,7 @@ public:
 
     result_reader_type reader(unmerged_result);
     EXT_DD_CTX_VERBOSE << "Initializing buffers. ";
-    em_merger merger(levels_, bytes_memory);
+    em_merger merger(levels_, bytes_memory_);
 //      em_merger merger(levels_, 1);
     EXT_DD_CTX_VERBOSE << "Total words memory: " << merger.remaining_capacity_in_words() << ".\n";
 

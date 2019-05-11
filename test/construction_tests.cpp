@@ -19,6 +19,7 @@
 #include "util/common.hpp"
 #include "util/decode.hpp"
 #include "util/file_util.hpp"
+#include "external_memory/internal_memory_bound.hpp"
 
 
 template <bool ext_in, bool ext_out>
@@ -30,6 +31,11 @@ void no_alphabet_reduction() {
   if constexpr (ext_in || ext_out) {
     // initialize external memory by using stxxl
     volatile stxxlvector<bool> dummy;
+  }
+
+  if constexpr (ext_in && ext_out) {
+    // set very low memory limit to enforce small block sizes
+    internal_memory_bound::value() = 1024; // 1KiB
   }
 
   using in_type = typename input_type<ext_in, 1>::type;

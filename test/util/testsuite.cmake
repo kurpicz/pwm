@@ -31,7 +31,6 @@ macro(generic_run_test test_target test_file
       ${PROJECT_SOURCE_DIR}/src/register/dd_prefix_counting_single_scan.cpp
       ${PROJECT_SOURCE_DIR}/src/register/dd_prefix_sorting.cpp
       ${PROJECT_SOURCE_DIR}/src/register/external_dd.cpp
-      ${PROJECT_SOURCE_DIR}/src/register/external_dd_test.cpp
       ${PROJECT_SOURCE_DIR}/src/register/external_sequential_prefix_counting.cpp
       ${PROJECT_SOURCE_DIR}/src/register/external_parallel_prefix_counting.cpp
       ${PROJECT_SOURCE_DIR}/src/register/external_sequential_prefix_sorting.cpp

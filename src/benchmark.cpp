@@ -20,6 +20,8 @@
 #include "util/structure_decode.hpp"
 #include "util/stats.hpp"
 #include "util/debug_assert.hpp"
+#include "util/meminfo.hpp"
+#include "external_memory/internal_memory_bound.hpp"
 
 #ifdef MALLOC_COUNT
 #include "benchmark/malloc_count.h"
@@ -55,6 +57,7 @@ struct {
   unsigned int word_width = 1;
   unsigned int nr_runs = 5;
   uint64_t prefix_size = 0;
+  uint64_t memory = 0;
   bool list_algorithms_only = false;
 
   filter_by_property parallel_filter;
@@ -421,6 +424,9 @@ int32_t main(int32_t argc, char const* argv[]) {
 
   cp.add_flag('\0', "external", global_settings.external,
               "Run only external memory algorithms.");
+  cp.add_bytes('\0', "memory", global_settings.memory,
+              "Maximum internal memory for external memory algorithms.");
+
   cp.add_flag('\0', "external_in", global_settings.external_in,
               "Run only semi-external algorithms (stream input from disk).");
   cp.add_flag('\0', "external_out", global_settings.external_out,
@@ -429,7 +435,7 @@ int32_t main(int32_t argc, char const* argv[]) {
                     "Use the given directories as external memory"
                     "(split multiple directories using ':').");
 
-  cp.add_flag('\0', "stxxlbench", global_settings.diskbench,
+  cp.add_flag('\0', "diskbench", global_settings.diskbench,
               "Benchmark the current STXXL configuration.");
 
   cp.add_flag('c', "check", global_settings.check,
@@ -451,15 +457,64 @@ int32_t main(int32_t argc, char const* argv[]) {
     global_settings.external_in = true;
     global_settings.external_out = true;
   }
+  else if (global_settings.external_in && global_settings.external_out) {
+    global_settings.external = true;
+  }
+
+  const uint64_t total_mem = 1024ULL * get_mem_total();
+  const uint64_t avail_mem = 1024ULL * get_mem_available();
+
+  const uint64_t total_mem_mib = total_mem / (1024ULL * 1024);
+  const uint64_t avail_mem_mib = avail_mem / (1024ULL * 1024);;
+
+  if (total_mem == 0) {
+    std::cerr << "Total system memory:     "
+              << " Could not read /proc/meminfo.";
+  } else {
+    std::cout << "Total system memory:     "
+              << total_mem_mib << "MiB" << std::endl;
+  }
+
+  if (avail_mem == 0) {
+    std::cerr << "Available system memory: "
+              << " Could not read /proc/meminfo.";
+  } else {
+    std::cout << "Available system memory: "
+              << avail_mem_mib << "MiB" << std::endl;
+  }
+
+  std::cout << "Available threads:       "
+            << global_settings.number_threads << std::endl;
+  std::cout << std::endl;
+
+  if (global_settings.external || global_settings.diskbench) {
+    if (global_settings.memory == 0) {
+      std::cout << "No maximum internal memory usage "
+                << "specified (argument --memory)." << std::endl;
+      if (avail_mem > 0) {
+        global_settings.memory = (avail_mem * 9) / 10;
+        const uint64_t mib = global_settings.memory / (1024ULL * 1024);
+        std::cout << "Using at most " << mib << "MiB of memory, "
+                  << "which is 90% of the available memory." << std::endl;
+      }
+      else {
+        global_settings.memory = 4ULL * 1024 * 1024 * 1024;
+        const uint64_t mib = global_settings.memory / (1024ULL * 1024);
+        std::cout << "Using at most " << mib << "MiB of memory." << std::endl;
+      }
+    }
+    else {
+      std::cout << "Memory limit: "
+                << global_settings.memory / (1024ULL * 1024)
+                << "MiB" << std::endl;
+    }
+    internal_memory_bound::value() = global_settings.memory;
+    std::cout << std::endl;
+  }
 
   if (global_settings.diskbench) {
-    if (global_settings.prefix_size == 0) {
-      std::cerr << "Disk bench aborted: No size has been given (argument --length)" << std::endl;
-      return -1;
-    }
-
-    const uint64_t prefix_size = (global_settings.prefix_size / 8) * 8;
-    const uint64_t prefix_size_words = prefix_size / 8;
+    const uint64_t bytes = (global_settings.memory / 8) * 8;
+    const uint64_t words = bytes / 8;
 
     const uint64_t runs =
         std::max((unsigned int)(1), global_settings.nr_runs);
@@ -468,14 +523,16 @@ int32_t main(int32_t argc, char const* argv[]) {
     std::vector<statistics<true>> stats_r(runs);
 
     stxxlvector<uint64_t> vec_read, vec_write;
-    vec_read.resize(prefix_size_words * runs);
-    vec_write.resize(prefix_size_words * runs);
+    vec_read.resize(words * runs);
+    vec_write.resize(words * runs);
 
-    std::cout << "Disk bench: Filling EM vector.." << std::endl;
+    std::cout << "Disk bench: " << runs << " repetitions of "
+              << (bytes / 1024ULL / 1024) << "MiB." << std::endl;
+    std::cout << "Filling EM vector.." << std::endl;
     {
       stxxlwriter<uint64_t> writer(vec_read.begin());
       for (uint64_t run = 0; run < runs; ++run) {
-        for (uint64_t i = 0; i < prefix_size_words; ++i) {
+        for (uint64_t i = 0; i < words; ++i) {
           writer << i;
         }
       }
@@ -485,12 +542,12 @@ int32_t main(int32_t argc, char const* argv[]) {
     stxxlwriter<uint64_t> write_bench(vec_write.begin());
 
     for (uint64_t run = 0; run < runs; ++run) {
-      uint64_t * mem = (uint64_t *) malloc(prefix_size);
+      uint64_t * mem = (uint64_t *) malloc(bytes);
 
       std::cout << "Starting read test " << (run + 1) << "..." << std::endl;
       {
         stats_r[run].start();
-        for (uint64_t i = 0; i < prefix_size_words; ++i) {
+        for (uint64_t i = 0; i < words; ++i) {
           read_bench >> mem[i];
         }
         stats_r[run].finish();
@@ -500,7 +557,7 @@ int32_t main(int32_t argc, char const* argv[]) {
       std::cout << "Starting write test " << (run + 1) << "..." << std::endl;
       {
         stats_w[run].start();
-        for (uint64_t i = 0; i < prefix_size_words; ++i) {
+        for (uint64_t i = 0; i < words; ++i) {
           write_bench << mem[i];
         }
         stats_w[run].finish();
@@ -513,12 +570,12 @@ int32_t main(int32_t argc, char const* argv[]) {
     std::sort(stats_r.begin(), stats_r.end());
     std::sort(stats_w.begin(), stats_w.end());
 
-    std::cout << "RESULT algo=stxxlbench_read characters=" << prefix_size
-              << " mibs=" << ((1000.0 * prefix_size) / stats_r[(runs - 1) >> 1].get_total_time()) / 1024 / 1024
+    std::cout << "RESULT algo=stxxlbench_read characters=" << bytes
+              << " mibs=" << ((1000.0 * bytes) / stats_r[(runs - 1) >> 1].get_total_time()) / 1024 / 1024
               << " " << stats_r[(runs - 1) >> 1] << " word_width=1" << std::endl;
 
-    std::cout << "RESULT algo=stxxlbench_write characters=" << prefix_size
-              << " mibs=" << ((1000.0 * prefix_size) / stats_w[(runs - 1) >> 1].get_total_time()) / 1024 / 1024
+    std::cout << "RESULT algo=stxxlbench_write characters=" << bytes
+              << " mibs=" << ((1000.0 * bytes) / stats_w[(runs - 1) >> 1].get_total_time()) / 1024 / 1024
               << " " << stats_w[(runs - 1) >> 1] << " word_width=1" << std::endl;
 
     return 0;

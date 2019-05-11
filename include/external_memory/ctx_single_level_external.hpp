@@ -1,8 +1,7 @@
 /*******************************************************************************
- * include/util/ctx_single_level.hpp
+ * include/external_memory/ctx_single_level_external.hpp
  *
- * Copyright (C) 2017 Marvin Löbel <loebel.marvin@gmail.com>
- * Copyright (C) 2017 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
+ * Copyright (C) 2019 Jonas Ellert <jonas.ellert@tu-dortmund.de>
  *
  * All rights reserved. Published under the BSD-2 license in the LICENSE file.
  ******************************************************************************/
