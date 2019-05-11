@@ -11,6 +11,7 @@
 #include <vector>
 #include "arrays/stxxl_helper.hpp"
 #include "construction/wavelet_structure.hpp"
+#include "util/debug_assert.hpp"
 
 class wavelet_structure_external_writer;
 class wavelet_structure_external_factory;
@@ -94,10 +95,10 @@ private:
     }
   }
 
-  bit_vectors getInternalBitvectors() {
+  bit_vectors<> getInternalBitvectors() {
     if(is_huffman_shaped_) std::abort();
 
-    bit_vectors result(levels_, text_size_);
+    bit_vectors<> result(levels_, text_size_);
     for(uint64_t level = 0; level < levels_; level++) {
       auto intLevel = result[level];
       auto extLevel = (*this)[level];

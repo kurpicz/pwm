@@ -35,7 +35,7 @@ public:
       return wavelet_structure_tree();
     }
 
-    auto bv = bit_vectors(levels, size);
+    auto bv = bit_vectors<>(levels, size);
 
     // TODO: When not semi_external, this can/should be done way nicer.
     std::vector<AlphabetType> local_text(size);
@@ -95,7 +95,7 @@ public:
       return wavelet_structure_matrix();
     }
 
-    auto bv = bit_vectors(levels, size);
+    auto bv = bit_vectors<>(levels, size);
     auto _zeros = std::vector<size_t>(levels, 0);
 
     // TODO: When not semi_xternal, this can/should be done way nicer.

@@ -17,9 +17,8 @@
 
 #include "arrays/span.hpp"
 #include "construction/wavelet_structure.hpp"
-
-#include "huffman/ctx_huff_all_levels.hpp"
-#include "huffman/ctx_huff_all_levels_borders.hpp"
+#include "huffman/ctx_huffman.hpp"
+#include "construction/ctx_generic.hpp"
 #include "huffman/huff_bit_vectors.hpp"
 #include "huffman/huff_codes.hpp"
 #include "huffman/huff_merge.hpp"
@@ -28,7 +27,7 @@
 #include "wx_base.hpp"
 
 template <typename Algorithm, typename AlphabetType, bool is_tree_>
-class huff_dd : public wx_in_out_external<false, false>  {
+class huff_dd : public wx_in_out_external<false, false> {
 
 public:
   static constexpr bool is_parallel = true;
@@ -36,9 +35,32 @@ public:
   static constexpr uint8_t word_width = sizeof(AlphabetType);
   static constexpr bool is_huffman_shaped = true;
 
-  using ctx_t = std::conditional_t<Algorithm::needs_all_borders,
-                                   ctx_huff_all_levels_borders<is_tree>,
-                                   ctx_huff_all_levels<is_tree>>;
+  // TODO: Redesign somehow
+  // using ctx_t = ctx_generic<is_tree,
+  //                           std::conditional_t<Algorithm::needs_all_borders,
+  //                                              ctx_options::borders::all_level,
+  //                                              ctx_options::borders::single_level>,
+  //                           ctx_options::hist::all_level,
+  //                           ctx_options::pre_computed_rho,
+  //                           ctx_options::bv_initialized,
+  //                           huff_bit_vectors>;
+  using huffman_codes = canonical_huff_codes<AlphabetType, is_tree>;
+
+  using ctx_t = ctx_huffman<is_tree,
+                            std::conditional_t<Algorithm::needs_all_borders,
+                                               ctx_options::borders::all_level,
+                                               ctx_options::borders
+                                               ::single_level>,
+                            std::conditional_t<Algorithm::needs_all_borders,
+                                               ctx_huffman_options::huff_borders
+                                               ::all_level,
+                                               ctx_huffman_options::huff_borders
+                                               ::single_level>,
+                            ctx_huffman_options::huff_hist::all_level,
+                            ctx_options::pre_computed_rho,
+                            ctx_options::bv_initialized,
+                            huff_bit_vectors,
+                            huffman_codes>;
 
   template <typename InputType>
   static wavelet_structure compute(const InputType& global_text_ptr,
@@ -80,8 +102,7 @@ public:
     };
 
     // build huffman codes and calculate level sizes
-    canonical_huff_codes<AlphabetType, is_tree> codes =
-        canonical_huff_codes<AlphabetType, is_tree>(builder);
+    huffman_codes codes = canonical_huff_codes<AlphabetType, is_tree>(builder);
     uint64_t const levels = builder.levels();
 
     if (size == 0) {
@@ -95,15 +116,6 @@ public:
     const auto rho = rho_dispatch<is_tree>::create(levels);
     auto ctxs = std::vector<ctx_t>(shards);
 
-    // NB: Only allocate if needed
-    std::vector<AlphabetType> global_sorted_text_allocation;
-    if constexpr (Algorithm::needs_second_text_allocation) {
-      global_sorted_text_allocation = std::vector<AlphabetType>(size);
-    }
-    span<AlphabetType> const global_sorted_text{
-        global_sorted_text_allocation.data(),
-        global_sorted_text_allocation.size()};
-
     #pragma omp parallel for
     for (size_t shard = 0; shard < shards; shard++) {
       std::vector<uint64_t> const& local_level_sizes =
@@ -111,22 +123,22 @@ public:
 
       auto const text = get_local_slice(shard, global_text);
 
-      ctxs[shard] = ctx_t(local_level_sizes, levels, rho);
+      ctxs[shard] = ctx_t(local_level_sizes, levels, rho, codes);
 
-      if constexpr (Algorithm::needs_second_text_allocation) {
-        auto const sorted_text = get_local_slice(shard, global_sorted_text);
-        Algorithm::calc_huff(text.data(), text.size(), levels, codes,
-                             ctxs[shard], sorted_text.data(),
-                             local_level_sizes);
-      } else {
-        Algorithm::calc_huff(text.data(), text.size(), levels, codes,
-                             ctxs[shard]);
-      }
+      Algorithm::calc_huff(text.data(), text.size(), levels, codes,
+                           ctxs[shard], local_level_sizes);
 
-      ctxs[shard].discard_non_merge_data();
+      // we discard all ctx data once we no longer need it:
+      // - merge needs ctxs[shard].hist and ctxs[shard].bv
+      // - zeros needs ctxs[shard].zeros
+      // - after merge we only move the bv and drop the entire ctx,
+      //   so no need for an early cleanup.
+      ctxs[shard].discard_borders();
+      ctxs[shard].discard_rho();
+      // ctxs[shard].discard_hist();
+      // ctxs[shard].discard_bv();
+      // ctxs[shard].discard_zeros();
     }
-
-    drop_me(std::move(global_sorted_text_allocation));
 
     std::vector<uint64_t> const& level_sizes = builder.level_sizes();
     auto bv = huff_merge_bit_vectors(level_sizes, shards, ctxs, rho);

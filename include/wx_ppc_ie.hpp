@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "arrays/memory_types.hpp"
-#include "construction/ctx_all_levels.hpp"
+#include "construction/ctx_generic.hpp"
 #include "construction/pc_semi_external.hpp"
 #include "construction/wavelet_structure.hpp"
 
@@ -31,7 +31,12 @@ public:
   static wavelet_structure
   compute(const InputType& text, const uint64_t size, const uint64_t levels) {
 
-    using ctx_t = ctx_all_levels<is_tree>;
+    using ctx_t = ctx_generic<is_tree,
+        ctx_options::borders::all_level,
+        ctx_options::hist::all_level,
+        ctx_options::pre_computed_rho,
+        ctx_options::bv_initialized,
+        bit_vectors>;
 
     if (size == 0) {
       if constexpr (is_tree_)
@@ -45,7 +50,7 @@ public:
 
     pc_in_external_parallel(text, size, levels, ctx);
 
-    std::cout << "DONE DONE" << std::endl;
+//    std::cout << "DONE DONE" << std::endl;
 
     if constexpr (ctx_t::compute_zeros) {
       return wavelet_structure_matrix(std::move(ctx.bv()),

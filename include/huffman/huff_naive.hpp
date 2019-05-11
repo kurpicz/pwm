@@ -20,11 +20,12 @@ void huff_naive(AlphabetType const* text,
                 uint64_t const size,
                 uint64_t const levels,
                 HuffCodes const& codes,
-                ContextType& ctx) {
+                ContextType& ctx,
+                span<uint64_t const> const) {
   constexpr bool is_tree = !ContextType::compute_zeros;
 
   auto& bv = ctx.bv();
-  auto& zeros = ctx.zeros();
+  auto&& zeros = ctx.zeros();
 
   // calculate histogram
   {
@@ -32,9 +33,10 @@ void huff_naive(AlphabetType const* text,
     // but not for standalone.
     for (size_t i = 0; i < size; i++) {
       const code_pair cp = codes.encode_symbol(text[i]);
-      for (size_t level = 0; level <= cp.code_length; level++) {
+      for (size_t level = 0; level <= cp.code_length(); level++) {
+        auto&& hist = ctx.hist_at_level(level);
         auto prefix = cp.prefix(level);
-        ctx.hist(level, prefix)++;
+        hist[prefix]++;
       }
     }
   }
@@ -59,7 +61,7 @@ void huff_naive(AlphabetType const* text,
         word <<= 1;
         word |= cp[level];
         if constexpr (!is_tree) {
-          if (cp.code_length > level + 1) {
+          if (cp.code_length() > level + 1) {
             if (cp[level]) {
               text1.emplace_back(local_text[cur_pos + i]);
             } else {
@@ -82,7 +84,7 @@ void huff_naive(AlphabetType const* text,
         word <<= 1;
         word |= cp[level];
         if constexpr (!is_tree) {
-          if (cp.code_length > level + 1) {
+          if (cp.code_length() > level + 1) {
             if (cp[level]) {
               text1.emplace_back(local_text[i]);
             } else {

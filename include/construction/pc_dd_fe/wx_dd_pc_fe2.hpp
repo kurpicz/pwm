@@ -44,6 +44,7 @@ public:
 
     stats.phase("dd");
 
+    WX_DD_PC_FE_VERBOSE << "Initializing result...\n";
     // create empty result
     std::ostringstream name;
     name << "w" << (is_tree_ ? "t" : "m") << "_dd_fe";
@@ -53,9 +54,14 @@ public:
             construct(size, levels, name.str(), 0);
     if(size == 0) return result;
 
+    WX_DD_PC_FE_VERBOSE << "Creating context...\n";
     external_dd_ctx<InputType, bytes_memory_, rw_simultaneously> ctx(text, size, levels);
 
+    WX_DD_PC_FE_VERBOSE << "Running dd phase...\n";
+
     ctx.dd();
+
+    WX_DD_PC_FE_VERBOSE << "Running merge phase...\n";
     stats.phase("merge");
     ctx.template merge<is_tree>(result);
 

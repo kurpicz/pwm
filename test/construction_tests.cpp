@@ -33,80 +33,16 @@ using out_external = typename output_type<memory_mode::external>::type;
 template <bool in_external_, bool out_external_>
 using a_list = algorithm_list<in_external_, out_external_, 1>;
 
-//TEST(wavelet, no_alphabet_reduction) {
-//  auto& algo_list = a_list<in_internal_bool, out_internal_bool>::get_algorithm_list();
-//  for (const auto& a : algo_list) {
-//    if (!a->is_huffman_shaped()) {
-//      a->print_info();
-//      test::roundtrip_batch([&](const std::string& s){
-//        auto vec = std::vector<uint8_t>(s.begin(), s.end());
-//        uint64_t levels = no_reduction_alphabet(vec);
-//        wavelet_structure bvz = a->compute_bitvector(vec.data(), vec.size() , levels);
-//        if (a->is_tree()) {
-//          auto decoded_s = decode_wt(bvz.bvs(), vec.size());
-//          ASSERT_EQ(s, decoded_s) << "Failure (Algorithm): " << a->name();
-//        } else {
-//          auto decoded_s = decode_wm(bvz.bvs(), bvz.zeros(), vec.size());
-//          ASSERT_EQ(s, decoded_s) << "Failure (Algorithm): " << a->name();
-//        }
-//      });
-//    }
-//  }
-//}
-//
-//TEST(wavelet, no_alphabet_reduction_external_input) {
-//  auto& algo_list = a_list<in_external_bool, out_internal_bool>::get_algorithm_list();
-//  for (const auto& a : algo_list) {
-//    if (!a->is_huffman_shaped()) {
-//      a->print_info();
-//      test::roundtrip_batch([&](const std::string& s){
-//        auto vec = std::vector<uint8_t>(s.begin(), s.end());
-//        uint64_t levels = no_reduction_alphabet(vec);
-//
-//        in_external vec_external;
-//        for(const auto symbol : vec)
-//          vec_external.push_back(symbol);
-//
-//        wavelet_structure bvz = a->compute_bitvector(vec_external, vec.size() , levels);
-//        if (a->is_tree()) {
-//          auto decoded_s = decode_wt(bvz.bvs(), vec.size());
-//          ASSERT_EQ(s, decoded_s) << "Failure (Algorithm): " << a->name();
-//        } else {
-//          auto decoded_s = decode_wm(bvz.bvs(), bvz.zeros(), vec.size());
-//          ASSERT_EQ(s, decoded_s) << "Failure (Algorithm): " << a->name();
-//        }
-//      });
-//    }
-//  }
-//}
-//
-//TEST(wavelet, no_alphabet_reduction_external_output) {
-//  auto& algo_list = a_list<in_internal_bool, out_external_bool>::get_algorithm_list();
-//  for (const auto& a : algo_list) {
-//    if (!a->is_huffman_shaped()) {
-//      a->print_info();
-//      test::roundtrip_batch([&](const std::string& s){
-//          auto vec = std::vector<uint8_t>(s.begin(), s.end());
-//          uint64_t levels = no_reduction_alphabet(vec);
-//          auto bvz = a->compute_bitvector(vec.data(), vec.size() , levels)
-//              .getInternalStructure();
-//          if (a->is_tree()) {
-//            auto decoded_s = decode_wt(bvz.bvs(), vec.size());
-//            ASSERT_EQ(s, decoded_s) << "Failure (Algorithm): " << a->name();
-//          } else {
-//            auto decoded_s = decode_wm(bvz.bvs(), bvz.zeros(), vec.size());
-//            ASSERT_EQ(s, decoded_s) << "Failure (Algorithm): " << a->name();
-//          }
-//      });
-//    }
-//  }
-//}
 
-TEST(wavelet, no_alphabet_reduction_external_input_output) {
-  {
+template <bool ext_in, bool ext_out>
+void no_alphabet_reduction() {
+  if constexpr (ext_in || ext_out) {
+    // initialize external memory by using stxxl
     volatile stxxlvector<bool> dummy;
   }
-  auto& algo_list = a_list<in_external_bool, out_external_bool>::get_algorithm_list();
+
+  using in_type = typename input_type<ext_in, 1>::type;
+  auto& algo_list = algorithm_list<ext_in, ext_out, 1>::get_algorithm_list();
   for (const auto& a : algo_list) {
     if (!a->is_huffman_shaped()) {
       a->print_info();
@@ -114,13 +50,16 @@ TEST(wavelet, no_alphabet_reduction_external_input_output) {
           auto vec = std::vector<uint8_t>(s.begin(), s.end());
           uint64_t levels = no_reduction_alphabet(vec);
 
-          in_external vec_external;
-          for(const auto symbol : vec)
-            vec_external.push_back(symbol);
+          in_type input;
+          if constexpr (ext_in) {
+            for(const auto symbol : vec)
+              input.push_back(symbol);
+          }
+          else {
+            input = vec.data();
+          }
 
-          auto bvz = a->compute_bitvector(vec_external, vec.size() , levels)
-              .getInternalStructure();
-
+          auto bvz = a->compute_internal_bitvector(input, vec.size() , levels);
           if (a->is_tree()) {
             auto decoded_s = decode_wt(bvz.bvs(), vec.size());
             ASSERT_EQ(s, decoded_s) << "Failure (Algorithm): " << a->name();
@@ -134,12 +73,27 @@ TEST(wavelet, no_alphabet_reduction_external_input_output) {
 }
 
 
+TEST(wavelet_internal, no_alphabet_reduction) {
+  no_alphabet_reduction<false, false>();
+}
+
+TEST(wavelet_external_in, no_alphabet_reduction) {
+  no_alphabet_reduction<true, false>();
+}
+
+TEST(wavelet_external_out, no_alphabet_reduction) {
+  no_alphabet_reduction<false, true>();
+}
+
+TEST(wavelet_external, no_alphabet_reduction) {
+  no_alphabet_reduction<true, true>();
+}
 
 /*
 TODO: Broken due to levels == 0 corner case
 
 TEST(construction, wavelet_alphabet_reduction) {
-  auto& algo_list = algorithm_list::get_algorithm_list();
+  auto& algo_list = algorithm_list<in_internal, out_internal>::get_algorithm_list();
   for (const auto& a : algo_list) {
     if (a->word_width() == 1 && !a->is_huffman_shaped()) {
       a->print_info();
@@ -147,7 +101,7 @@ TEST(construction, wavelet_alphabet_reduction) {
         auto vec = std::vector<uint8_t>(s.begin(), s.end());
         auto max_char = reduce_alphabet(vec);
         uint64_t levels = levels_for_max_char(max_char);
-        wavelet_structure bvz = a->compute_bitvector(&vec, vec.size() , levels);
+        wavelet_structure bvz = a->compute_bitvector(vec.data(), vec.size() , levels);
         if (a->is_tree()) {
           auto decoded_s = decode_wt(bvz.bvs(), vec.size());
           auto decoded_vec = std::vector<uint8_t>(decoded_s.begin(), decoded_s.end());
@@ -163,31 +117,31 @@ TEST(construction, wavelet_alphabet_reduction) {
 }
 */
 
-TEST(huffman_shaped_wavelet, alphabet_reduction) {
-  auto& algo_list = a_list<in_internal_bool, out_internal_bool>::get_algorithm_list();
+TEST(wavelet, huffman_alphabet_reduction) {
+  auto& algo_list = algorithm_list<false, false, 1>::get_algorithm_list();
   for (const auto& a : algo_list) {
-    if (a->is_huffman_shaped()) {
+    if (a->is_huffman_shaped() && a->is_tree()) {
       a->print_info();
       test::roundtrip_batch([&](const std::string& s){
-        auto vec = std::vector<uint8_t>(s.begin(), s.end());
-        auto max_char = reduce_alphabet(vec);
-        uint64_t levels = levels_for_max_char(max_char);
-        auto bvz = a->compute_bitvector(vec.data(), vec.size() , levels);
-        histogram<uint8_t> hist { vec.data(), vec.size() };
-        level_sizes_builder<uint8_t> builder { std::move(hist) };
-        if (a->is_tree()) {
-          const auto codes =
-            canonical_huff_codes<uint8_t, true>(builder);
-          auto decoded_s = decode_wt_huff(bvz.bvs(), codes);
-          auto decoded_vec = std::vector<uint8_t>(decoded_s.begin(), decoded_s.end());
-          ASSERT_EQ(vec, decoded_vec) << "Failure (Algorithm): " << a->name();
-        } else {
-          const auto codes =
-            canonical_huff_codes<uint8_t, false>(builder);
-          auto decoded_s = decode_wm_huff(bvz.bvs(), codes);
-          auto decoded_vec = std::vector<uint8_t>(decoded_s.begin(), decoded_s.end());
-          ASSERT_EQ(vec, decoded_vec) << "Failure (Algorithm): " << a->name();
-        }
+          auto vec = std::vector<uint8_t>(s.begin(), s.end());
+          auto max_char = reduce_alphabet(vec);
+          uint64_t levels = levels_for_max_char(max_char);
+          auto bvz = a->compute_bitvector(vec.data(), vec.size(), levels);
+          histogram<uint8_t> hist { vec.data(), vec.size() };
+          level_sizes_builder<uint8_t> builder { std::move(hist) };
+          if (a->is_tree()) {
+            const auto codes =
+                canonical_huff_codes<uint8_t, true>(builder);
+            auto decoded_s = decode_wt_huff(bvz.bvs(), codes);
+            auto decoded_vec = std::vector<uint8_t>(decoded_s.begin(), decoded_s.end());
+            ASSERT_EQ(vec, decoded_vec) << "Failure (Algorithm): " << a->name();
+          } else {
+            const auto codes =
+                canonical_huff_codes<uint8_t, false>(builder);
+            auto decoded_s = decode_wm_huff(bvz.bvs(), codes);
+            auto decoded_vec = std::vector<uint8_t>(decoded_s.begin(), decoded_s.end());
+            ASSERT_EQ(vec, decoded_vec) << "Failure (Algorithm): " << a->name();
+          }
       });
     }
   }

@@ -19,6 +19,7 @@
 #include "util/print.hpp"
 #include "util/structure_decode.hpp"
 #include "util/stats.hpp"
+#include "util/debug_assert.hpp"
 
 #ifdef MALLOC_COUNT
 #include "benchmark/malloc_count.h"
@@ -32,7 +33,8 @@ struct filter_by_property {
 
     inline bool should_keep(bool algo_property) {
         if (exclude_other && exclude_self) {
-            std::cerr << "An pair of options excluded all algorithms, check the commandline arguments\n";
+            std::cerr << "An pair of options excluded all algorithms, check "
+                      << "the command line arguments" << std::endl;;
             exit(1);
         }
 
@@ -105,6 +107,7 @@ struct {
       malloc_count_reset_peak();
       uint64_t malloc_count_base = malloc_count_peak();
       #endif
+
       in_type input_for_algo;
       uint64_t text_size = 0;
       uint64_t max_char = 0;
@@ -127,6 +130,8 @@ struct {
         text_size = input_for_algo.size();
         levels = levels_for_max_char(max_char);
       }
+
+
       std::cout << "Characters: " << text_size << std::endl;
       #ifdef MALLOC_COUNT
       malloc_count_reset_peak();
@@ -134,13 +139,16 @@ struct {
       std::cout << "Memory peak text: " << malloc_count_text << " B, "
                 << malloc_count_text / (1024 * 1024) << " MiB" << std::endl;
       #endif // MALLOC_COUNT
+
       for (const auto& a : algo_list) {
-        GUARD_LOOP(global_settings.filter_name == "" || (a->name().compare(global_settings.filter_name) == 0));
+        GUARD_LOOP(global_settings.filter_name == "" ||
+                   (a->name().compare(global_settings.filter_name) == 0));
         GUARD_LOOP(global_settings.parallel_filter.should_keep(a->is_parallel()));
         GUARD_LOOP(global_settings.huffman_filter.should_keep(a->is_huffman_shaped()));
         GUARD_LOOP(global_settings.matrix_filter.should_keep(!a->is_tree()));
 
         std::cout << "RESULT " << "algo=" << a->name() << ' ';
+
         std::cout << "runs=" << global_settings.nr_runs << " " << std::flush;
         if (global_settings.nr_runs > 0) {
           auto stats_object = a->median_time_stats(
@@ -151,10 +159,14 @@ struct {
           std::cout << "memory=" << stats_object.get_total_memory() + malloc_count_text << ' ';
           #endif // MALLOC_COUNT
         }
+
+        auto bit_size = a->huffman_bit_size(input_for_algo, text_size, levels);
+
         std::cout << "input=" << path << ' '
                   << "characters=" << text_size << ' '
                   << "sigma=" << max_char + 1 << ' '
                   << "word_width=" << global_settings.word_width << ' '
+                  << "bit_size=" << bit_size << ' '
                   << "threads=" << (a->is_parallel() ? global_settings.number_threads : 1)
                   << std::endl;
 
@@ -217,7 +229,7 @@ struct {
                     return e->name() == "wm_huff_naive";
                 }).at(0);
               }
-              assert(naive != nullptr);
+              CHECK(naive != nullptr);
               auto naive_wx = naive->compute_bitvector(
                   input_for_algo_check, text_size, levels);
               bool err_trigger = false;
@@ -252,6 +264,17 @@ struct {
                                std::string("bit size differs on level ")
                                + std::to_string(l))) {
                     for (uint64_t bi = 0; bi < sbs; bi++) {
+                      constexpr uint64_t entry_bits
+                        = (sizeof(decltype(sbvs[0][0])) * 8);
+
+                      auto sbvs_l_bi = sbvs[l][bi / entry_bits];
+                      auto nbvs_l_bi = nbvs[l][bi / entry_bits];
+
+                      if (((bi % entry_bits) == 0) && (sbvs_l_bi == nbvs_l_bi)) {
+                        bi += (entry_bits - 1);
+                        continue;
+                      }
+
                       if(!check_err(
                           bit_at(sbvs[l], bi) == bit_at(nbvs[l], bi),
                           std::string("bit ")
@@ -418,7 +441,11 @@ int32_t main(int32_t argc, char const* argv[]) {
     return -1;
   }
 
-  global_settings.number_threads = omp_get_max_threads();
+  #pragma omp parallel
+  {
+    #pragma omp single
+    global_settings.number_threads = omp_get_max_threads();
+  }
 
   if (global_settings.external) {
     global_settings.external_in = true;

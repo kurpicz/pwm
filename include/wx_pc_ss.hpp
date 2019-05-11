@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "construction/ctx_compute_borders.hpp"
+#include "construction/ctx_generic.hpp"
 #include "construction/pc_ss.hpp"
 #include "construction/wavelet_structure.hpp"
 
@@ -23,7 +23,12 @@ public:
   static constexpr uint8_t word_width = sizeof(AlphabteType);
   static constexpr bool is_huffman_shaped = false;
 
-  using ctx_t = ctx_compute_borders<is_tree>;
+  using ctx_t = ctx_generic<is_tree,
+                            ctx_options::borders::all_level,
+                            ctx_options::hist::all_level,
+                            ctx_options::pre_computed_rho,
+                            ctx_options::bv_initialized,
+                            bit_vectors>;
 
   template <typename InputType>
   static wavelet_structure
@@ -44,7 +49,7 @@ public:
 
     if constexpr (ctx_t::compute_zeros) {
       return wavelet_structure_matrix(std::move(ctx.bv()),
-                                      std::move(ctx.zeros()));
+                                      std::move(ctx.take_zeros()));
     } else {
       return wavelet_structure_tree(std::move(ctx.bv()));
     }

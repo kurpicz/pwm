@@ -14,6 +14,7 @@
 
 #include "construction/wavelet_structure.hpp"
 #include "util/debug.hpp"
+#include "util/debug_assert.hpp"
 
 [[maybe_unused]] static void print_structure(std::ostream& out,
                                              const base_bit_vectors& bv,
@@ -59,14 +60,14 @@
   if (left > bv.level_bit_size(i)) {
     left = bv.level_bit_size(i);
   }
-  assert(left <= bv.level_bit_size(i));
+  DCHECK(left <= bv.level_bit_size(i));
 
   if (right > bv.level_bit_size(i)) {
     right = bv.level_bit_size(i);
   }
-  assert(right <= bv.level_bit_size(i));
+  DCHECK(right <= bv.level_bit_size(i));
 
-  assert(left <= right);
+  DCHECK(left <= right);
 
   uint64_t ones = 0;
   for (uint64_t j = left; j < right; j++) {
@@ -91,7 +92,7 @@ print_tree(std::ostream& out, const base_bit_vectors& bv, bool padded = false) {
     auto l = layer.left;
     auto r = layer.right;
 
-    assert(l <= r);
+    DCHECK(l <= r);
     auto v = std::vector<bool>();
 
     for (uint64_t j = l; j < r; j++) {
@@ -115,7 +116,7 @@ print_tree(std::ostream& out, const base_bit_vectors& bv, bool padded = false) {
       auto res = get_block_split(i - 1, bv, pblock.left, pblock.right);
 
       auto lr = [&](auto l, auto r) {
-        assert(l <= r);
+        DCHECK(l <= r);
         layer.push_back({
             {},
             l,

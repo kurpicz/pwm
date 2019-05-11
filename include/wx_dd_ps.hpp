@@ -13,11 +13,12 @@
 #include <omp.h>
 #include <vector>
 
-#include "construction/ctx_all_levels.hpp"
+#include "construction/ctx_generic.hpp"
 #include "construction/merge.hpp"
 #include "construction/ps.hpp"
 #include "construction/wavelet_structure.hpp"
 #include "util/common.hpp"
+#include "util/debug_assert.hpp"
 
 #include "wx_base.hpp"
 
@@ -30,7 +31,12 @@ public:
   static constexpr uint8_t word_width = sizeof(AlphabetType);
   static constexpr bool is_huffman_shaped = false;
 
-  using ctx_t = ctx_all_levels<is_tree>;
+  using ctx_t = ctx_generic<is_tree,
+                            ctx_options::borders::single_level,
+                            ctx_options::hist::all_level,
+                            ctx_options::pre_computed_rho,
+                            ctx_options::bv_initialized,
+                            bit_vectors>;
 
   template <typename InputType>
   static wavelet_structure compute(const InputType& global_text,
@@ -58,13 +64,11 @@ public:
       ctxs[shard] = ctx_t(local_size, levels, rho);
     }
 
-    auto global_sorted_text = std::vector<AlphabetType>(size);
-
     #pragma omp parallel
     {
       const uint64_t omp_rank = omp_get_thread_num();
       const uint64_t omp_size = omp_get_num_threads();
-      assert(omp_size == shards);
+      DCHECK(omp_size == shards);
 
       const uint64_t local_size =
           (size / omp_size) + ((omp_rank < size % omp_size) ? 1 : 0);
@@ -72,15 +76,22 @@ public:
                               std::min<uint64_t>(omp_rank, size % omp_size);
 
       AlphabetType const* text = global_text + offset;
-      AlphabetType* sorted_text = global_sorted_text.data() + offset;
 
-      ps(text, local_size, levels, ctxs[omp_rank], sorted_text);
+      ps(text, local_size, levels, ctxs[omp_rank]);
     }
 
+    // we discard all ctx data once we no longer need it:
+    // - merge needs ctxs[i].hist and ctxs[i].bv
+    // - zeros needs ctxs[i].zeros
+    // - after merge we only move the bv and drop the entire ctx,
+    //   so no need for an early cleanup.
     for (auto& ctx : ctxs) {
-      ctx.discard_non_merge_data();
+      ctx.discard_borders();
+      ctx.discard_rho();
+      // ctx.discard_hist();
+      // ctx.discard_bv();
+      // ctx.discard_zeros();
     }
-    drop_me(std::move(global_sorted_text));
 
     auto _bv = merge_bit_vectors(size, levels, shards, ctxs, rho);
 

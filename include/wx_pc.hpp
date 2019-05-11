@@ -10,7 +10,7 @@
 
 #include <vector>
 
-#include "construction/ctx_single_level.hpp"
+#include "construction/ctx_generic.hpp"
 #include "construction/pc.hpp"
 #include "construction/wavelet_structure.hpp"
 
@@ -25,14 +25,17 @@ public:
   static constexpr uint8_t word_width = sizeof(AlphabetType);
   static constexpr bool is_huffman_shaped = false;
 
-  using ctx_t = ctx_single_level<is_tree>;
+  using ctx_t = ctx_generic<is_tree,
+                            ctx_options::borders::single_level,
+                            ctx_options::hist::single_level,
+                            ctx_options::live_computed_rho,
+                            ctx_options::bv_initialized,
+                            bit_vectors>;
 
   template <typename InputType>
   static wavelet_structure compute(const InputType& text,
                                    const uint64_t size,
-                                   const uint64_t levels,
-                                   std::vector<uint64_t>*
-                                       global_char_hist = nullptr) {
+                                   const uint64_t levels) {
 
     if (size == 0) {
       if constexpr (ctx_t::compute_zeros) {
@@ -42,13 +45,13 @@ public:
       }
     }
 
-    auto ctx = ctx_t(size, levels);
+    auto ctx = ctx_t(size, levels, levels);
 
-    pc(text, size, levels, ctx, global_char_hist);
+    pc(text, size, levels, ctx);
 
     if constexpr (ctx_t::compute_zeros) {
       return wavelet_structure_matrix(std::move(ctx.bv()),
-                                      std::move(ctx.zeros()));
+                                      std::move(ctx.take_zeros()));
     } else {
       return wavelet_structure_tree(std::move(ctx.bv()));
     }

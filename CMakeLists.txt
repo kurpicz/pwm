@@ -8,12 +8,15 @@
 ################################################################################
 
 cmake_minimum_required(VERSION 3.0.2 FATAL_ERROR)
-set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/misc/") 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 project (pwm)
+
+include(ExternalProject)
+include(find_or_download_package)
 
 find_program(CCACHE_FOUND ccache)
 if(CCACHE_FOUND)
@@ -43,8 +46,11 @@ endif()
 set(CMAKE_CXX_FLAGS
   "${CMAKE_CXX_FLAGS} -fopenmp -Wall -Wextra -Wpedantic -fdiagnostics-color=auto")
 set(CMAKE_CXX_FLAGS_RELEASE
-  "${CMAKE_CXX_FLAGS_RELEASE} -O3 -funroll-loops -march=native")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -ggdb")
+  "${CMAKE_CXX_FLAGS_RELEASE} -O3 -funroll-loops -march=native -DNDEBUG")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -ggdb -DDEBUG")
+
+# Add include checking
+include(header_walker)
 
 # Make malloc count optional
 option(ENABLE_MALLOC_COUNT "Enable memory measurement." OFF)
@@ -78,9 +84,6 @@ add_subdirectory(src)
 # Add competitors
 add_subdirectory(external/wavelet_construction)
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-include(ExternalProject)
-include(find_or_download_package)
 find_or_download_package(STXXL STXXL stxxl)
 
 MESSAGE(STATUS "Built Type: " ${CMAKE_BUILD_TYPE} )

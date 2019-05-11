@@ -24,7 +24,7 @@ private:
 
   pow2_array hist_;
   std::vector<uint64_t> borders_;
-  bit_vectors bv_;
+  bit_vectors<true> bv_;
 
   uint64_t data_size_;
   std::vector<uint64_t> level_data_sizes_;
@@ -58,16 +58,20 @@ public:
     return borders_;
   }
 
-  bit_vectors& bv() {
+  base_bit_vectors& bv() {
     return bv_;
   }
 
-  bit_vectors const& bv() const {
+  base_bit_vectors const& bv() const {
     return bv_;
   }
 
   pow2_array& hist() {
     return hist_;
+  }
+
+  auto hist_at_level(uint64_t const level) {
+    return hist_[level];
   }
 
   std::vector<uint64_t> flat_hist() {

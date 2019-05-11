@@ -8,39 +8,74 @@
 
 #pragma once
 
-#include <cassert>
 #include <climits>
 #include <omp.h>
 
 #include "arrays/bit_vectors.hpp"
 #include "util/common.hpp"
 #include "util/macros.hpp"
+#include "util/debug_assert.hpp"
 
-template <typename WordType>
+template <typename WordType, bool zero_mem = false>
 void copy_bits(WordType* const dst,
                WordType const* const src,
                uint64_t& dst_off_ref,
                uint64_t& src_off_ref,
-               uint64_t const block_size) {
-  if (block_size == 0)
+               uint64_t const block_size,
+               WordType const** opt_zero_mem_marker = nullptr) {
+  if (block_size == 0) {
     return;
+  }
 
-  auto debug_ptr = [dst](WordType* const) {
-    /*
-    NB: Code skeleton for debugging writes to memory.
-    This should not have runtime impact while commented out
-
-    #include <bitset>
-    #include <sstream>
-
+  /*
+  NB: Code skeleton for debugging writes to memory.
+  #include <bitset>
+  #include <iomanip>
+  #include <sstream>
+  auto debug_ptr = [dst](WordType* const ptr, auto extra_fmt) {
     int64_t diff = ptr - dst;
     std::stringstream ss;
-    ss << "write [" << dst << "][" << diff << "]: " << std::bitset<64>(*ptr) <<
-    "\n";
+    ss << "write [" << dst << "][" << std::setw(6) << diff
+       << "]: " << std::bitset<64>(*ptr);
+    extra_fmt(ss);
+    ss << "\n";
     // Using a stringstream to get a atomic write to cout
     std::cout << ss.str();
-    */
   };
+  */
+
+  auto zero_word_once = [opt_zero_mem_marker]([[maybe_unused]] WordType* word) {
+    if constexpr (zero_mem) {
+      if (opt_zero_mem_marker != nullptr) {
+        WordType const*& zero_mem_marker = *opt_zero_mem_marker;
+        if (zero_mem_marker == nullptr) {
+          zero_mem_marker = word;
+        }
+        if (zero_mem_marker == word) {
+          *word = 0;
+          zero_mem_marker++;
+        }
+        DCHECK(zero_mem_marker == word + 1);
+      }
+    } else {
+      (void) opt_zero_mem_marker;
+    }
+  };
+  auto skip_zero_words =
+      [opt_zero_mem_marker]([[maybe_unused]] WordType const* start,
+                            [[maybe_unused]] size_t count) {
+        if constexpr (zero_mem) {
+          if (opt_zero_mem_marker != nullptr) {
+            WordType const*& zero_mem_marker = *opt_zero_mem_marker;
+            if (zero_mem_marker == nullptr) {
+              zero_mem_marker = start;
+            }
+            zero_mem_marker += count;
+          }
+        } else {
+          (void) opt_zero_mem_marker;
+        }
+      };
 
   WordType constexpr BITS = (sizeof(WordType) * CHAR_BIT);
   WordType constexpr MOD_MASK = BITS - 1;
@@ -58,11 +93,13 @@ void copy_bits(WordType* const dst,
     {
       auto& word = dst[dst_off >> SHIFT];
 
+      if ((dst_off & MOD_MASK) != 0 && dst_off != dst_off_end) {
+        zero_word_once(&word);
+      }
       while ((dst_off & MOD_MASK) != 0 && dst_off != dst_off_end) {
         bool const bit = bit_at<WordType>(src, src_off++);
 
         word |= (WordType(bit) << (MOD_MASK - (dst_off++ & MOD_MASK)));
-        debug_ptr(&word);
       }
     }
 
@@ -75,9 +112,9 @@ void copy_bits(WordType* const dst,
 
       WordType const* const ds_end = ds + words;
 
+      skip_zero_words(ds, words);
       while (ds != ds_end) {
         *ds++ = *sr++;
-        debug_ptr(ds);
       }
 
       dst_off += words * BITS;
@@ -88,11 +125,13 @@ void copy_bits(WordType* const dst,
     {
       auto& word = dst[dst_off >> SHIFT];
 
+      if (dst_off != dst_off_end) {
+        zero_word_once(&word);
+      }
       while (dst_off != dst_off_end) {
         bool const bit = bit_at<WordType>(src, src_off++);
 
         word |= (WordType(bit) << (MOD_MASK - (dst_off++ & MOD_MASK)));
-        debug_ptr(&word);
       }
     }
   } else {
@@ -100,11 +139,13 @@ void copy_bits(WordType* const dst,
     {
       auto& word = dst[dst_off >> SHIFT];
 
+      if ((dst_off & MOD_MASK) != 0 && dst_off != dst_off_end) {
+        zero_word_once(&word);
+      }
       while ((dst_off & MOD_MASK) != 0 && dst_off != dst_off_end) {
         bool const bit = bit_at<WordType>(src, src_off++);
 
         word |= (WordType(bit) << (MOD_MASK - (dst_off++ & MOD_MASK)));
-        debug_ptr(&word);
       }
     }
 
@@ -119,9 +160,9 @@ void copy_bits(WordType* const dst,
       WordType const* sr = src + (src_off >> SHIFT);
       WordType const* const ds_end = ds + words;
 
+      skip_zero_words(ds, words);
       while (ds != ds_end) {
         *ds++ = (*sr << src_shift_a) | (*(sr + 1) >> src_shift_b);
-        debug_ptr(ds);
         sr++;
       }
 
@@ -133,11 +174,13 @@ void copy_bits(WordType* const dst,
     {
       auto& word = dst[dst_off >> SHIFT];
 
+      if (dst_off != dst_off_end) {
+        zero_word_once(&word);
+      }
       while (dst_off != dst_off_end) {
         bool const bit = bit_at<WordType>(src, src_off++);
 
         word |= (WordType(bit) << (MOD_MASK - (dst_off++ & MOD_MASK)));
-        debug_ptr(&word);
       }
     }
   }
@@ -152,7 +195,7 @@ inline auto merge_bit_vectors(uint64_t size,
                               uint64_t shards,
                               const std::vector<ContextType>& src_ctxs,
                               const Rho& rho) {
-  assert(shards == src_ctxs.size());
+  DCHECK(shards == src_ctxs.size());
 
   // Allocate data structures centrally
 
@@ -288,7 +331,8 @@ inline auto merge_bit_vectors(uint64_t size,
       const auto permuted_block = rho(level, block);
 
       // block size == number of entries in the block on this level
-      auto block_size = src_ctxs[read_shard].hist(level, permuted_block);
+      auto block_size =
+          src_ctxs[read_shard].hist_at_level(level)[permuted_block];
 
       // advance global write offset by the number of bits assigned for
       // this block
@@ -360,21 +404,17 @@ inline auto merge_bit_vectors(uint64_t size,
         write_offset += block_size;
         nxt_lctx(merge_shard).read_offsets[read_shard] += block_size;
 
-        assert(write_offset <= ctxs[merge_shard].end_offset);
+        DCHECK(write_offset <= ctxs[merge_shard].end_offset);
       }
     }
   triple_loop_exit:; // we are done
   }
 
-  auto r = bit_vectors(levels, size);
-  auto& _bv = r;
+  auto bv = bit_vectors<false>(levels, size);
 
-  #pragma omp parallel
-  // for(size_t omp_rank = 0; omp_rank < shards; omp_rank++)
-  {
-    assert(size_t(omp_get_num_threads()) == shards);
-    const size_t omp_rank = omp_get_thread_num();
-    const size_t merge_shard = omp_rank;
+  #pragma omp parallel for
+  for (size_t merge_shard = 0; merge_shard < shards; merge_shard++) {
+    DCHECK(size_t(omp_get_num_threads()) == shards);
 
     auto& ctx = ctxs[merge_shard];
 
@@ -385,6 +425,7 @@ inline auto merge_bit_vectors(uint64_t size,
     for (size_t level = 0; level < levels; level++) {
       auto i = ctx.levels[level].first_read_block;
       uint64_t write_offset = target_left;
+      uint64_t const* zero_marker = nullptr;
 
       auto copy_next_block = [&](size_t const initial_offset) {
         const auto block = i / shards;
@@ -392,8 +433,8 @@ inline auto merge_bit_vectors(uint64_t size,
         i++;
 
         const auto& local_bv = src_ctxs[read_shard].bv()[level];
-        const auto& h = src_ctxs[read_shard];
-        uint64_t block_size = h.hist(level, rho(level, block)) - initial_offset;
+        auto&& hist = src_ctxs[read_shard].hist_at_level(level);
+        uint64_t block_size = hist[rho(level, block)] - initial_offset;
         uint64_t distance_to_end = target_right - write_offset;
 
         uint64_t copy_size;
@@ -404,8 +445,9 @@ inline auto merge_bit_vectors(uint64_t size,
         }
 
         auto& local_cursor = ctx.levels[level].read_offsets[read_shard];
-        copy_bits<uint64_t>(_bv[level].data(), local_bv.data(), write_offset,
-                            local_cursor, copy_size);
+        copy_bits<uint64_t, true>(bv[level].data(), local_bv.data(),
+                                  write_offset, local_cursor, copy_size,
+                                  &zero_marker);
       };
 
       if (write_offset < target_right) {
@@ -419,7 +461,7 @@ inline auto merge_bit_vectors(uint64_t size,
     }
   }
 
-  return r;
+  return bv;
 }
 
 /******************************************************************************/

@@ -39,7 +39,7 @@
 TEST(bin_select_popcnt, select) {
   const size_t bit_vector_size = 1024 * 1024 * 128;
 
-  bit_vectors bv(1, bit_vector_size);
+  bit_vectors<> bv(1, bit_vector_size);
 
   std::mt19937 gen(44227);
   std::uniform_int_distribution<uint64_t> dis(0);
