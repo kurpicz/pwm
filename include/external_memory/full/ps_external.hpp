@@ -8,7 +8,6 @@
 
 #pragma once
 
-#include "external_memory/ctx_single_level_external.hpp"
 #include "external_memory/wavelet_structure_external.hpp"
 #include "util/debug_assert.hpp"
 

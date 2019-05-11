@@ -11,7 +11,6 @@
 #include <deque>
 
 #include <util/inplace_partition.hpp>
-#include "external_memory/ctx_single_level_external.hpp"
 #include "external_memory/wavelet_structure_external.hpp"
 
 template <typename AlphabetType, bool is_tree, typename InputType>
@@ -26,16 +25,16 @@ void ps_out_external(
   auto& hist = wavelet_structure_external_writer::histograms(result);
   auto const& level_offsets = result.level_offsets();
 
-  ctx_single_level_external<is_tree> ctx(size, levels);
-  auto& borders = ctx.borders();
+  std::vector<uint64_t> borders(1ULL << levels, 0);
+  auto rho = rho_dispatch<is_tree>::create(levels);
 
   auto sorted_text_vec = std::vector<AlphabetType>(size);
   AlphabetType* sorted_text = sorted_text_vec.data();
 
   uint64_t cur_max_char = (1 << levels);
 
-  using result_writer_type =
-      typename std::remove_reference<decltype(bvs)>::type::bufwriter_type;
+  using result_type = typename std::remove_reference<decltype(bvs)>::type;
+  using result_writer_type = typename result_type::bufwriter_type;
 
   // While initializing the histogram, we also compute the first level
   uint64_t cur_pos = 0;
@@ -83,14 +82,10 @@ void ps_out_external(
     // bit prefixes and the bit-reversal permutation
     borders[0] = 0;
     for (uint64_t i = 1; i < cur_max_char; ++i) {
-      auto const prev_rho = ctx.rho(level, i - 1);
+      auto const prev_rho = rho(level, i - 1);
 
-      borders[ctx.rho(level, i)] =
+      borders[rho(level, i)] =
           borders[prev_rho] + hist[level][prev_rho];
-
-      if constexpr (!is_tree) {
-        ctx.set_rho(level - 1, i - 1, prev_rho >> 1);
-      }
     }
 
     // The number of 0s is the position of the first 1 in the previous level
@@ -146,8 +141,8 @@ void ps_out_external_inplace(
   auto& zeros = wavelet_structure_external_writer::zeros(result);
   auto& hist = wavelet_structure_external_writer::histograms(result);
 
-  using result_writer_type =
-  typename std::remove_reference<decltype(bvs)>::type::bufwriter_type;
+  using result_type = typename std::remove_reference<decltype(bvs)>::type;
+  using result_writer_type = typename result_type::bufwriter_type;
   result_writer_type writer(bvs);
 
   ps_ip_sort partition(text, size);
