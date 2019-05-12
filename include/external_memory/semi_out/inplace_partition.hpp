@@ -33,8 +33,8 @@ struct ps_ip_sort {
 
   std::queue<mem_block> q_free_;
 
-  ps_ip_sort(char_t *text, const uint64_t n)
-      : n_(n), b_(std::ceil(std::sqrt(n_))) {
+  ps_ip_sort(char_t *text, const uint64_t n, const uint64_t b)
+      : n_(n), b_(b) {
 
     buffA_ = static_cast<char_t *>(malloc(b_ * sizeof(char_t)));
     buffB_ = static_cast<char_t *>(malloc(b_ * sizeof(char_t)));
@@ -46,7 +46,7 @@ struct ps_ip_sort {
     q_free_.push(mem_block {buffC_, 0});
     q_free_.push(mem_block {buffD_, 0});
 
-    const uint64_t last_block_size = n_ % b_;
+    const uint64_t last_block_size = n_ % b_; //might be 0
     const uint64_t n_skip_ = n_ - last_block_size;
 
     for (uint64_t i = 0; i < n_skip_; i += b_) {
@@ -61,6 +61,8 @@ struct ps_ip_sort {
       q0_.push(mem_block { buffLastBlock_, last_block_size });
     }
     else buffLastBlock_ = nullptr;
+
+//    std::cout << "\n\nINIT:  " << q_free_.size() << " " << q0_.size() << " " << q1_.size() << std::endl;
   }
 
   inline uint64_t get_zeros() const { return (q0_.size() == 0 ? 0 : (q0_.size() - 1) * b_ + q0_.back().size_); }
@@ -74,8 +76,8 @@ struct ps_ip_sort {
   mem_block zero_block_push;
   mem_block one_block_push;
 
-
   inline void start_level() {
+//    std::cout << "START A: " << q_free_.size() << " " << q0_.size() << " " << q1_.size() << std::endl;
     const auto zeros = get_zeros();
     if (zeros > 0) {
       zero_idx_pop = 0;
@@ -92,9 +94,11 @@ struct ps_ip_sort {
     one_block_push = q_free_.front();
     one_block_push.size_ = 0;
     q_free_.pop();
+//    std::cout << "START B: " << q_free_.size() << " " << q0_.size() << " " << q1_.size() << std::endl;
   }
 
   inline void finish_level() {
+//    std::cout << "STOP A:  " << q_free_.size() << " " << q0_.size() << " " << q1_.size() << std::endl;
     if (zero_block_push.size_ > 0)
       q0_.push(zero_block_push);
     else
@@ -104,9 +108,10 @@ struct ps_ip_sort {
       q1_.push(one_block_push);
     else
       q_free_.push(one_block_push);
+
+//    std::cout << "STOP B:  " << q_free_.size() << " " << q0_.size() << " " << q1_.size() << std::endl;
   }
 
-  // TODO: make unlikely
   inline char_t pop0() {
     if (PWM_UNLIKELY(zero_idx_pop == zero_block_pop.size_ - 1)) {
       const auto result = zero_block_pop[zero_idx_pop];
