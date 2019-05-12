@@ -82,22 +82,47 @@ private:
 
 template <bool ext_in, bool ext_out, int width>
 class construction_algorithm {
+  using value_type = typename input_type<ext_in, width>::value_type;
   using in_type = typename input_type<ext_in, width>::type;
   using out_type = typename output_type<ext_out>::type;
   using out_type_internal = typename output_type<false>::type;
 
   using stats_type = statistics<ext_in | ext_out>;
+
+
+  virtual out_type compute_bitvector_private(const in_type& global_text,
+                                             const uint64_t size,
+                                             const uint64_t levels,
+                                             stats_type& stats) const = 0;
+
 public:
-  construction_algorithm(std::string const& name, std::string const& description)
+  construction_algorithm(std::string const& name,
+                         std::string const& description)
       : name_(name), description_(description) {
     algorithm_list<ext_in, ext_out, width>::get_algorithm_list().
         register_algorithm(this);
   }
 
-  virtual out_type compute_bitvector(const in_type& global_text,
-                                     const uint64_t size,
-                                     const uint64_t levels,
-                                     stats_type& stats) const = 0;
+  out_type compute_bitvector(const in_type& global_text,
+                             const uint64_t size,
+                             const uint64_t levels,
+                             stats_type& stats) const {
+    if (is_inplace()) {
+      if constexpr (ext_in) {
+        in_type copy = global_text;
+        return compute_bitvector_private(copy, size, levels, stats);
+      }
+      else {
+        std::vector<value_type> copy;
+        copy.reserve(size);
+        for (uint64_t i = 0; i < size; ++i) {
+          copy.push_back(global_text[i]);
+        }
+        return compute_bitvector_private(copy.data(), size, levels, stats);
+      }
+    }
+    return compute_bitvector_private(global_text, size, levels, stats);
+  }
 
   out_type compute_bitvector(const in_type& global_text,
                              const uint64_t size,
@@ -122,9 +147,7 @@ public:
                                       const uint64_t runs) const {
     std::vector<stats_type> stats(runs);
     for (uint64_t run = 0; run < runs; ++run) {
-      stats[run].start();
       compute_bitvector(global_text, size, levels, stats[run]);
-      stats[run].finish();
     }
     std::sort(stats.begin(), stats.end());
     return stats[(runs - 1) >> 1];
@@ -139,6 +162,7 @@ public:
   virtual bool is_parallel() const = 0;
   virtual bool is_tree() const = 0;
   virtual bool is_huffman_shaped() const = 0;
+  virtual bool is_inplace() const = 0;
 
   constexpr bool is_input_external() const { return ext_in; }
   constexpr bool is_output_external() const { return ext_out; }
@@ -184,20 +208,34 @@ public:
       Algorithm::external_out,
       Algorithm::word_width>;
 
-  using stats_type = statistics<Algorithm::external_in | Algorithm::external_out>;
+  using stats_type = statistics<Algorithm::external_in ||
+                                Algorithm::external_out>;
+
+private:
+
+  out_type compute_bitvector_private(const in_type& global_text,
+                                     const uint64_t size,
+                                     const uint64_t levels,
+                                     stats_type &stats) const {
+    stats.start();
+    if constexpr (Algorithm::stats_support) {
+      auto result = Algorithm::compute(global_text, size, levels, stats);
+      stats.finish();
+      return result;
+    }
+    else {
+      auto result = Algorithm::compute(global_text, size, levels);
+      stats.finish();
+      return result;
+    }
+  }
+
+public:
 
   concrete_algorithm(std::string name, std::string description)
       : base_class(name, description) {}
 
-  out_type compute_bitvector(const in_type& global_text,
-                             const uint64_t size,
-                             const uint64_t levels,
-                             stats_type &stats) const {
-    if constexpr (Algorithm::stats_support)
-      return Algorithm::compute(global_text, size, levels, stats);
-    else
-      return Algorithm::compute(global_text, size, levels);
-  }
+
 
   bool is_parallel() const override {
     return Algorithm::is_parallel;
@@ -209,6 +247,10 @@ public:
 
   bool is_huffman_shaped() const override {
     return Algorithm::is_huffman_shaped;
+  }
+
+  bool is_inplace() const override {
+    return Algorithm::is_inplace;
   }
 
   inline uint64_t huffman_bit_size([[maybe_unused]] const in_type& global_text,

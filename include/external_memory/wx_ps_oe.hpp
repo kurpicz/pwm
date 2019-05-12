@@ -16,7 +16,7 @@
 #include "wx_base.hpp"
 
 template <typename AlphabetType, bool is_tree_, bool inplace_sort = false>
-class wx_ps_oe : public wx_in_out_external<false, true> {
+class wx_ps_oe : public wx_in_out_external<false, true, false, inplace_sort> {
 public:
   static constexpr bool is_parallel = false;
   static constexpr bool is_tree = is_tree_;

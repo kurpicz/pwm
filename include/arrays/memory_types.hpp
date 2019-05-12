@@ -25,12 +25,14 @@ struct output_type;
 
 template <int word_width>
 struct input_type<memory_mode::internal, word_width> {
-  using type = typename type_for_bytes<word_width>::type*;
+  using value_type = typename type_for_bytes<word_width>::type;
+  using type = value_type*;
 };
 
 template <int word_width>
 struct input_type<memory_mode::external, word_width> {
-  using type = stxxlvector<typename type_for_bytes<word_width>::type>;
+  using value_type = typename type_for_bytes<word_width>::type;
+  using type = stxxlvector<value_type>;
 };
 
 template <>
