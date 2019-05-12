@@ -19,7 +19,7 @@
 #include "wx_base.hpp"
 
 template <typename AlphabetType, bool is_tree_>
-class wx_ppc_ie : public wx_in_out_external<true, false> {
+class wx_ppc_ie : public wx_in_out_external<true, false, true> {
 
 public:
   static constexpr bool is_parallel = true;
@@ -27,9 +27,12 @@ public:
   static constexpr uint8_t word_width = sizeof(AlphabetType);
   static constexpr bool is_huffman_shaped = false;
 
-  template <typename InputType>
+  template <typename InputType, typename stats_type>
   static wavelet_structure
-  compute(const InputType& text, const uint64_t size, const uint64_t levels) {
+  compute(const InputType& text,
+          const uint64_t size,
+          const uint64_t levels,
+          stats_type &stats) {
 
     using ctx_t = ctx_generic<is_tree,
         ctx_options::borders::all_level,
@@ -48,13 +51,13 @@ public:
     const auto rho = rho_dispatch<is_tree>::create(levels);
     ctx_t ctx(size, levels, rho);
 
-    pc_in_external_parallel(text, size, levels, ctx);
+    pc_in_external_parallel(text, size, levels, ctx, stats);
 
 //    std::cout << "DONE DONE" << std::endl;
 
     if constexpr (ctx_t::compute_zeros) {
       return wavelet_structure_matrix(std::move(ctx.bv()),
-                                      std::move(ctx.zeros()));
+                                      std::move(ctx.take_zeros()));
     } else {
       return wavelet_structure_tree(std::move(ctx.bv()));
     }

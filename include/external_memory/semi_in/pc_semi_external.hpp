@@ -60,228 +60,156 @@ void pc_in_external(const InputType& text,
   }
 }
 
-template <typename InputType, typename ContextType>
-void pc_in_external_parallel(InputType& text_raw,
-                             const uint64_t size,
-                             const uint64_t levels,
-                             ContextType& ctx) {
 
-  using ctx_t = ContextType;
-  using char_t = typename InputType::value_type;
+template <typename InputType, typename ContextType,
+          uint64_t block_bytes = 32ULL * 1024 * 1024,
+          typename stats_type>
+void pc_in_external_parallel(const InputType& text,
+                    const uint64_t size,
+                    const uint64_t levels,
+                    ContextType& ctx,
+                    stats_type &stats) {
+
+  using value_type = typename InputType::value_type;
   using stxxl_vector_type = InputType;
   using stxxl_reader_type = typename stxxl_vector_type::bufreader_type;
-  using stxxl_const_iter_type = typename stxxl_vector_type::const_iterator;
 
-  constexpr static uint64_t block_bytes = 2ULL * 1024 *1024;
-  constexpr static uint64_t block_chars = block_bytes / sizeof(char_t);
-  constexpr static uint64_t page_blocks = 4ULL;
-  constexpr static uint64_t page_bytes = block_bytes * page_blocks;
-  constexpr static uint64_t page_chars = block_chars * page_blocks;
-
+  auto&& zeros = ctx.zeros();
   auto& bv = ctx.bv();
-  auto& zeros = ctx.zeros();
 
-  struct access_type {
-    const InputType& text_;
-    const uint64_t lbound_;
-    const uint64_t rbound_;
+  omp_lock_t mutex_read_text;
+  omp_lock_t mutex_write_hist;
+  omp_init_lock(&mutex_read_text);
+  omp_init_lock(&mutex_write_hist);
+  uint64_t threads;
+  #pragma omp parallel
+  threads = (uint64_t)omp_get_num_threads();
 
-    stxxl_const_iter_type it_;
-    char_t * page_data_;
-    uint64_t page_start_;
-    uint64_t page_current_;
 
-    access_type(const InputType& text,
-                const uint64_t lbound,
-                const uint64_t rbound)
-        : text_(text),
-          lbound_(lbound),
-          rbound_(rbound),
-          it_(text_.cbegin() + lbound),
-          page_start_(0),
-          page_current_(0) {
-      page_data_ = static_cast<char_t *>(malloc(page_bytes));
-      load_page();
-    }
+  const uint64_t total_chars =
+      std::max(threads << 1, block_bytes * threads / sizeof(value_type));
+  const uint64_t total_bytes = total_chars * sizeof(value_type);
 
-    access_type(const InputType& text) : access_type(text, 0, text.size()) {}
+  value_type * raw_buffer = (value_type *)malloc(total_bytes);
 
-    void operator >> (char_t& v) {
-      v = page_data_[page_current_++];
-      if(PWM_UNLIKELY(page_current_ == page_chars)) {
-        page_start_ += page_chars;
-        page_current_ = 0;
-        load_page();
-      }
-    }
+  const uint64_t small_size = total_chars / threads;
+  const uint64_t small_blocks = (size + small_size - 1) / small_size;
+  const uint64_t last_small_size = size - (small_blocks - 1) * small_size;
 
-    void load_page() {
-      const uint64_t count = std::min(rbound_ - page_start_, page_chars);
-      #pragma omp critical
-      {
-        for (uint64_t i = 0; i < count; ++i) {
-          page_data_[i] = *it_;
-          ++it_;
-        }
-      }
-    }
+  const uint64_t big_size = total_chars >> 1;
+  const uint64_t big_blocks = (size + big_size - 1) / big_size;
+  const uint64_t last_big_size = size - (big_blocks - 1) * big_size;
 
-    ~access_type() {
-      delete page_data_;
-    }
-  };
+  uint64_t next_block = 0;
+  stxxl_reader_type reader(text);
+  auto&& ll_hist = ctx.hist_at_level(levels);
+  const uint64_t ll_hist_size = 1ULL << levels;
 
-  std::vector<uint64_t> initial_hist((1ULL << levels) * levels, 0);
 
-  #pragma omp parallel num_threads(levels)
+//  std::cout << "Starting histogram phase.\n"
+//            << "T:  " << total_chars << " / " << total_bytes << "\n"
+//            << "B:  " << big_blocks << "\n"
+//            << "S:  " << big_size << "\n"
+//            << "LS: " << last_big_size << "\n"
+//            << "b:  " << small_blocks << "\n"
+//            << "s:  " << small_size << "\n"
+//            << "ls: " << last_small_size << std::endl;
+
+  stats.phase("scan1");
+
+  #pragma omp parallel
   {
-    const uint64_t omp_rank = uint64_t(omp_get_thread_num());
-    const uint64_t omp_size = uint64_t(omp_get_num_threads());
-    const uint64_t alphabet_size = (1 << levels);
-    const bool is_tail = (omp_rank + 1 == omp_size);
+    const uint64_t omp_rank = omp_get_thread_num();
 
-    auto *const initial_hist_ptr =
-        initial_hist.data() + (alphabet_size * omp_rank);
+    value_type * small_buffer = &(raw_buffer[omp_rank * small_size]);
 
+    while (true) {
+      omp_set_lock(&mutex_read_text);
+      if (next_block == small_blocks) {
+//        std::cout << "Thread " << omp_rank << " done." << std::endl;
+        omp_unset_lock(&mutex_read_text);
+        break;
+      }
+      ++next_block;
+      const uint64_t s =
+          (next_block == small_blocks) ? last_small_size : small_size;
 
-    const uint64_t slice_size = ((size / omp_size) >> 6) << 6;
-    const uint64_t lbound = omp_rank * slice_size;
-    const uint64_t rbound = is_tail ? (size - 63) : (lbound + slice_size);
+//      std::cout << "Thread " << omp_rank
+//                << ", read block " << next_block - 1
+//                << " (" << s << ")" << std::endl;
 
-    {
-      access_type slice_reader(text_raw, lbound, rbound);
-      char_t character;
-      for (uint64_t cur_pos = lbound; cur_pos < rbound; cur_pos += 64) {
-        uint64_t word = 0ULL;
-        for (uint64_t i = 0; i < 64; ++i) {
-          slice_reader >> character;
-          ++initial_hist_ptr[character];
-          word <<= 1;
-          word |= ((character >> (levels - 1)) & 1ULL);
-        }
-        bv[0][cur_pos >> 6] = word;
+      for (uint64_t i = 0; i < s; ++i) {
+        reader >> small_buffer[i];
       }
 
-      if ((size & 63ULL) && is_tail) {
-        uint64_t word = 0ULL;
-        for (uint64_t i = 0; i < (size & 63ULL); ++i) {
-          slice_reader >> character;
-          ++initial_hist_ptr[character];
-          word <<= 1;
-          word |= ((character >> (levels - 1)) & 1ULL);
-        }
-        word <<= (64 - (size & 63ULL));
-        bv[0][size >> 6] = word;
-      }
-    }
+//      std::cout << "Thread " << omp_rank
+//                << ", done read block " << next_block << std::endl;
+      omp_unset_lock(&mutex_read_text);
 
-    #pragma omp barrier
-
-    // Compute the historam with respect to the local slices of the text
-    #pragma omp for
-    for (uint64_t i = 0; i < alphabet_size; ++i) {
-      for (uint64_t rank = 0; rank < omp_size; ++rank) {
-        ctx.hist(levels, i) +=
-            *(initial_hist.data() + (alphabet_size * rank) + i);
+      std::vector<uint64_t> local_ll_hist(ll_hist_size, 0);
+      for (uint64_t i = 0; i < s; ++i) {
+        ++local_ll_hist[small_buffer[i]];
       }
-    }
 
-    #pragma omp single
-    {
-      if constexpr (ctx_t::compute_zeros) {
-        // The number of 0s at the last level is the number of "even"
-        // characters
-        for (uint64_t i = 0; i < alphabet_size; i += 2) {
-          zeros[levels - 1] += ctx.hist(levels, i);
-        }
+      omp_set_lock(&mutex_write_hist);
+      for (uint64_t i = 0; i < ll_hist_size; ++i) {
+        ll_hist[i] += + local_ll_hist[i];
       }
-    }
-
-    // Compute the histogram for each level of the wavelet structure
-    #pragma omp for
-    for (uint64_t level = 1; level < levels; ++level) {
-      const uint64_t local_alphabet_size = (1 << level);
-      const uint64_t requierd_characters = (1 << (levels - level));
-      for (uint64_t i = 0; i < local_alphabet_size; ++i) {
-        for (uint64_t j = 0; j < requierd_characters; ++j) {
-          ctx.hist(level, i) +=
-              ctx.hist(levels, (i * requierd_characters) + j);
-        }
-      }
+      omp_unset_lock(&mutex_write_hist);
     }
   }
 
-
-  char_t * page_load = static_cast<char_t *>(malloc(page_bytes));
-  char_t * page_use = static_cast<char_t *>(malloc(page_bytes));
-  uint64_t page_offset = 0;
-  uint64_t page_size = 0;
-  const uint64_t page_count = (text_raw.size() + page_chars - 1) / page_chars;
-
-  stxxl_reader_type reader(text_raw);
-
-  std::vector<uint64_t> prefix_shift(levels);
-  std::vector<uint64_t> cur_bit_shift(levels);
-  std::vector<std::vector<uint64_t>> borders(levels);
-
-    // Now we compute the wavelet structure bottom-up, i.e., the last level
-    // first
-  #pragma omp parallel num_threads(levels)
-  {
-    const uint64_t level = uint64_t(omp_get_thread_num());
-    const uint64_t local_alphabet_size = (1 << level);
-    prefix_shift[level] = (levels - level);
-    cur_bit_shift[level] = prefix_shift[level] - 1;
-    borders[level].resize(local_alphabet_size);
-
-    if (level == 0) {
-      page_size = std::min(uint64_t(text_raw.size()) - page_offset, page_chars);
-      page_offset += page_size;
-      for (uint64_t i = 0; i < page_size; ++i) reader >> page_use[i];
-    }
-    else {
-      borders[level][0] = 0;
-      for (uint64_t i = 1; i < local_alphabet_size; ++i) {
-        const auto prev_rho = ctx.rho(level, i - 1);
-        borders[level][ctx.rho(level, i)] =
-            borders[level][prev_rho] + ctx.hist(level, prev_rho);
-      }
-      // The number of 0s is the position of the first 1 in the previous level
-      if constexpr (ctx_t::compute_zeros) {
-        zeros[level - 1] = borders[level][1];
-      }
-    }
+  if constexpr (ContextType::compute_zeros) {
+    compute_last_level_zeros(levels, zeros, ll_hist);
   }
 
-  for (uint64_t page = 0; page < page_count; ++page) {
-    const uint64_t next_page_size = std::min(uint64_t(text_raw.size()) - page_offset, page_chars);
+  // Now we compute the WM bottom-up, i.e., the last level first
+  bottom_up_compute_hist_borders_optional_zeros_rho(size, levels, ctx);
 
-    #pragma omp parallel num_threads(levels)
-    {
-      const uint64_t level = uint64_t(omp_get_thread_num());
+//  std::cout << "Histogram phase complete." << std::endl;
 
-      if (level == 0) {
-        for (uint64_t i = 0; i < next_page_size; ++i) reader >> page_load[i];
+  value_type * big_buffer1 = raw_buffer;
+  value_type * big_buffer2 = &(raw_buffer[big_size]);
+
+  stats.phase("scan2");
+
+  reader.rewind();
+  uint64_t s = (big_blocks == 1) ? last_big_size : big_size;
+  for (uint64_t i = 0; i < s; ++i) {
+    reader >> big_buffer2[i];
+  }
+
+  for (uint64_t b = 0; b < big_blocks; ++b) {
+    std::swap(big_buffer1, big_buffer2);
+    const uint64_t next_s =
+        ((b + 1 == big_blocks) ? 0 :
+         (b + 2 == big_blocks) ? last_big_size : big_size);
+
+    #pragma omp parallel for schedule(nonmonotonic : dynamic, 1)
+    for (uint64_t l = 0; l <= levels; ++l) {
+      if (PWM_UNLIKELY(l == 0)) {
+        for (uint64_t i = 0; i < next_s; ++i) {
+          reader >> big_buffer2[i];
+        }
       }
       else {
-        const uint64_t prefix_shiftl = prefix_shift[level];
-        const uint64_t cur_bit_shiftl = cur_bit_shift[level];
-        std::vector<uint64_t> &bordersl = borders[level];
-        for (uint64_t i = 0; i < page_size; ++i) {
-          const uint64_t pos = bordersl[page_use[i] >> prefix_shiftl]++;
-          bv[level][pos >> 6] |=
-              (((page_use[i] >> cur_bit_shiftl) & 1ULL) << (63ULL - (pos & 63ULL)));
+        const uint64_t level = l - 1;
+        auto&& borders = ctx.borders_at_level(level);
+        const uint64_t prefix_shift = (levels - level);
+        const uint64_t cur_bit_shift = prefix_shift - 1;
+        auto lbv = bv[level];
+
+        for (uint64_t i = 0; i < s; ++i) {
+          const auto cur_char = big_buffer1[i];
+          const uint64_t pos = borders[cur_char >> prefix_shift]++;
+          lbv[pos >> 6] |=
+              (((cur_char >> cur_bit_shift) & 1ULL) << (63ULL - (pos & 63ULL)));
         }
       }
     }
-
-    page_size = next_page_size;
-    page_offset += next_page_size;
-    std::swap(page_load, page_use);
+    s = next_s;
   }
-
-  delete page_load;
-  delete page_use;
+  delete raw_buffer;
 }
 
 /******************************************************************************/
