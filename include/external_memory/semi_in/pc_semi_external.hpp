@@ -11,6 +11,7 @@
 #include <omp.h>
 #include <cmath>
 #include "construction/building_blocks.hpp"
+#include "util/cacheline.hpp"
 
 template <typename InputType, typename ContextType>
 void pc_in_external(const InputType& text,
@@ -171,6 +172,20 @@ void pc_in_external_parallel(const InputType& text,
   value_type * big_buffer1 = raw_buffer;
   value_type * big_buffer2 = &(raw_buffer[big_size]);
 
+  // make sure that the borders of different levels
+  // are in different cache lines at all times
+  const uint64_t cache_line_bytes = get_cache_line_size();
+  const uint64_t cache_line_words = (cache_line_bytes + 7) / 8;
+  std::vector<std::vector<uint64_t>> all_borders(levels);
+  for (uint64_t l = 0; l < levels; ++l) {
+    const uint64_t size = 1ULL << l;
+    all_borders[l].resize(size + cache_line_words, 0ULL);
+    auto &&borders = ctx.borders_at_level(l);
+    for (uint64_t i = 0; i < size; ++i) {
+      all_borders[l][i] = borders[i];
+    }
+  }
+
   stats.phase("scan2");
 
   reader.rewind();
@@ -182,8 +197,8 @@ void pc_in_external_parallel(const InputType& text,
   for (uint64_t b = 0; b < big_blocks; ++b) {
     std::swap(big_buffer1, big_buffer2);
     const uint64_t next_s =
-        ((b + 1 == big_blocks) ? 0 :
-         (b + 2 == big_blocks) ? last_big_size : big_size);
+        ((b + 2 < big_blocks) ? big_size :
+        ((b + 1 < big_blocks) ? last_big_size : 0));
 
     #pragma omp parallel for schedule(nonmonotonic : dynamic, 1)
     for (uint64_t l = 0; l <= levels; ++l) {
@@ -194,7 +209,7 @@ void pc_in_external_parallel(const InputType& text,
       }
       else {
         const uint64_t level = l - 1;
-        auto&& borders = ctx.borders_at_level(level);
+        auto& borders = all_borders[level];
         const uint64_t prefix_shift = (levels - level);
         const uint64_t cur_bit_shift = prefix_shift - 1;
         auto lbv = bv[level];
