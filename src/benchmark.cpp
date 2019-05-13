@@ -54,6 +54,8 @@ struct filter_by_property {
 struct {
   std::vector<std::string> file_paths;
   std::string filter_name = "";
+  std::string filter_name_contains = "";
+  std::string filter_name_not_contains = "";
   unsigned int word_width = 1;
   unsigned int nr_runs = 5;
   uint64_t prefix_size = 0;
@@ -80,6 +82,15 @@ struct {
   bool debug_print = false;
 
   int32_t number_threads;
+
+  bool name_filter (const std::string& name) const {
+    return ((filter_name == "") ||
+            (name.compare(filter_name) == 0)) &&
+        ((filter_name_contains == "") ||
+            (name.find(filter_name_contains) != std::string::npos)) &&
+        ((filter_name_not_contains == "") ||
+            (name.find(filter_name_not_contains) == std::string::npos));
+  }
 
 } global_settings;
 
@@ -144,8 +155,7 @@ struct {
       #endif // MALLOC_COUNT
 
       for (const auto& a : algo_list) {
-        GUARD_LOOP(global_settings.filter_name == "" ||
-                   (a->name().compare(global_settings.filter_name) == 0));
+        GUARD_LOOP(global_settings.name_filter(a->name()));
         GUARD_LOOP(global_settings.parallel_filter.should_keep(a->is_parallel()));
         GUARD_LOOP(global_settings.huffman_filter.should_keep(a->is_huffman_shaped()));
         GUARD_LOOP(global_settings.matrix_filter.should_keep(!a->is_tree()));
@@ -398,7 +408,11 @@ int32_t main(int32_t argc, char const* argv[]) {
   cp.add_stringlist('f', "file", global_settings.file_paths,
                     "Path(s) to the text file(s).");
   cp.add_string('n', "name", global_settings.filter_name,
+                "Runs the named algorithm.");
+  cp.add_string('\0', "contains", global_settings.filter_name_contains,
                 "Runs all algorithms that contain the <name> in their name");
+  cp.add_string('\0', "not_contains", global_settings.filter_name_not_contains,
+                "Runs all algorithms that do not contain the <name> in their name");
   cp.add_uint('b', "byte", global_settings.word_width,
               "Bytes per char in the input text.");
   cp.add_uint('r', "runs", global_settings.nr_runs,
