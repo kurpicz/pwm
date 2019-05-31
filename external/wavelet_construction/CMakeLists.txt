@@ -9,9 +9,6 @@
 add_subdirectory(sdslWT)
 add_subdirectory(serialWT)
 
-# TODO: Detect automatically
-option(PWM_ENABLE_CILK_ALGORITHM "Enable algorithms using cilk." ON)
-
 if (PWM_ENABLE_CILK_ALGORITHM)
     add_subdirectory(ddWT)
     add_subdirectory(levelWT)

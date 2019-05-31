@@ -40,11 +40,6 @@ matrix:
         - CC=gcc-7
         - BUILDMODE=Release
 
-before_install:
-  - git clone https://github.com/simongog/sdsl-lite.git
-  - cd sdsl-lite
-  - ./install.sh
-  - cd ..
 script:
   - mkdir build
   - cd build

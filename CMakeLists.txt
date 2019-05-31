@@ -15,6 +15,16 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 project (pwm)
 
+# Options
+option(PWM_BUILD_COMPETITORS
+  "Build other published WT/WM construction algorithms for benchmarks" ON)
+option(PWM_ENABLE_CILK_ALGORITHM
+  "Enable algorithms using cilk. Onlu if PWM_BUILD_COMPETITORS is ON.\
+   Requires gcc version < 8.0.0" ON)
+option(PWM_BUILD_SDSL_WT
+  "Build the WT construction algorithm depending of the SDSL \
+   (requires the SDSL to be installed). Only if PWM_BUILD_COMPETITORS is ON" OFF)
+
 include(ExternalProject)
 include(find_or_download_package)
 
@@ -81,8 +91,10 @@ add_subdirectory(test)
 # Add benchmarks and utility programs
 add_subdirectory(src)
 
-# Add competitors
-add_subdirectory(external/wavelet_construction)
+if (PWM_BUILD_COMPETITORS)
+  # Add competitors
+  add_subdirectory(external/wavelet_construction)
+endif()
 
 find_or_download_package(STXXL STXXL stxxl)
 
