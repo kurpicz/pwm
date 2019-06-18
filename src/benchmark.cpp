@@ -116,7 +116,7 @@ struct {
     }
 
     for (const auto& path : global_settings.file_paths) {
-      std::cout << std::endl << "Text: " << path << std::endl;
+      //std::cout << std::endl << "Text: " << path << std::endl;
       #ifdef MALLOC_COUNT
       malloc_count_reset_peak();
       uint64_t malloc_count_base = malloc_count_peak();
@@ -146,12 +146,12 @@ struct {
       }
 
 
-      std::cout << "Characters: " << text_size << std::endl;
+      // std::cout << "Characters: " << text_size << std::endl;
       #ifdef MALLOC_COUNT
       malloc_count_reset_peak();
       uint64_t malloc_count_text = malloc_count_peak() - malloc_count_base;
-      std::cout << "Memory peak text: " << malloc_count_text << " B, "
-                << malloc_count_text / (1024 * 1024) << " MiB" << std::endl;
+      //std::cout << "Memory peak text: " << malloc_count_text << " B, "
+      //          << malloc_count_text / (1024 * 1024) << " MiB" << std::endl;
       #endif // MALLOC_COUNT
 
       for (const auto& a : algo_list) {
@@ -178,9 +178,11 @@ struct {
         std::cout << "input=" << path << ' '
                   << "characters=" << text_size << ' '
                   << "sigma=" << max_char + 1 << ' '
-                  << "word_width=" << global_settings.word_width << ' '
-                  << "bit_size=" << bit_size << ' '
-                  << "threads=" << (a->is_parallel() ? global_settings.number_threads : 1)
+                  << "word_width=" << global_settings.word_width << ' ';
+        if(a->is_huffman_shaped()) {
+          std::cout << "bit_size=" << bit_size << ' ';
+        }
+        std::cout << "threads=" << (a->is_parallel() ? global_settings.number_threads : 1)
                   << std::endl;
 
 
@@ -480,7 +482,7 @@ int32_t main(int32_t argc, char const* argv[]) {
 
   const uint64_t total_mem_mib = total_mem / (1024ULL * 1024);
   const uint64_t avail_mem_mib = avail_mem / (1024ULL * 1024);;
-
+  /*
   if (total_mem == 0) {
     std::cerr << "Total system memory:     "
               << " Could not read /proc/meminfo.";
@@ -500,7 +502,7 @@ int32_t main(int32_t argc, char const* argv[]) {
   std::cout << "Available threads:       "
             << global_settings.number_threads << std::endl;
   std::cout << std::endl;
-
+  */
   if (global_settings.external || global_settings.diskbench) {
     if (global_settings.memory == 0) {
       std::cout << "No maximum internal memory usage "
