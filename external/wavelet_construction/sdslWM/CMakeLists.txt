@@ -1,24 +1,24 @@
 ################################################################################
-# external/wavelet_construction/CMakeLists.txt
+# external/wavelet_construction/sdslWT/CMakeLists.txt
 #
 # Copyright (C) 2018 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
 #
 # All rights reserved. Published under the BSD-2 license in the LICENSE file.
 ################################################################################
 
-add_subdirectory(serialWT)
+find_package(SDSL REQUIRED)
 
-if (PWM_BUILD_SDSL_WX)
-  add_subdirectory(sdslWM)
-  add_subdirectory(sdslWT)
-endif()
+add_executable(sdslWM
+  WT.cpp
+  WTTime.cpp)
 
-if (PWM_ENABLE_CILK_ALGORITHM)
-  add_subdirectory(ddWT)
-  add_subdirectory(levelWT)
-  add_subdirectory(recWT)
-  add_subdirectory(sortWTOpt)
-endif()
+target_link_libraries(sdslWM tlx_command_line ${SDSL})
+
+target_include_directories(sdslWM PUBLIC
+  ${SDSL_INCLUDE_DIRS}
+  $<BUILD_INTERFACE:${CURRENT_SOURCE_DIR}>
+  $<INSTALL_INTERFACE:${CURRENT_SOURCE_DIR}>
+  )
 
 ################################################################################
 

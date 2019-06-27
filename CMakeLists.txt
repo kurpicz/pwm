@@ -21,7 +21,7 @@ option(PWM_BUILD_COMPETITORS
 option(PWM_ENABLE_CILK_ALGORITHM
   "Enable algorithms using cilk. Onlu if PWM_BUILD_COMPETITORS is ON.\
    Requires gcc version < 8.0.0" ON)
-option(PWM_BUILD_SDSL_WT
+option(PWM_BUILD_SDSL_WX
   "Build the WT construction algorithm depending of the SDSL \
    (requires the SDSL to be installed). Only if PWM_BUILD_COMPETITORS is ON" OFF)
 

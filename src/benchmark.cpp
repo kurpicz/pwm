@@ -477,33 +477,32 @@ int32_t main(int32_t argc, char const* argv[]) {
     global_settings.external = true;
   }
 
-  const uint64_t total_mem = 1024ULL * get_mem_total();
-  const uint64_t avail_mem = 1024ULL * get_mem_available();
-
-  const uint64_t total_mem_mib = total_mem / (1024ULL * 1024);
-  const uint64_t avail_mem_mib = avail_mem / (1024ULL * 1024);;
-  /*
-  if (total_mem == 0) {
-    std::cerr << "Total system memory:     "
-              << " Could not read /proc/meminfo.";
-  } else {
-    std::cout << "Total system memory:     "
-              << total_mem_mib << "MiB" << std::endl;
-  }
-
-  if (avail_mem == 0) {
-    std::cerr << "Available system memory: "
-              << " Could not read /proc/meminfo.";
-  } else {
-    std::cout << "Available system memory: "
-              << avail_mem_mib << "MiB" << std::endl;
-  }
-
-  std::cout << "Available threads:       "
-            << global_settings.number_threads << std::endl;
-  std::cout << std::endl;
-  */
   if (global_settings.external || global_settings.diskbench) {
+    const uint64_t total_mem = 1024ULL * get_mem_total();
+    const uint64_t avail_mem = 1024ULL * get_mem_available();
+
+    const uint64_t total_mem_mib = total_mem / (1024ULL * 1024);
+    const uint64_t avail_mem_mib = avail_mem / (1024ULL * 1024);;
+
+    if (total_mem == 0) {
+      std::cerr << "Total system memory:     "
+                << " Could not read /proc/meminfo.";
+    } else {
+      std::cout << "Total system memory:     "
+                << total_mem_mib << "MiB" << std::endl;
+    }
+
+    if (avail_mem == 0) {
+      std::cerr << "Available system memory: "
+                << " Could not read /proc/meminfo.";
+    } else {
+      std::cout << "Available system memory: "
+                << avail_mem_mib << "MiB" << std::endl;
+    }
+
+    std::cout << "Available threads:       "
+              << global_settings.number_threads << std::endl;
+    std::cout << std::endl;
     if (global_settings.memory == 0) {
       std::cout << "No maximum internal memory usage "
                 << "specified (argument --memory)." << std::endl;
