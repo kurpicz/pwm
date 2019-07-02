@@ -21,6 +21,7 @@
 #include "util/debug_assert.hpp"
 
 #include "wx_base.hpp"
+#include "wx_ps.hpp"
 
 template <typename AlphabetType, bool is_tree_>
 class wx_dd_ps : public wx_in_out_external<false, false>  {
@@ -52,6 +53,13 @@ public:
     }
 
     const uint64_t shards = omp_get_max_threads();
+
+    if (shards == 0) {
+      return wx_ps<AlphabetType, is_tree>::
+        template compute<InputType>(global_text,
+                                    size,
+                                    levels);
+    }
 
     const auto rho = rho_dispatch<is_tree>::create(levels);
     auto ctxs = std::vector<ctx_t>(shards);
