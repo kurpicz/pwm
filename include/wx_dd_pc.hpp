@@ -43,8 +43,6 @@ public:
   static wavelet_structure compute(const InputType& global_text,
                                    const uint64_t size,
                                    const uint64_t levels) {
-
-    auto begin_time = std::chrono::high_resolution_clock::now();
     if (size == 0) {
       if constexpr (ctx_t::compute_zeros) {
         return wavelet_structure_matrix();
@@ -52,23 +50,16 @@ public:
         return wavelet_structure_tree();
       }
     }
-    auto end_time = std::chrono::high_resolution_clock::now();
-    auto duration = end_time - begin_time;
-    auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
-    // std::cout << "time_init_wt=" << static_cast<float>(millis.count()) << " ";
 
     const uint64_t shards = omp_get_max_threads();
 
-    if (shards == 0) {
-      return wx_pc<AlphabetType, is_tree>::
+    if (shards <= 1) {
+      return wx_pc<AlphabetType, is_tree_>::
         template compute<InputType>(global_text,
                                     size,
                                     levels);
     }
 
-    //std::cout << "shards=" << shards << " ";
-
-    begin_time = std::chrono::high_resolution_clock::now();
     const auto rho = rho_dispatch<is_tree>::create(levels);
     auto ctxs = std::vector<ctx_t>(shards);
 
@@ -80,12 +71,6 @@ public:
       ctxs[shard] = ctx_t(local_size, levels, rho);
     }
 
-    end_time = std::chrono::high_resolution_clock::now();
-    duration = end_time - begin_time;
-    millis = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
-    //std::cout << "time_context=" << static_cast<float>(millis.count()) << " ";
-
-    begin_time = std::chrono::high_resolution_clock::now();
     #pragma omp parallel
     {
       const uint64_t omp_rank = omp_get_thread_num();
@@ -102,11 +87,6 @@ public:
       pc(text, local_size, levels, ctxs[omp_rank]);
     }
 
-    end_time = std::chrono::high_resolution_clock::now();
-    duration = end_time - begin_time;
-    millis = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
-    //std::cout << "time_partial=" << static_cast<float>(millis.count()) << " ";
-
     // we discard all ctx data once we no longer need it:
     // - merge needs ctxs[i].hist and ctxs[i].bv
     // - zeros needs ctxs[i].zeros
@@ -120,12 +100,7 @@ public:
       // ctx.discard_zeros();
     }
 
-    begin_time = std::chrono::high_resolution_clock::now();
     auto _bv = merge_bit_vectors(size, levels, shards, ctxs, rho);
-    end_time = std::chrono::high_resolution_clock::now();
-    duration = end_time - begin_time;
-    millis = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
-    //std::cout << "time_merge=" << static_cast<float>(millis.count()) << " ";
 
     if constexpr (ctx_t::compute_zeros) {
       auto _zeros = std::vector<uint64_t>(levels, 0);

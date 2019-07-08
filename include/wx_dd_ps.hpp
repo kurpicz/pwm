@@ -54,7 +54,7 @@ public:
 
     const uint64_t shards = omp_get_max_threads();
 
-    if (shards == 0) {
+    if (shards <= 1) {
       return wx_ps<AlphabetType, is_tree>::
         template compute<InputType>(global_text,
                                     size,
