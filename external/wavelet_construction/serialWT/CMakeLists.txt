@@ -1,5 +1,5 @@
 ################################################################################
-# external/wavelet_shun/serialWT/CMakeLists.txt
+# external/wavelet_construction/serialWT/CMakeLists.txt
 #
 # Copyright (C) 2018 Florian Kurpicz <florian.kurpicz@tu-dortmund.de>
 #
