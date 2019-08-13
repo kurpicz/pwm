@@ -1,4 +1,3 @@
-
 ################################################################################
 # external/wavelet_construction/parWT/CMakeLists.txt
 #
