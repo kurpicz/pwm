@@ -13,6 +13,8 @@
 #include "huffman/huff_ps.hpp"
 #include "arrays/span.hpp"
 
+#include "wx_huff_ps.hpp"
+
 struct huff_ps_disp {
   static constexpr bool needs_all_borders = false;
 
@@ -28,6 +30,6 @@ struct huff_ps_disp {
 };
 
 template <typename AlphabetType, bool is_tree_>
-using wx_huff_dd_ps = huff_dd<huff_ps_disp, AlphabetType, is_tree_>;
+using wx_huff_dd_ps = huff_dd<huff_ps_disp, wx_huff_ps, AlphabetType, is_tree_>;
 
 /******************************************************************************/

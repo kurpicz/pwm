@@ -12,6 +12,8 @@
 #include "huffman/huff_dd.hpp"
 #include "huffman/huff_pc_ss.hpp"
 
+#include "wx_huff_pc_ss.hpp"
+
 struct huff_pc_ss_disp {
   static constexpr bool needs_all_borders = true;
 
@@ -27,6 +29,9 @@ struct huff_pc_ss_disp {
 };
 
 template <typename AlphabetType, bool is_tree_>
-using wx_huff_dd_pc_ss = huff_dd<huff_pc_ss_disp, AlphabetType, is_tree_>;
+using wx_huff_dd_pc_ss = huff_dd<huff_pc_ss_disp,
+                                 wx_huff_pc_ss,
+                                 AlphabetType,
+                                 is_tree_>;
 
 /******************************************************************************/
