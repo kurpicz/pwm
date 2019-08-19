@@ -6,6 +6,16 @@
 # All rights reserved. Published under the BSD-2 license in the LICENSE file.
 ################################################################################
 
+set(DDFSWT_SRCS
+  bitrank/basic.c
+  bitrank/bit_array.c
+  bitrank/bitrankw32int.c
+  dd.c
+  util.c
+)
+
+set_source_files_properties(${DDFSWT_SRCS} PROPERTIES LANGUAGE CXX)
+
 add_executable(ddfsWT
   bitrank/basic.c
   bitrank/bit_array.c

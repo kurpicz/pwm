@@ -45,6 +45,8 @@
 #include "basic_wt.h"
 #include "util.h"
 
+#include <tlx/cmdline_parser.hpp>
+
 #ifdef MALLOC_COUNT
 #include "benchmark/malloc_count.h"
 #endif
