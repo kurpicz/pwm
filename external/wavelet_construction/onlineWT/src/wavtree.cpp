@@ -234,7 +234,7 @@ static void tmp_wavtree_fill( tmp_wavtree *tmp_wt, strstream *sst,
         for (int c; (c=strstream_getc(sst))!=EOF;) {
             if (bitvector_cap(tmp_wt->tmp_root->bv) != old_cap) {
                 old_cap = bitvector_cap(tmp_wt->tmp_root->bv);
-                bitvec_print_cap(tmp_wt->tmp_root->bv);
+                //bitvec_print_cap(tmp_wt->tmp_root->bv);
             }
             if ((chcode=tmp_wt->chcode_table[c]) != NULL_CODE) {
                 tmp_wavtree_app_char(tmp_wt->tmp_root, chcode);

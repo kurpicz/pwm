@@ -27,11 +27,11 @@ set(ONLINE_WT_SRCS
 )
 
 add_executable(onlineWT
-  fs2.cpp
+  onlineWT.cpp
   ${ONLINE_WT_SRCS}
 )
 
-target_link_libraries(onlineWT tlx_command_line dl)
+target_link_libraries(onlineWT tlx_command_line dl "stdc++fs" "c++experimental")
 
 if(ENABLE_MALLOC_COUNT)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ansi")
@@ -49,11 +49,11 @@ target_include_directories(onlineWT PUBLIC
 )
 
 add_executable(offlineWT
-  fs1.cpp
+  offlineWT.cpp
   ${ONLINE_WT_SRCS}
 )
 
-target_link_libraries(offlineWT tlx_command_line dl)
+target_link_libraries(offlineWT tlx_command_line dl "stdc++fs" "c++experimental")
 
 if(ENABLE_MALLOC_COUNT)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ansi")
