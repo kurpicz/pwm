@@ -1,9 +1,9 @@
-# Parallel Wavelet Tree and Wavelet Matrix Construction [![Build Status](https://travis-ci.org/kurpicz/pwm.svg?branch=master)](https://travis-ci.org/kurpicz/pwm)
+# Parallel (Shared Memory and External Memory) Wavelet Tree and Wavelet Matrix Construction [![Build Status](https://travis-ci.org/kurpicz/pwm.svg?branch=master)](https://travis-ci.org/kurpicz/pwm)
 
 The wavelet tree and wavelet matrix are compact full text indices that can answer *access*, *rank*, and *select* queries (among others) for a text in time logarithmic in the size of the alphabet.
 This project contains multiple wavelet tree and wavelet matrix construction algorithms, all implemented in C++.
 
-## Sequential and Parallel Algorithms
+## Sequential and Parallel Shared Memory Algorithms
 We implemented different simple but very fast sequential and parallel wavelet tree (WT) and wavelet matrix (WM) construction algorithms.
 The are based on two ideas, namely *prefix counting* (*pc*) and *prefix sorting* (*ps*).
 
@@ -27,7 +27,7 @@ A detailed description and benchmarks of the implemented algorithms can be found
       year      = {2018}
     }
 
-## (Semi-)External Memory Algorithms
+## Sequential and Parallel (Semi-)External Memory Algorithms
 We also implemented (semi-)external memory WT and wavelet WM algorithms.
 In the semi-external memory model, we keep all data that requires random access in main memory, whereas all other properties/limitations of the [external memory mode](https://en.wikipedia.org/wiki/External_memory_algorithm) are still effective.
 
