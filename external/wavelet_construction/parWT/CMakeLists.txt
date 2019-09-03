@@ -10,10 +10,10 @@ add_executable(parWT
   bitrank/basic.c
   bitrank/bit_array.c
   bitrank/bitrankw32int.c
-  pwt.c
-  util.c)
+  util.c
+    pwt.c)
 
-target_link_libraries(parWT tlx_command_line cilkrts dl)
+target_link_libraries(parWT "-std=gnu89 -lrt -fcilkplus -lcilkrts -lm" dl)
 
 if(ENABLE_MALLOC_COUNT)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ansi")
