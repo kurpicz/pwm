@@ -53,17 +53,17 @@
 int WORD_SIZE = sizeof(word_t) * 8;
 
 /* Index of word*/
-__inline__ word_addr_t bindex(bit_index_t b) {
+__attribute__((always_inline)) word_addr_t bindex(bit_index_t b) {
   return b / WORD_SIZE;
 }
 
 /* Offset within a word (values up to 64 most likely)*/
-__inline__ unsigned int boffset(bit_index_t b) {
+__attribute__((always_inline)) unsigned int boffset(bit_index_t b) {
   return b % WORD_SIZE;
 }
 
 /* Number of words required to store so many bits*/
-__inline__ word_addr_t nwords(bit_index_t b) {
+__attribute__((always_inline)) word_addr_t nwords(bit_index_t b) {
   return (b + WORD_SIZE - 1) / WORD_SIZE;
 }
 
@@ -390,7 +390,7 @@ void bit_array_not(BIT_ARRAY* dest, BIT_ARRAY* src) {
 }
 
 
-__inline__ word_t get_word(BIT_ARRAY* bitarr, word_addr_t word_index,
+__attribute__((always_inline)) word_t get_word(BIT_ARRAY* bitarr, word_addr_t word_index,
                        word_addr_t nwords) {
   if(word_index >= nwords) {
     return 0;

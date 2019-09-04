@@ -52,6 +52,18 @@ struct BIT_ARRAY {
 };
 
 
+/* sizeof gives size in bytes (8 bits per byte)*/
+extern int WORD_SIZE;
+
+/* Index of word*/
+word_addr_t bindex(bit_index_t b);
+
+/* Offset within a word (values up to 64 most likely)*/
+unsigned int boffset(bit_index_t b);
+
+/* Number of words required to store so many bits*/
+word_addr_t nwords(bit_index_t b);
+
 typedef struct BIT_ARRAY BIT_ARRAY;
 
 /* Constructor - create a new bit array of length nbits*/
