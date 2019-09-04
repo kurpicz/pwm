@@ -45,7 +45,7 @@
 #include "basic_wt.h"
 #include "util.h"
 
-#ifdef MALLOC_COUNT
+#ifdef ENABLE_MALLOC_COUNT
 #include "benchmark/malloc_count.h"
 #endif
 
@@ -345,10 +345,10 @@ int main(int argc, char* argv[]) {
 /*  printf("%s,%lu,%u,", argv[1], n, alphabet);*/
 
   /* Memory usage*/
-#ifdef ENABLE_MALLOC_COUNT
-  /* size_t s_total_memory = malloc_count_total(); */
-  /* size_t s_current_memory = malloc_count_current(); */
-  /* malloc_reset_peak(); */
+#ifdef ENABLE_ENABLE_MALLOC_COUNT
+  size_t s_total_memory = malloc_count_total();
+  size_t s_current_memory = malloc_count_current();
+  malloc_reset_peak();
 
   /* Running time. CLOCK_THREAD_CPUTIME_ID: Running time of the thread that call it (main thread in this case)*/
 #else
@@ -364,9 +364,9 @@ int main(int argc, char* argv[]) {
   BIT_ARRAY** wtree = wt_create(text, n, alphabet);
 
 #ifdef ENABLE_MALLOC_COUNT
-  /* size_t e_total_memory = malloc_count_total(); */
-  /* size_t e_current_memory = malloc_count_current(); */
-  /* printf("%s, %u, %zu, %zu, %zu, %zu, %zu\n", argv[1], alphabet, s_total_memory, e_total_memory, malloc_count_peak(), s_current_memory, e_current_memory); */
+  size_t e_total_memory = malloc_count_total();
+  size_t e_current_memory = malloc_count_current();
+  printf("%s, %u, %zu, %zu, %zu, %zu, %zu\n", argv[1], alphabet, s_total_memory, e_total_memory, malloc_count_peak(), s_current_memory, e_current_memory);
 
 #else
   if (clock_gettime(CLOCK_THREAD_CPUTIME_ID, &etime)) {
@@ -376,7 +376,7 @@ int main(int argc, char* argv[]) {
 
   t = (etime.tv_sec - stime.tv_sec) + (etime.tv_nsec - stime.tv_nsec) / 1000000000.0;
   printf("%d,%s,%lu,%lf\n", __cilkrts_get_nworkers(), argv[1], n, t);
-/*  printf("%d,%s,%lu\n", __cilkrts_get_nworkers(), argv[1], n); // Merge*/
+ printf("%d,%s,%lu\n", __cilkrts_get_nworkers(), argv[1], n); /* Merge */
 #endif
 
   free(text);
