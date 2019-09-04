@@ -31,7 +31,7 @@ add_executable(onlineWT
   ${ONLINE_WT_SRCS}
 )
 
-target_link_libraries(onlineWT tlx_command_line dl "stdc++fs" "c++experimental")
+target_link_libraries(onlineWT tlx_command_line dl "stdc++fs") 
 
 if(ENABLE_MALLOC_COUNT)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ansi")
@@ -53,7 +53,7 @@ add_executable(offlineWT
   ${ONLINE_WT_SRCS}
 )
 
-target_link_libraries(offlineWT tlx_command_line dl "stdc++fs" "c++experimental")
+target_link_libraries(offlineWT tlx_command_line dl "stdc++fs")
 
 if(ENABLE_MALLOC_COUNT)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ansi")

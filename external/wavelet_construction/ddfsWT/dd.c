@@ -29,7 +29,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include <time.h>
+#include <sys/time.h>
 
 #ifdef NO_CILK
 #define __cilkrts_get_nworkers() 1
@@ -354,10 +354,10 @@ int main(int argc, char* argv[]) {
 #else
   struct timespec stime, etime;
   double t;
-  if (clock_gettime(CLOCK_THREAD_CPUTIME_ID, &stime)) {
+  /*if (clock_gettime(CLOCK_THREAD_CPUTIME_ID, &stime)) {
     fprintf(stderr, "clock_gettime failed");
     exit(-1);
-  }
+  }*/
 #endif
 
   /* Wavelet tree construction*/
@@ -369,10 +369,10 @@ int main(int argc, char* argv[]) {
   printf("%s, %u, %zu, %zu, %zu, %zu, %zu\n", argv[1], alphabet, s_total_memory, e_total_memory, malloc_count_peak(), s_current_memory, e_current_memory);
 
 #else
-  if (clock_gettime(CLOCK_THREAD_CPUTIME_ID, &etime)) {
+  /*if (clock_gettime(CLOCK_THREAD_CPUTIME_ID, &etime)) {
     fprintf(stderr, "clock_gettime failed");
     exit(-1);
-  }
+  }*/
 
   t = (etime.tv_sec - stime.tv_sec) + (etime.tv_nsec - stime.tv_nsec) / 1000000000.0;
   printf("%d,%s,%lu,%lf\n", __cilkrts_get_nworkers(), argv[1], n, t);
