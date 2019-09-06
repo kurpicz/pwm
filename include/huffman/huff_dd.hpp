@@ -95,6 +95,8 @@ public:
     // merge local histograms
     histogram<AlphabetType> merged_hist(local_hists);
 
+    std::vector<size_t> total_local_level_sizes(shards);
+
     // prepare level size builder
     auto builder = parallel_level_sizes_builder<AlphabetType>{
         std::move(merged_hist),
@@ -121,11 +123,11 @@ public:
       std::vector<uint64_t> const& local_level_sizes =
           builder.level_sizes_shards()[shard];
 
-      size_t level_sizes_sum = std::accumulate(local_level_sizes.begin(),
-                                                local_level_sizes.end(), 0);
+      size_t const level_sizes_sum = std::accumulate(local_level_sizes.begin(),
+                                                     local_level_sizes.end(),
+                                                     0);
 
-      #pragma omp critical
-      std::cout << "level_sizes_sum " << level_sizes_sum << std::endl;
+      total_local_level_sizes[shard] = level_sizes_sum;
 
       auto const text = get_local_slice(shard, global_text);
 
@@ -145,6 +147,13 @@ public:
       // ctxs[shard].discard_bv();
       // ctxs[shard].discard_zeros();
     }
+
+    size_t max_size = *std::max_element(total_local_level_sizes.begin(),
+                                        total_local_level_sizes.end());
+    size_t min_size = *std::min_element(total_local_level_sizes.begin(),
+                                        total_local_level_sizes.end());
+    std::cout << "max_size=" << max_size << ' '
+              << "min_size " << min_size << ' ';
 
     std::vector<uint64_t> const& level_sizes = builder.level_sizes();
     auto bv = huff_merge_bit_vectors(level_sizes, shards, ctxs, rho);
