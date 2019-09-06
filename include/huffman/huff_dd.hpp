@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <cstring>
+#include <numeric>
 #include <omp.h>
 #include <type_traits>
 #include <vector>
@@ -119,6 +120,12 @@ public:
     for (size_t shard = 0; shard < shards; shard++) {
       std::vector<uint64_t> const& local_level_sizes =
           builder.level_sizes_shards()[shard];
+
+      size_t level_sizes_sum = std::accumulate(local_level_sizes.begin(),
+                                                local_level_sizes.end(), 0);
+
+      #pragma omp critical
+      std::cout << "level_sizes_sum " << level_sizes_sum << std::endl;
 
       auto const text = get_local_slice(shard, global_text);
 
