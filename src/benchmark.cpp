@@ -135,16 +135,20 @@ struct {
         input_for_algo = text_uint.data();
       } else {
         stxxl::syscall_file stxxl_file(path, stxxl::file::open_mode::RDONLY);
-        const stxxlvector<uint_t> unreduced_vector(&stxxl_file);
-        input_for_algo = stxxlvector<uint_t>();
-        max_char = reduce_alphabet<uint_t>(
-            unreduced_vector,
-            input_for_algo,
-            global_settings.prefix_size);
-        text_size = input_for_algo.size();
+        input_for_algo = (width > 2) ? stxxlvector<uint_t>(&stxxl_file) : stxxlvector<uint_t>();
+        if constexpr (width <= 2) {
+          const stxxlvector<uint_t> unreduced_vector(&stxxl_file);
+          max_char = reduce_alphabet<uint_t>(
+                       unreduced_vector,
+                       input_for_algo,
+                       global_settings.prefix_size);
+        }
+        else {
+          max_char = std::numeric_limits<uint_t>::max();
+        }
+        text_size = std::min((uint64_t)input_for_algo.size(), global_settings.prefix_size);
         levels = levels_for_max_char(max_char);
       }
-
 
       // std::cout << "Characters: " << text_size << std::endl;
       #ifdef MALLOC_COUNT
