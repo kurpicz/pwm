@@ -374,6 +374,10 @@ struct {
       return run<ext_in, ext_out, 2>();
     else if(global_settings.word_width == 4)
       return run<ext_in, ext_out, 4>();
+    else if(global_settings.word_width == 5)
+      return run<ext_in, ext_out, 4>();
+    else if(global_settings.word_width == 6)
+      return run<ext_in, ext_out, 4>();
     else if(global_settings.word_width == 8)
       return run<ext_in, ext_out, 8>();
     else {
