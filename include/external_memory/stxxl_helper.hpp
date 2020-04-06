@@ -17,7 +17,27 @@
 #include "util/filesystem_util.hpp"
 
 template <typename value_type>
-using stxxlvector = typename stxxl::VECTOR_GENERATOR<value_type>::result;
+struct get_stxxlvector_type {
+  using vec_type = typename stxxl::VECTOR_GENERATOR<value_type>::result;
+  using pager_type = typename vec_type::pager_type;
+  using alloc_str_type = typename vec_type::alloc_strategy_type;
+  constexpr static auto page_size = vec_type::page_size;
+  constexpr static auto block_size = vec_type::block_size;
+  constexpr static auto multiplier = 2048ULL * sizeof(value_type) * page_size;
+  constexpr static auto fixed_block_size =
+      ((block_size + multiplier - 1) / multiplier) * multiplier;
+
+  using result = stxxl::vector<
+      value_type,
+      page_size,
+      pager_type,
+      fixed_block_size,
+      alloc_str_type>;
+};
+
+
+template <typename value_type>
+using stxxlvector = typename get_stxxlvector_type<value_type>::result;
 
 template <typename value_type>
 using stxxlreader =

@@ -176,7 +176,8 @@ struct {
 
         std::cout << "input=" << path << ' '
                   << "characters=" << text_size << ' '
-                  << "sigma=" << max_char + 1 << ' '
+                  << "sigma=" << ((max_char == std::numeric_limits<uint64_t>::max()) ?
+                    "18446744073709551616" : std::to_string(max_char + 1)) << ' '
                   << "word_width=" << global_settings.word_width << ' ';
         if(a->is_huffman_shaped()) {
           std::cout << "bit_size=" << bit_size << ' ';
@@ -371,12 +372,16 @@ struct {
       return run<ext_in, ext_out, 1>();
     else if(global_settings.word_width == 2)
       return run<ext_in, ext_out, 2>();
+    else if(global_settings.word_width == 3)
+      return run<ext_in, ext_out, 3>();
     else if(global_settings.word_width == 4)
       return run<ext_in, ext_out, 4>();
     else if(global_settings.word_width == 5)
-      return run<ext_in, ext_out, 4>();
+      return run<ext_in, ext_out, 5>();
     else if(global_settings.word_width == 6)
-      return run<ext_in, ext_out, 4>();
+      return run<ext_in, ext_out, 6>();
+    else if(global_settings.word_width == 7)
+      return run<ext_in, ext_out, 7>();
     else if(global_settings.word_width == 8)
       return run<ext_in, ext_out, 8>();
     else {

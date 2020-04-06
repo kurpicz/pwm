@@ -70,7 +70,7 @@ using wt_ps_8_fe_wp0 = wx_ps_fe<uint8_t, true, 0>;
 using wm_ps_8_fe_wp1 = wx_ps_fe<uint8_t, false, 1>;
 using wm_ps_16_fe_wp1 = wx_ps_fe<uint16_t, false, 1>;
 using wm_ps_32_fe_wp1 = wx_ps_fe<uint32_t, false, 1>;
-using wm_ps_64_fe_wp1 = wx_ps_fe<uint64_t, false, 1>;
+using wm_ps_40_fe_wp1 = wx_ps_fe<uint40_t, false, 1>;
 using wt_ps_8_fe_wp1 = wx_ps_fe<uint8_t, true, 1>;
 using wm_ps_8_fe_wp2 = wx_ps_fe<uint8_t, false, 2>;
 using wt_ps_8_fe_wp2 = wx_ps_fe<uint8_t, true, 2>;
@@ -80,6 +80,7 @@ CONSTRUCTION_REGISTER(
     "Sequential wavelet tree construction with 8-bit alphabet (using sorting, "
     "fully external, no wordpacking).",
     wt_ps_8_fe_wp0)
+
 CONSTRUCTION_REGISTER(
     "wm_ps_fe_wp1",
     "Sequential wavelet matrix construction with 8-bit alphabet (using "
@@ -99,7 +100,8 @@ CONSTRUCTION_REGISTER(
     "wm_ps_fe_wp1",
     "Sequential wavelet matrix construction with 64-bit alphabet (using "
     "sorting, fully external, wordpacking with padding).",
-    wm_ps_64_fe_wp1)
+    wm_ps_40_fe_wp1)
+
 CONSTRUCTION_REGISTER(
     "wt_ps_fe_wp1",
     "Sequential wavelet tree construction with 8-bit alphabet (using sorting, "

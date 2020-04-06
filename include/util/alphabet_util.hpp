@@ -57,8 +57,9 @@ static uint64_t reduce_alphabet(const stxxlvector<AlphabetType>& text,
   stxxlwriter<AlphabetType> writer(result);
 
   if constexpr (sizeof(AlphabetType) > 4) {
-    for (const auto& c : reader) {
-      writer << c;
+    for (uint64_t i = 0; i < text_size; ++i) {
+      writer << *reader;
+      ++reader;
     }
     writer.finish();
     return std::numeric_limits<AlphabetType>::max();

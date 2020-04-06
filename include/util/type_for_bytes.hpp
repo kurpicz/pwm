@@ -29,6 +29,11 @@ struct type_for_bytes<2> {
 }; // type_for_bytes<2>
 
 template <>
+struct type_for_bytes<3> {
+  using type = uint24_t;
+}; // type_for_bytes<3>
+
+template <>
 struct type_for_bytes<4> {
   using type = uint32_t;
 }; // type_for_bytes<4>
@@ -36,12 +41,17 @@ struct type_for_bytes<4> {
 template <>
 struct type_for_bytes<5> {
   using type = uint40_t;
-}; // type_for_bytes<4>
+}; // type_for_bytes<5>
 
 template <>
 struct type_for_bytes<6> {
   using type = uint48_t;
-}; // type_for_bytes<4>
+}; // type_for_bytes<6>
+
+template <>
+struct type_for_bytes<7> {
+  using type = uint56_t;
+}; // type_for_bytes<7>
 
 template <>
 struct type_for_bytes<8> {
