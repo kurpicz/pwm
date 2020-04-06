@@ -9,6 +9,7 @@
 #pragma once
 
 #include "util/debug_assert.hpp"
+#include "util/uint_t.hpp"
 
 template <uint8_t BytesPerWord>
 struct type_for_bytes {
@@ -30,6 +31,16 @@ struct type_for_bytes<2> {
 template <>
 struct type_for_bytes<4> {
   using type = uint32_t;
+}; // type_for_bytes<4>
+
+template <>
+struct type_for_bytes<5> {
+  using type = uint40_t;
+}; // type_for_bytes<4>
+
+template <>
+struct type_for_bytes<6> {
+  using type = uint48_t;
 }; // type_for_bytes<4>
 
 template <>
