@@ -50,39 +50,49 @@ static uint64_t reduce_alphabet(const stxxlvector<AlphabetType>& text,
                                 uint64_t text_size) {
   if(text_size <= 0) text_size = text.size();
   else text_size = std::min(text_size, uint64_t(text.size()));
-
-  uint64_t max_char = uint64_t(0);
   result.resize(0);
   result.reserve(text_size);
+
   stxxlreader<AlphabetType> reader(text);
   stxxlwriter<AlphabetType> writer(result);
-  uint64_t counter = 0;
 
-  if constexpr (std::is_same<AlphabetType, uint8_t>::value) {
-    std::array<uint64_t, std::numeric_limits<uint8_t>::max()> occ;
-    occ.fill(0);
+  if constexpr (sizeof(AlphabetType) > 4) {
     for (const auto& c : reader) {
-      if (occ[c] == 0) {
-        occ[c] = ++max_char;
-      }
-      writer << occ[c] - 1;
-      if(++counter == text_size) break;
+      writer << c;
     }
-    --max_char;
-  } else {
-    std::unordered_map<AlphabetType, uint64_t> word_list;
-    for (const auto& c : reader) {
-      auto result = word_list.find(c);
-      if (result == word_list.end()) {
-        word_list.emplace(c, max_char++);
-      }
-      writer << static_cast<AlphabetType>(word_list.find(c)->second);
-      if(++counter == text_size) break;
-    }
-    --max_char;
+    writer.finish();
+    return std::numeric_limits<AlphabetType>::max();
   }
-  writer.finish();
-  return max_char;
+  else {
+    uint64_t max_char = uint64_t(0);
+    uint64_t counter = 0;
+
+    if constexpr (std::is_same<AlphabetType, uint8_t>::value) {
+      std::array<uint64_t, std::numeric_limits<uint8_t>::max()> occ;
+      occ.fill(0);
+      for (const auto& c : reader) {
+        if (occ[c] == 0) {
+          occ[c] = ++max_char;
+        }
+        writer << occ[c] - 1;
+        if(++counter == text_size) break;
+      }
+      --max_char;
+    } else {
+      std::unordered_map<AlphabetType, uint64_t> word_list;
+      for (const auto& c : reader) {
+        auto result = word_list.find(c);
+        if (result == word_list.end()) {
+          word_list.emplace(c, max_char++);
+        }
+        writer << static_cast<AlphabetType>(word_list.find(c)->second);
+        if(++counter == text_size) break;
+      }
+      --max_char;
+    }
+    writer.finish();
+    return max_char;
+  }
 }
 
 [[maybe_unused]] static uint64_t levels_for_max_char(uint64_t max_char) {
