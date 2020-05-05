@@ -43,6 +43,6 @@ matrix:
 script:
   - mkdir build
   - cd build
-  - cmake -DCMAKE_BUILD_TYPE=$BUILDMODE ..
+  - cmake -DPWM_ENABLE_CILK_ALGORITHM=OFF -DCMAKE_BUILD_TYPE=$BUILDMODE ..
   - make check
   - make
