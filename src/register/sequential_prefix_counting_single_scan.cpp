@@ -12,6 +12,8 @@
 using wm_pc_ss_8 = wx_pc_ss<uint8_t, false>;
 using wm_pc_ss_16 = wx_pc_ss<uint16_t, false>;
 using wm_pc_ss_32 = wx_pc_ss<uint32_t, false>;
+using wm_pc_ss_40 = wx_pc_ss<uint40_t, false>;
+
 
 CONSTRUCTION_REGISTER("wm_pc_ss",
   "Sequential wavelet matrix construction with 8-bit alphabet "
@@ -22,10 +24,14 @@ CONSTRUCTION_REGISTER("wm_pc_ss",
 CONSTRUCTION_REGISTER("wm_pc_ss",
   "Sequential wavelet matrix construction with 32-bit alphabet "
   "(using counting and computing all levels at once).", wm_pc_ss_32)
+CONSTRUCTION_REGISTER("wm_pc_ss",
+  "Sequential wavelet matrix construction with 40-bit alphabet "
+  "(using counting and computing all levels at once).", wm_pc_ss_40)
 
 using wt_pc_ss_8 = wx_pc_ss<uint8_t, true>;
 using wt_pc_ss_16 = wx_pc_ss<uint16_t, true>;
 using wt_pc_ss_32 = wx_pc_ss<uint32_t, true>;
+using wt_pc_ss_40 = wx_pc_ss<uint40_t, true>;
 
 CONSTRUCTION_REGISTER("wt_pc_ss",
   "Sequential wavelet tree construction with 8-bit alphabet "
@@ -36,5 +42,8 @@ CONSTRUCTION_REGISTER("wt_pc_ss",
 CONSTRUCTION_REGISTER("wt_pc_ss",
   "Sequential wavelet tree construction with 32-bit alphabet "
   "(using counting and computing all levels at once).", wt_pc_ss_32)
+CONSTRUCTION_REGISTER("wt_pc_ss",
+  "Sequential wavelet tree construction with 32-bit alphabet "
+  "(using counting and computing all levels at once).", wt_pc_ss_40)
 
 /******************************************************************************/

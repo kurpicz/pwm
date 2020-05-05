@@ -12,6 +12,7 @@
 using wm_ps_8 = wx_ps<uint8_t, false>;
 using wm_ps_16 = wx_ps<uint16_t, false>;
 using wm_ps_32 = wx_ps<uint32_t, false>;
+using wm_ps_40 = wx_ps<uint40_t, false>;
 
 CONSTRUCTION_REGISTER("wm_ps",
   "Sequential wavelet matrix construction with 8-bit alphabet (using sorting).",
@@ -22,10 +23,14 @@ CONSTRUCTION_REGISTER("wm_ps",
 CONSTRUCTION_REGISTER("wm_ps",
   "Sequential wavelet matrix construction with 32-bit alphabet (using sorting).",
   wm_ps_32)
+CONSTRUCTION_REGISTER("wm_ps",
+  "Sequential wavelet matrix construction with 40-bit alphabet (using sorting).",
+  wm_ps_40)
 
 using wt_ps_8 = wx_ps<uint8_t, true>;
 using wt_ps_16 = wx_ps<uint16_t, true>;
 using wt_ps_32 = wx_ps<uint32_t, true>;
+using wt_ps_40 = wx_ps<uint40_t, true>;
 
 CONSTRUCTION_REGISTER("wt_ps",
   "Sequential wavelet tree construction with 8-bit alphabet (using sorting).",
@@ -36,5 +41,8 @@ CONSTRUCTION_REGISTER("wt_ps",
 CONSTRUCTION_REGISTER("wt_ps",
   "Sequential wavelet tree construction with 32-bit alphabet (using sorting).",
   wt_ps_32)
+CONSTRUCTION_REGISTER("wt_ps",
+  "Sequential wavelet tree construction with 40-bit alphabet (using sorting).",
+  wt_ps_40)
 
 /******************************************************************************/
