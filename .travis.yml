@@ -41,6 +41,7 @@ matrix:
         - BUILDMODE=Release
 
 script:
+  - git submodule sync && git submodule update --init --recursive
   - mkdir build
   - cd build
   - cmake -DPWM_ENABLE_CILK_ALGORITHM=OFF -DCMAKE_BUILD_TYPE=$BUILDMODE ..
