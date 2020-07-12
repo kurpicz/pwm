@@ -35,14 +35,14 @@ matrix:
         - CXX=g++-7
         - CC=gcc-7
         - BUILDMODE=Debug
-    - <<: *base_linux_config
-      env:
-        - CMAKE_CC="gcc-7"
-        - CMAKE_CXX="g++-7"
-        - COMPILER_NAME=gcc
-        - CXX=g++-7
-        - CC=gcc-7
-        - BUILDMODE=Release
+    # - <<: *base_linux_config
+    #   env:
+    #     - CMAKE_CC="gcc-7"
+    #     - CMAKE_CXX="g++-7"
+    #     - COMPILER_NAME=gcc
+    #     - CXX=g++-7
+    #     - CC=gcc-7
+    #     - BUILDMODE=Release
 
 script:
   - git submodule sync && git submodule update --init --recursive
