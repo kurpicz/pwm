@@ -121,8 +121,8 @@ public:
     }
   }
 
-  template <typename writer_type>
-  inline void to_em(writer_type &writer, uint64_t shift) {
+  template <typename bvt, typename writer_type>
+  inline void to_em(bvt &bvs, uint64_t final_word_idx, writer_type &writer, uint64_t shift) {
     uint64_t initial_word = (shift == 0) ? 0ULL : prefix(*writer, shift);
     while(!hist_.empty()) {
       const uint64_t next_bits = hist_.front();
@@ -184,7 +184,9 @@ public:
 
     if (PWM_LIKELY(shift > 0)) {
       EXT_MERGE_VERBOSE << bitstring(initial_word) << "\n";
-      writer << (initial_word | suffix(*writer, 64 - shift));
+      //uint64_t final_word = bvs[final_word_idx];
+      writer.finish();
+      bvs[final_word_idx] = (initial_word | suffix(bvs[final_word_idx], 64 - shift));
     }
     clear();
   }

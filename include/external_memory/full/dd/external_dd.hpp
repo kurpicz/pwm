@@ -251,7 +251,7 @@ public:
             EXT_DD_CTX_VERBOSE << "Write interval " << largest_interval_idx
                                << " of bit length " << largest_interval.size_in_bits()
                                << " to em bit idx " << border << ". Shift = " << mod64(border) << ".\n";
-            largest_interval.to_em(writer, mod64(border));
+            largest_interval.to_em(bvs, div64(border + largest_interval.size_in_bits()), writer, mod64(border));
           }
 
           EXT_DD_CTX_VERBOSE << "Write " << bits << " bits to buffer interval " << i << ".\n";
@@ -270,7 +270,8 @@ public:
         EXT_DD_CTX_VERBOSE << "Write interval " << i
                            << " of bit length " << merger.interval(i).size_in_bits()
                            << " to em bit idx " << border << ". Shift = " << mod64(border) << ".\n";
-        merger.interval(i).to_em(writer, mod64(border));
+        auto size = merger.interval(i).size_in_bits();
+        merger.interval(i).to_em(bvs, div64(border + size), writer, mod64(border));
       }
     }
   }
