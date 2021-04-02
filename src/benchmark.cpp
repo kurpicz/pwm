@@ -537,6 +537,7 @@ int32_t main(int32_t argc, char const* argv[]) {
 
   if (global_settings.diskbench) {
     const uint64_t bytes = (global_settings.memory / 8) * 8;
+
     const uint64_t words = bytes / 8;
 
     const uint64_t runs =
@@ -593,14 +594,50 @@ int32_t main(int32_t argc, char const* argv[]) {
     std::sort(stats_r.begin(), stats_r.end());
     std::sort(stats_w.begin(), stats_w.end());
 
+    double rbs =
+        ((1000.0 * bytes) / stats_r[(runs - 1) >> 1].get_total_time());
+    double wbs =
+        ((1000.0 * bytes) / stats_w[(runs - 1) >> 1].get_total_time());
+
     std::cout << "RESULT algo=stxxlbench_read characters=" << bytes
-              << " mibs=" << ((1000.0 * bytes) / stats_r[(runs - 1) >> 1].get_total_time()) / 1024 / 1024
-              << " " << stats_r[(runs - 1) >> 1] << " word_width=1" << std::endl;
+              << " mibs=" << rbs / 1024 / 1024 << " "
+              << stats_r[(runs - 1) >> 1] << " word_width=1" << std::endl;
 
     std::cout << "RESULT algo=stxxlbench_write characters=" << bytes
-              << " mibs=" << ((1000.0 * bytes) / stats_w[(runs - 1) >> 1].get_total_time()) / 1024 / 1024
-              << " " << stats_w[(runs - 1) >> 1] << " word_width=1" << std::endl;
+              << " mibs=" << wbs / 1024 / 1024 << " "
+              << stats_w[(runs - 1) >> 1] << " word_width=1" << std::endl;
 
+    double test_gibit = 8.0 * bytes / 1024 / 1024 / 1024;
+    double rms_per_gibit =
+        stats_r[(runs - 1) >> 1].get_total_time() / test_gibit;
+    double wms_per_gibit =
+        stats_w[(runs - 1) >> 1].get_total_time() / test_gibit;
+
+    // how long does it take to compute a WT of size 1 Gibit?
+    auto print_max = [&] (int sigma, std::string text) {
+      int lgsigma = std::ceil(std::log2(sigma));
+
+      // if we compute a WT of size 1Gibit, what is the text size in Gibit?
+      // (all of our texts are stored using one byte per symbol)
+      double text_gibit = 8.0 / lgsigma;
+
+      double gibit_read = 1 + text_gibit; // read text, write WT
+      double gibit_write = 2;             // write WT twice
+
+      double read_time = rms_per_gibit * gibit_read;
+      double write_time = wms_per_gibit * gibit_write;
+
+      double total_time = read_time + write_time; // in milliseconds!
+      double throughput = 1000.0 / total_time;
+
+      std::cout << "Max throughput per output (!) for " << text
+                << " (lgsigma=" << lgsigma << "): " << throughput << " Gibit/s"
+                << std::endl;
+    };
+
+    print_max(4,   "DNA    ");
+    print_max(32,  "PROT   ");
+    print_max(256, "CC/WIKI");
     return 0;
   }
   else return execution.start();
