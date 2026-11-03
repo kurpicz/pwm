@@ -31,7 +31,7 @@ file_to_vector(const std::string& file_name, const size_t prefix_size = 0) {
   }
   stream.seekg(0);
   std::vector<typename type_for_bytes<BytesPerWord>::type> result(size);
-  stream.read(reinterpret_cast<char*>(result.data()), size);
+  stream.read(reinterpret_cast<char*>(result.data()), size * BytesPerWord);
   stream.close();
   return result;
 }
