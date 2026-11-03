@@ -19,7 +19,7 @@ template <typename AlphabetType>
 static uint64_t reduce_alphabet(std::vector<AlphabetType>& text) {
   uint64_t max_char = uint64_t(0);
   if constexpr (std::is_same<AlphabetType, uint8_t>::value) {
-    std::array<uint64_t, std::numeric_limits<uint8_t>::max()> occ;
+    std::array<uint64_t, std::numeric_limits<uint8_t>::max() + 1> occ;
     occ.fill(0);
     for (auto& c : text) {
       if (occ[c] == 0) {
@@ -69,7 +69,7 @@ static uint64_t reduce_alphabet(const stxxlvector<AlphabetType>& text,
     uint64_t counter = 0;
 
     if constexpr (std::is_same<AlphabetType, uint8_t>::value) {
-      std::array<uint64_t, std::numeric_limits<uint8_t>::max()> occ;
+      std::array<uint64_t, std::numeric_limits<uint8_t>::max() + 1> occ;
       occ.fill(0);
       for (const auto& c : reader) {
         if (occ[c] == 0) {
